@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import * as go from 'gojs';
 import type { SelectedEdgeData } from '../store/diagramSlice';
 import { hasDuplicateLink } from '../utils/link-validation';
-import { isValidLinkSource, isValidLinkTarget, getLinkValidationErrorFrom, getLinkValidationErrorTo } from '../config/diagram-rules';
+import { isValidLinkSource, isValidLinkTarget, getLinkValidationErrorFrom, getLinkValidationErrorTo, DEFAULT_LINK_TYPE } from '../config/diagram-rules';
 import type { LinkType } from '../store/diagramSlice';
 
 /**
@@ -25,7 +25,7 @@ export function useEdgeValidation(selectedEdge: SelectedEdgeData | null) {
 
     const fromKey = selectedEdge.from;
     const toKey = selectedEdge.to;
-    const linkType = (selectedEdge.category || 'link') as LinkType;
+    const linkType = (selectedEdge.category || DEFAULT_LINK_TYPE) as LinkType;
     const linkKey = selectedEdge.key;
 
     // Check if reversing (toKey -> fromKey) would create a duplicate

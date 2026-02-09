@@ -11,7 +11,8 @@ import {
   isValidLinkTarget, 
   getLinkValidationErrorFrom,
   getLinkValidationErrorTo,
-  canLinkEndOnCanvas
+  canLinkEndOnCanvas,
+  DEFAULT_LINK_TYPE
 } from '../config/diagram-rules';
 
 // ============================================================================
@@ -150,7 +151,7 @@ export function canReverseLink(
   
   if (!fromNodeData || !toNodeData) return false;
   
-  const normalizedLinkType = linkType || 'link';
+  const normalizedLinkType = linkType || DEFAULT_LINK_TYPE;
   
   // Validate that toNode can be a source (after reverse)
   if (!isValidLinkSource(normalizedLinkType as LinkType, toNodeData.category)) {

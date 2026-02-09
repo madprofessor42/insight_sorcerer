@@ -65,6 +65,19 @@
   border-color: #3d7ac5;
 }
 
+.edgeActionButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #2a3a4a;
+  border-color: #3a4a5a;
+}
+
+.edgeActionButton:disabled:hover {
+  background: #2a3a4a;
+  border-color: #3a4a5a;
+  transform: none;
+}
+
 .edgeActionIcon {
   font-size: 16px;
   flex-shrink: 0;

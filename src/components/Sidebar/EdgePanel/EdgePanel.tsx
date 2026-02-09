@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useAppSelector } from '../../../store/hooks';
 import { useEdgeOperations } from '../../../hooks/useEdgeOperations';
+import { useEdgeValidation } from '../../../hooks/useEdgeValidation';
+import { canLinkBeBidirectional, normalizeLinkType } from '../../../config/diagram-rules';
 import styles from './EdgePanel.module.css';
 
 export function EdgePanel() {
   const selectedEdge = useAppSelector((state) => state.diagram.selectedEdge);
   const { resetCurve, reverseDirection, toggleBidirectional } = useEdgeOperations();
+  const { canReverse } = useEdgeValidation(selectedEdge);
   const [bidirectionalActive, setBidirectionalActive] = useState(false);
 
   // Update bidirectional state when selected edge changes
@@ -19,6 +22,9 @@ export function EdgePanel() {
     return null;
   }
 
+  const linkType = normalizeLinkType(selectedEdge.category);
+  const canBeBidirectional = canLinkBeBidirectional(linkType);
+
   const handleToggleBidirectional = () => {
     toggleBidirectional(selectedEdge);
     setBidirectionalActive(!bidirectionalActive);
@@ -29,7 +35,7 @@ export function EdgePanel() {
       {/* Edge Info */}
       <div className={styles.edgeInfo}>
         <p className={styles.edgeType}>
-          Тип: {selectedEdge.category || 'link'}
+          Тип: {linkType}
         </p>
         {selectedEdge.key && (
           <p className={styles.edgeId}>
@@ -52,7 +58,12 @@ export function EdgePanel() {
         <button
           className={styles.edgeActionButton}
           onClick={() => reverseDirection(selectedEdge)}
-          title="Развернуть направление связи"
+          disabled={!canReverse}
+          title={
+            canReverse
+              ? "Развернуть направление связи"
+              : "Разворот создаст дубликат связи"
+          }
         >
           <span className={styles.edgeActionIcon}>↔️</span>
           <span className={styles.edgeActionLabel}>Развернуть</span>
@@ -61,7 +72,12 @@ export function EdgePanel() {
         <button
           className={`${styles.edgeActionButton} ${bidirectionalActive ? styles.active : ''}`}
           onClick={handleToggleBidirectional}
-          title="Переключить двунаправленность"
+          disabled={!canBeBidirectional}
+          title={
+            canBeBidirectional 
+              ? "Переключить двунаправленность" 
+              : `Связи типа '${linkType}' не могут быть двунаправленными`
+          }
         >
           <span className={styles.edgeActionIcon}>⇄</span>
           <span className={styles.edgeActionLabel}>Двунаправленная</span>

@@ -6,6 +6,11 @@ import type { LinkType } from '../store/diagramSlice';
 export type NodeType = 'Stock' | 'Variable';
 
 /**
+ * Default link type when category is not specified
+ */
+export const DEFAULT_LINK_TYPE: LinkType = 'link';
+
+/**
  * Link validation rule
  */
 export interface LinkValidationRule {
@@ -15,6 +20,8 @@ export interface LinkValidationRule {
   allowedFromNodes: NodeType[];
   /** Allowed target node types (empty array means all types allowed) */
   allowedToNodes: NodeType[];
+  /** Can this link type be bidirectional (single link with two arrows) */
+  canBeBidirectional: boolean;
   /** Error message when source node is invalid */
   errorMessageFrom?: string;
   /** Error message when target node is invalid */
@@ -30,6 +37,7 @@ export const LINK_VALIDATION_RULES: LinkValidationRule[] = [
     linkType: 'flow',
     allowedFromNodes: ['Stock'],
     allowedToNodes: ['Stock'],
+    canBeBidirectional: false, // Flow cannot be bidirectional - creates 2 separate links
     errorMessageFrom: 'Flow links can only be created FROM Stock nodes',
     errorMessageTo: 'Flow links can only connect TO Stock nodes'
   },
@@ -37,6 +45,7 @@ export const LINK_VALIDATION_RULES: LinkValidationRule[] = [
     linkType: 'link',
     allowedFromNodes: [], // Can connect from any node type
     allowedToNodes: [], // Can connect to any node type
+    canBeBidirectional: true, // Link can be bidirectional - single link with two arrows
   }
 ];
 
@@ -107,3 +116,26 @@ export function getLinkValidationErrorTo(linkType: LinkType): string {
   return 'Invalid link target';
 }
 
+/**
+ * Check if a link type can be bidirectional
+ */
+export function canLinkBeBidirectional(linkType: LinkType): boolean {
+  const rule = getLinkValidationRule(linkType);
+  if (!rule) return true; // Default to true if no rule exists
+  
+  return rule.canBeBidirectional;
+}
+
+/**
+ * Normalize link type - returns the actual type or default if undefined
+ */
+export function normalizeLinkType(category: string | undefined): LinkType {
+  return (category || DEFAULT_LINK_TYPE) as LinkType;
+}
+
+/**
+ * Check if two links are of the same type
+ */
+export function isSameLinkType(type1: string | undefined, type2: string | undefined): boolean {
+  return normalizeLinkType(type1) === normalizeLinkType(type2);
+}

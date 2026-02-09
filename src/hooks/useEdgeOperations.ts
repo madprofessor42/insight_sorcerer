@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import * as go from 'gojs';
 import type { SelectedEdgeData } from '../store/diagramSlice';
+import { canLinkBeBidirectional, normalizeLinkType } from '../config/diagram-rules';
 
 /**
  * Hook for edge operations (reset curve, reverse, bidirectional)
@@ -89,6 +90,13 @@ export function useEdgeOperations() {
     
     const link = diagram.findLinkForData(linkData);
     if (!link) return;
+
+    // Check if this link type can be bidirectional
+    const linkType = normalizeLinkType(link.data.category);
+    if (!canLinkBeBidirectional(linkType)) {
+      console.warn(`⚠️  Links of type '${linkType}' cannot be bidirectional`);
+      return;
+    }
 
     diagram.startTransaction('toggle bidirectional');
     

@@ -7,6 +7,7 @@ export { usePaletteDragDrop } from './usePaletteDragDrop';
 export { useLinkTypeSelector } from './useLinkTypeSelector';
 export { useEdgeOperations } from './useEdgeOperations';
 export { useBidirectionalLinks } from './useBidirectionalLinks';
+export { useEdgeValidation } from './useEdgeValidation';
 
 // Re-export types
 export type { NodeData } from './usePaletteDragDrop';

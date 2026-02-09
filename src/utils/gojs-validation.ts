@@ -6,6 +6,7 @@ import {
   getLinkValidationErrorFrom,
   getLinkValidationErrorTo
 } from '../config/diagram-rules';
+import { hasDuplicateLink } from './link-validators';
 
 /**
  * Create link validation function for linking tool
@@ -16,7 +17,8 @@ export function createLinkValidation(linkType: LinkType) {
     fromNode: go.Node | null,
     _fromPort: go.GraphObject | null,
     toNode: go.Node | null,
-    _toPort: go.GraphObject | null
+    _toPort: go.GraphObject | null,
+    _link: go.Link | null
   ): boolean => {
     if (!fromNode) return false;
     
@@ -33,6 +35,17 @@ export function createLinkValidation(linkType: LinkType) {
     if (toNode && !isValidLinkTarget(linkType, toNodeType)) {
       console.warn(`⚠️  ${getLinkValidationErrorTo(linkType)}!`);
       return false;
+    }
+    
+    // Check for duplicate links of the same type
+    if (toNode && fromNode.diagram) {
+      const model = fromNode.diagram.model as go.GraphLinksModel;
+      if (model instanceof go.GraphLinksModel) {
+        if (hasDuplicateLink(model, fromNode.data.key, toNode.data.key, linkType)) {
+          console.warn(`⚠️ Duplicate link of type '${linkType}' already exists between these nodes`);
+          return false;
+        }
+      }
     }
     
     return true;
@@ -67,6 +80,17 @@ export function createRelinkValidation() {
     if (toNode && !isValidLinkTarget(linkType, toNodeType)) {
       console.warn(`⚠️  ${getLinkValidationErrorTo(linkType)}!`);
       return false;
+    }
+    
+    // Check for duplicate links of the same type (excluding current link being relinked)
+    if (toNode && fromNode.diagram) {
+      const model = fromNode.diagram.model as go.GraphLinksModel;
+      if (model instanceof go.GraphLinksModel) {
+        if (hasDuplicateLink(model, fromNode.data.key, toNode.data.key, linkType, link.data.key)) {
+          console.warn(`⚠️ Duplicate link of type '${linkType}' already exists between these nodes`);
+          return false;
+        }
+      }
     }
     
     return true;

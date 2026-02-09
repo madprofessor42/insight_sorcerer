@@ -25,18 +25,9 @@ export function initializeDiagram(): go.Diagram {
       linkKeyProperty: 'key',
       nodeCategoryProperty: 'category',
       linkCategoryProperty: 'category',
-      makeUniqueKeyFunction: (m: go.Model, data: any) => {
-        let k = data.key || 1;
-        while (m.findNodeDataForKey(k)) k++;
-        data.key = k;
-        return k;
-      },
-      makeUniqueLinkKeyFunction: (m: go.GraphLinksModel, data: any) => {
-        let k = data.key || -1;
-        while (m.findLinkDataForKey(k)) k--;
-        data.key = k;
-        return k;
-      }
+      // Let GoJS handle automatic key generation using its built-in mechanism
+      // Keys will be generated automatically when nodes/links are added without a key property
+      // GoJS will ensure uniqueness within the model
     })
   });
 

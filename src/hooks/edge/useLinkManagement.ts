@@ -88,24 +88,25 @@ export function useLinkManagement(
         
         console.log(`🌥️  Creating Cloud node at endpoint (${endPoint.x.toFixed(0)}, ${endPoint.y.toFixed(0)})`);
         
-        // Generate unique key for the new Cloud node
-        const cloudKey = `cloud_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        
         // NOTE: LinkDrawn event is already called within a GoJS transaction,
         // so we don't need to start a new one - just modify the model directly
         
-        // Add Cloud node to model
-        model.addNodeData({
-          key: cloudKey,
+        // Add Cloud node to model (GoJS will auto-generate unique key)
+        const cloudNodeData = {
           category: 'Cloud',
           name: '', // Empty name by default
           loc: go.Point.stringify(endPoint) // Position at link endpoint
-        });
+        };
+        
+        model.addNodeData(cloudNodeData);
+        
+        // Get the auto-generated key from the newly created node
+        const cloudKey = model.getKeyForNodeData(cloudNodeData);
         
         // Update link to connect to the new Cloud node
         diagram.model.setDataProperty(link.data, 'to', cloudKey);
         
-        console.log(`✅ Created Cloud node '${cloudKey}' and connected link`);
+        console.log(`✅ Created Cloud node with auto-generated key '${cloudKey}' and connected link`);
         
         // Continue with normal link processing
         // (duplicate check, bidirectional logic will now apply)

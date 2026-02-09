@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import * as go from 'gojs';
 import type { ReactDiagram } from 'gojs-react';
 import type { LinkType } from '../store/diagramSlice';
-import { canLinkBeBidirectional, normalizeLinkType } from '../config/diagram-rules';
+import { canLinkBeBidirectional, canLinkEndOnCanvas, normalizeLinkType } from '../config/diagram-rules';
 import { hasDuplicateLink, findReverseLink, createLinkValidation, createRelinkValidation } from '../utils/link-validation';
 
 /**
@@ -55,24 +55,49 @@ export function useLinkManagement(
       const fromKey = link.data.from;
       const toKey = link.data.to;
       
-      // For links ending on canvas, ensure we have points saved
-      if (toKey === undefined && link.points.count > 0) {
-        const points = link.points.toArray();
-        diagram.model.setDataProperty(link.data, 'points', points);
+      console.log(`🔗 LinkDrawn: type=${linkType}, from=${fromKey}, to=${toKey}, points=${link.points.count}`);
+      
+      // Step 1.5: If link ends on canvas, create a Cloud node at endpoint
+      // Only for link types that allow ending on canvas
+      if (toKey === undefined && canLinkEndOnCanvas(linkType)) {
+        // Get endpoint coordinates from diagram.lastInput (where user released mouse)
+        // We can't use link.points because GoJS doesn't store points for unconnected links
+        const endPoint = diagram.lastInput.documentPoint.copy();
+        
+        console.log(`🌥️  Creating Cloud node at endpoint (${endPoint.x.toFixed(0)}, ${endPoint.y.toFixed(0)})`);
+        
+        // Generate unique key for the new Cloud node
+        const cloudKey = `cloud_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        // NOTE: LinkDrawn event is already called within a GoJS transaction,
+        // so we don't need to start a new one - just modify the model directly
+        
+        // Add Cloud node to model
+        model.addNodeData({
+          key: cloudKey,
+          category: 'Cloud',
+          name: '', // Empty name by default
+          loc: go.Point.stringify(endPoint) // Position at link endpoint
+        });
+        
+        // Update link to connect to the new Cloud node
+        diagram.model.setDataProperty(link.data, 'to', cloudKey);
+        
+        console.log(`✅ Created Cloud node '${cloudKey}' and connected link`);
+        
+        // Continue with normal link processing
+        // (duplicate check, bidirectional logic will now apply)
       }
 
-      // Step 2: Check for duplicate links only if connecting to a node
-      // Links to canvas (toKey === undefined) are always allowed
-      if (toKey !== undefined && hasDuplicateLink(model, fromKey, toKey, link.data.category, link.data.key)) {
+      // Step 2: Get the actual toKey (might have been updated after Cloud creation)
+      const actualToKey = link.data.to;
+      
+      // Step 3: Check for duplicate links
+      if (hasDuplicateLink(model, fromKey, actualToKey, link.data.category, link.data.key)) {
         diagram.startTransaction('remove duplicate');
         model.removeLinkData(link.data);
         diagram.commitTransaction('remove duplicate');
         console.warn(`⚠️ Duplicate link of type '${linkType}' already exists between these nodes`);
-        return;
-      }
-      
-      // Step 3: Skip bidirectional logic for links to canvas
-      if (toKey === undefined) {
         return;
       }
       
@@ -82,7 +107,7 @@ export function useLinkManagement(
       }
 
       // Step 5: Check if reverse link of the SAME TYPE exists
-      const reverseLink = findReverseLink(model, fromKey, toKey, link.data.category, link.data.key);
+      const reverseLink = findReverseLink(model, fromKey, actualToKey, link.data.category, link.data.key);
 
       if (reverseLink) {
         diagram.startTransaction('convert to bidirectional');

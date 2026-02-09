@@ -3,7 +3,13 @@ import type { LinkType } from '../store/diagramSlice';
 /**
  * Node types available in the diagram
  */
-export type NodeType = 'Stock' | 'Variable';
+export type NodeType = 'Stock' | 'Variable' | 'Cloud';
+
+/**
+ * Node types that can be created manually by user
+ * Cloud nodes are created automatically only when linking to canvas
+ */
+export type ManuallyCreatableNodeType = 'Stock' | 'Variable';
 
 /**
  * Default link type when category is not specified
@@ -22,10 +28,8 @@ export interface LinkValidationRule {
   allowedToNodes: NodeType[];
   /** Can this link type be bidirectional (single link with two arrows) */
   canBeBidirectional: boolean;
-  /** Can this link type end on canvas (toNode: null) */
+  /** Can this link type end on canvas (toNode: null) - automatically creates Cloud node at endpoint */
   canEndOnCanvas: boolean;
-  /** Shape to show at canvas endpoint (when canEndOnCanvas is true) */
-  canvasEndpointShape?: 'cloud' | 'none';
   /** Error message when source node is invalid */
   errorMessageFrom?: string;
   /** Error message when target node is invalid */
@@ -39,21 +43,19 @@ export interface LinkValidationRule {
 export const LINK_VALIDATION_RULES: LinkValidationRule[] = [
   {
     linkType: 'flow',
-    allowedFromNodes: ['Stock'],
-    allowedToNodes: ['Stock'],
+    allowedFromNodes: ['Stock', 'Cloud'], // Can connect from Stock or Cloud (Cloud represents external source/sink)
+    allowedToNodes: ['Stock', 'Cloud'], // Can connect to Stock or Cloud (Cloud is auto-created when drawing to canvas)
     canBeBidirectional: false, // Flow cannot be bidirectional - creates 2 separate links
-    canEndOnCanvas: true, // Flow can end on canvas (toNode: null) - represents source/sink outside system
-    canvasEndpointShape: 'cloud', // Show cloud shape at canvas endpoint
-    errorMessageFrom: 'Flow links can only be created FROM Stock nodes',
-    errorMessageTo: 'Flow links can only connect TO Stock nodes'
+    canEndOnCanvas: true, // Flow can end on canvas (toNode: null) - auto-creates Cloud node at endpoint
+    errorMessageFrom: 'Flow links can only be created FROM Stock or Cloud nodes',
+    errorMessageTo: 'Flow links can only connect TO Stock or Cloud nodes'
   },
   {
     linkType: 'link',
     allowedFromNodes: [], // Can connect from any node type
     allowedToNodes: [], // Can connect to any node type
     canBeBidirectional: true, // Link can be bidirectional - single link with two arrows
-    canEndOnCanvas: false, // Regular links must connect to nodes
-    canvasEndpointShape: 'none', // No special shape for canvas endpoint
+    canEndOnCanvas: false // Regular links must connect to nodes
   }
 ];
 
@@ -150,20 +152,11 @@ export function isSameLinkType(type1: string | undefined, type2: string | undefi
 
 /**
  * Check if a link type can end on canvas (toNode: null)
+ * When true, a Cloud node will be automatically created at the endpoint
  */
 export function canLinkEndOnCanvas(linkType: LinkType): boolean {
   const rule = getLinkValidationRule(linkType);
   if (!rule) return false; // Default to false if no rule exists
   
   return rule.canEndOnCanvas;
-}
-
-/**
- * Get canvas endpoint shape for a link type
- */
-export function getCanvasEndpointShape(linkType: LinkType): 'cloud' | 'none' {
-  const rule = getLinkValidationRule(linkType);
-  if (!rule) return 'none';
-  
-  return rule.canvasEndpointShape || 'none';
 }

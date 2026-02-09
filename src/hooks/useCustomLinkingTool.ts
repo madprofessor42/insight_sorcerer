@@ -18,11 +18,16 @@ class CustomLinkingTool extends go.LinkingTool {
     tonode: go.Node | null,
     toport: go.GraphObject | null
   ): go.Link | null {
+    console.log(`🔧 CustomLinkingTool.insertLink: from=${fromnode.data.category}, tonode=${tonode ? tonode.data.category : 'null (canvas)'}`);
+    
     // CRITICAL: When toNode is null, GoJS bypasses isValidLink
     // We must manually call validation here for unconnected links
     if (tonode === null && this.linkValidation) {
+      console.log(`✅ Validating link to canvas...`);
       const isValid = this.linkValidation(fromnode, fromport, null, null, null);
+      console.log(`  Validation result: ${isValid}`);
       if (!isValid) {
+        console.log(`❌ Link to canvas blocked by validation`);
         return null; // Block link creation
       }
     }
@@ -39,7 +44,9 @@ class CustomLinkingTool extends go.LinkingTool {
 
     // Create link with actual ports (outer shapes)
     // toNode and toPort can be null for links to canvas
-    return super.insertLink(fromnode, actualFromPort, tonode, actualToPort);
+    const result = super.insertLink(fromnode, actualFromPort, tonode, actualToPort);
+    console.log(`🔗 Link created: ${result ? 'SUCCESS' : 'FAILED'}, toNode: ${tonode ? tonode.data.category : 'null (canvas)'}`);
+    return result;
   }
 }
 

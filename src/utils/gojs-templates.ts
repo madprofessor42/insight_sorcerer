@@ -1,9 +1,9 @@
 import * as go from 'gojs';
-import { getCanvasEndpointShape } from '../config/diagram-rules';
 
 /**
- * Define custom cloud shape for canvas endpoints
+ * Define custom cloud shape for Cloud nodes
  * This creates a cloud-like shape using bezier curves
+ * Cloud nodes are automatically created when drawing links to canvas
  */
 function defineCloudShape() {
   go.Shape.defineFigureGenerator('FlowCloud', (_shape, w, h) => {
@@ -26,31 +26,6 @@ function defineCloudShape() {
 
 // Initialize cloud shape definition
 defineCloudShape();
-
-/**
- * Create canvas endpoint shape based on link configuration
- * This is used for links ending on canvas (toNode: null)
- */
-function createCanvasEndpointShape($: any, color: string): go.GraphObject {
-  return $(go.Shape, {
-    figure: 'FlowCloud',
-    stroke: color,
-    fill: 'white', // White fill for cloud
-    strokeWidth: 2,
-    width: 40, // Larger cloud
-    height: 32,
-    segmentIndex: -1, // At the end of the link
-    segmentFraction: 1.0, // At the very end
-    alignmentFocus: go.Spot.Center, // Center the cloud on the line endpoint
-    name: 'CANVAS_ENDPOINT'
-  },
-    // Show only when: link ends on canvas AND config says to show cloud
-    new go.Binding('visible', '', function(linkData) {
-      if (linkData.to !== undefined) return false; // Has target node
-      const shape = getCanvasEndpointShape(linkData.category);
-      return shape === 'cloud';
-    }));
-}
 
 /**
  * Create node template map with different node types
@@ -179,6 +154,68 @@ export function createNodeTemplateMap(): go.Map<string, go.Node> {
     )
   );
 
+  // Cloud node template - automatically created when linking to canvas
+  // This node CANNOT be created manually through sidebar
+  nodeTemplateMap.add('Cloud',
+    $(go.Node, 'Spot',
+      { 
+        locationSpot: go.Spot.Center,
+        selectable: true,
+        deletable: true,
+        // Show/hide connection handler on hover
+        mouseEnter: (_e: go.InputEvent, thisObj: go.GraphObject) => {
+          if (thisObj instanceof go.Node) {
+            const port = thisObj.findObject('CENTER_PORT');
+            if (port) port.opacity = 1;
+          }
+        },
+        mouseLeave: (_e: go.InputEvent, thisObj: go.GraphObject) => {
+          if (thisObj instanceof go.Node) {
+            const port = thisObj.findObject('CENTER_PORT');
+            if (port) port.opacity = 0;
+          }
+        }
+      },
+      new go.Binding('location', 'loc', go.Point.parse).makeTwoWay(go.Point.stringify),
+      // Cloud shape - outer visual element
+      $(go.Shape, 'FlowCloud', {
+        name: 'OUTER_SHAPE',
+        fill: 'white',
+        stroke: '#4A90E2',
+        strokeWidth: 2,
+        width: 80,
+        height: 64,
+        cursor: 'move',
+        portId: 'outer',
+        fromSpot: go.Spot.AllSides,
+        toSpot: go.Spot.AllSides
+      }),
+      // Text (optional, can be edited)
+      $(go.TextBlock, {
+        margin: 8,
+        stroke: '#4A90E2',
+        font: 'bold 12px sans-serif',
+        editable: true,
+        text: '' // Empty by default
+      }, new go.Binding('text', 'name').makeTwoWay()),
+      // Center circle - clickable port that delegates to outer shape
+      $(go.Shape, 'Circle', {
+        name: 'CENTER_PORT',
+        alignment: go.Spot.Center,
+        width: 20,
+        height: 20,
+        fill: '#4A90E2',
+        stroke: '#2E5C8A',
+        strokeWidth: 2,
+        cursor: 'pointer',
+        portId: 'center',
+        fromLinkable: true,
+        toLinkable: true,
+        opacity: 0 // Invisible by default, shown on hover (but still active for linking!)
+      })
+    )
+  );
+
   return nodeTemplateMap;
 }
 
@@ -282,17 +319,14 @@ export function createLinkTemplateMap(): go.Map<string, go.Link> {
         visible: false 
       },
         new go.Binding('visible', 'bidirectional', (b) => b === true)),
-      // To arrow (shown when connected to a node)
+      // To arrow (always shown now, as links always connect to nodes)
       $(go.Shape, { 
         toArrow: 'Standard', 
         stroke: '#666', 
         fill: '#666',
         scale: 1.3,
         strokeWidth: 0 // No outline, just fill
-      },
-        new go.Binding('visible', 'to', (to) => to !== undefined)),
-      // Canvas endpoint shape (configured per link type)
-      createCanvasEndpointShape($, '#666')
+      })
     )
   );
 
@@ -325,17 +359,14 @@ export function createLinkTemplateMap(): go.Map<string, go.Link> {
         visible: false 
       },
         new go.Binding('visible', 'bidirectional', (b) => b === true)),
-      // To arrow (shown when connected to a node)
+      // To arrow (always shown now, as links always connect to nodes)
       $(go.Shape, { 
         toArrow: 'Standard', 
         stroke: '#4A90E2', 
         fill: '#4A90E2', 
         scale: 2.0,
         strokeWidth: 0 // No outline, just fill
-      },
-        new go.Binding('visible', 'to', (to) => to !== undefined)),
-      // Canvas endpoint shape (configured per link type)
-      createCanvasEndpointShape($, '#4A90E2')
+      })
     )
   );
 
@@ -375,17 +406,14 @@ export function createDefaultLinkTemplate(): go.Link {
       visible: false 
     },
       new go.Binding('visible', 'bidirectional', (b) => b === true)),
-    // To arrow (shown when connected to a node)
+    // To arrow (always shown now, as links always connect to nodes)
     $(go.Shape, { 
       toArrow: 'Standard', 
       stroke: '#666', 
       fill: '#666',
       scale: 1.3,
       strokeWidth: 0 // No outline, just fill
-    },
-      new go.Binding('visible', 'to', (to) => to !== undefined)),
-    // Canvas endpoint shape (configured per link type)
-    createCanvasEndpointShape($, '#666')
+    })
   );
 }
 

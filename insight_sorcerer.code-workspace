@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../system_dynamics_reborn"
+		},
+		{
+			"path": "../gojs-react-samples"
+		},
+		{
+			"path": "../GoJS"
+		}
+	],
+	"settings": {}
+}

@@ -162,7 +162,28 @@ export function createNodeTemplateMap(): go.Map<string, go.Node> {
       { 
         locationSpot: go.Spot.Center,
         selectable: true,
-        deletable: true
+        deletable: true,
+        // When clicking on Cloud, select both Cloud and its connected links
+        click: (e: go.InputEvent, node: go.GraphObject) => {
+          if (!(node instanceof go.Node)) return;
+          const diagram = node.diagram;
+          if (!diagram) return;
+          
+          // Collect Cloud node and all its connected links
+          const selection = new go.Set<go.Part>();
+          selection.add(node);
+          
+          // Add all links connected to this Cloud node
+          node.findLinksConnected().each((link: go.Link) => {
+            selection.add(link);
+          });
+          
+          // Select all collected parts (Cloud + its links)
+          diagram.selectCollection(selection);
+          
+          // Prevent default selection behavior
+          e.handled = true;
+        }
         // No visual linking handlers - links can only be reversed to/from Cloud, not created manually
       },
       new go.Binding('location', 'loc', go.Point.parse).makeTwoWay(go.Point.stringify),

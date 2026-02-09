@@ -43,8 +43,13 @@ export function useLinkManagement(
       const model = diagram.model as go.GraphLinksModel;
       if (!(model instanceof go.GraphLinksModel)) return;
 
-      // Step 1: Set link category (type)
+      // Step 1: Set link category (type) and initialize properties
       diagram.model.setDataProperty(link.data, 'category', selectedLinkType);
+      
+      // Initialize bidirectional property if not set (prevents binding errors)
+      if (link.data.bidirectional === undefined) {
+        diagram.model.setDataProperty(link.data, 'bidirectional', false);
+      }
       
       const linkType = normalizeLinkType(link.data.category);
       const fromKey = link.data.from;

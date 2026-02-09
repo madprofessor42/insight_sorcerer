@@ -17,17 +17,19 @@ interface DiagramProps {
 export function Diagram(props: DiagramProps) {
   const diagramRef = useRef<ReactDiagram>(null);
 
+  // Setup custom linking tool FIRST (before validation is set)
+  // This must be before useLinkManagement to avoid overwriting validation
+  useCustomLinkingTool(diagramRef);
+
   // Setup diagram event listeners
   useDiagramEvents(diagramRef, props.onDiagramEvent);
 
   // Setup centralized link management (validation, duplicates, bidirectional)
+  // This must be AFTER useCustomLinkingTool to set validation on the custom tool
   useLinkManagement(diagramRef, props.selectedLinkType);
 
   // Setup drag-and-drop
   useDiagramDragDrop(diagramRef);
-
-  // Setup custom linking tool for center port to edge linking
-  useCustomLinkingTool(diagramRef);
 
   const handleModelChange = (e: go.IncrementalData) => {
     const diagram = diagramRef.current?.getDiagram() || null;

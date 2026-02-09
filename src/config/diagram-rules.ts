@@ -24,6 +24,8 @@ export interface LinkValidationRule {
   canBeBidirectional: boolean;
   /** Can this link type end on canvas (toNode: null) */
   canEndOnCanvas: boolean;
+  /** Shape to show at canvas endpoint (when canEndOnCanvas is true) */
+  canvasEndpointShape?: 'cloud' | 'none';
   /** Error message when source node is invalid */
   errorMessageFrom?: string;
   /** Error message when target node is invalid */
@@ -41,6 +43,7 @@ export const LINK_VALIDATION_RULES: LinkValidationRule[] = [
     allowedToNodes: ['Stock'],
     canBeBidirectional: false, // Flow cannot be bidirectional - creates 2 separate links
     canEndOnCanvas: true, // Flow can end on canvas (toNode: null) - represents source/sink outside system
+    canvasEndpointShape: 'cloud', // Show cloud shape at canvas endpoint
     errorMessageFrom: 'Flow links can only be created FROM Stock nodes',
     errorMessageTo: 'Flow links can only connect TO Stock nodes'
   },
@@ -50,6 +53,7 @@ export const LINK_VALIDATION_RULES: LinkValidationRule[] = [
     allowedToNodes: [], // Can connect to any node type
     canBeBidirectional: true, // Link can be bidirectional - single link with two arrows
     canEndOnCanvas: false, // Regular links must connect to nodes
+    canvasEndpointShape: 'none', // No special shape for canvas endpoint
   }
 ];
 
@@ -152,4 +156,14 @@ export function canLinkEndOnCanvas(linkType: LinkType): boolean {
   if (!rule) return false; // Default to false if no rule exists
   
   return rule.canEndOnCanvas;
+}
+
+/**
+ * Get canvas endpoint shape for a link type
+ */
+export function getCanvasEndpointShape(linkType: LinkType): 'cloud' | 'none' {
+  const rule = getLinkValidationRule(linkType);
+  if (!rule) return 'none';
+  
+  return rule.canvasEndpointShape || 'none';
 }

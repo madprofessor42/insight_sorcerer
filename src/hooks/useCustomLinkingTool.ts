@@ -7,6 +7,7 @@ import type { ReactDiagram } from 'gojs-react';
  * Also supports creating links to canvas (toNode: null) for flow links
  */
 class CustomLinkingTool extends go.LinkingTool {
+  
   /**
    * Override insertLink to redirect center port connections to outer port
    * Handles special case when toNode is null (link to canvas)
@@ -17,6 +18,15 @@ class CustomLinkingTool extends go.LinkingTool {
     tonode: go.Node | null,
     toport: go.GraphObject | null
   ): go.Link | null {
+    // CRITICAL: When toNode is null, GoJS bypasses isValidLink
+    // We must manually call validation here for unconnected links
+    if (tonode === null && this.linkValidation) {
+      const isValid = this.linkValidation(fromnode, fromport, null, null, null);
+      if (!isValid) {
+        return null; // Block link creation
+      }
+    }
+    
     // Redirect center port to outer port for source
     const actualFromPort = fromport.name === 'CENTER_PORT' 
       ? fromnode.findObject('OUTER_SHAPE') || fromport

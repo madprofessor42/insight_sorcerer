@@ -1,7 +1,8 @@
 import * as go from 'gojs';
+import { getCanvasEndpointShape } from '../config/diagram-rules';
 
 /**
- * Define custom cloud shape for flow endpoints
+ * Define custom cloud shape for canvas endpoints
  * This creates a cloud-like shape using bezier curves
  */
 function defineCloudShape() {
@@ -25,6 +26,31 @@ function defineCloudShape() {
 
 // Initialize cloud shape definition
 defineCloudShape();
+
+/**
+ * Create canvas endpoint shape based on link configuration
+ * This is used for links ending on canvas (toNode: null)
+ */
+function createCanvasEndpointShape($: any, color: string): go.GraphObject {
+  return $(go.Shape, {
+    figure: 'FlowCloud',
+    stroke: color,
+    fill: color.replace('E2', 'F2FD'), // Lighter version for fill
+    strokeWidth: 2,
+    width: 30,
+    height: 24,
+    segmentIndex: -1,
+    segmentFraction: 1.0,
+    alignmentFocus: go.Spot.Left,
+    name: 'CANVAS_ENDPOINT'
+  },
+    // Show only when: link ends on canvas AND config says to show cloud
+    new go.Binding('visible', '', function(linkData) {
+      if (linkData.to !== undefined) return false; // Has target node
+      const shape = getCanvasEndpointShape(linkData.category);
+      return shape === 'cloud';
+    }));
+}
 
 /**
  * Create node template map with different node types
@@ -247,13 +273,15 @@ export function createLinkTemplateMap(): go.Map<string, go.Link> {
       // From arrow (shown only when bidirectional)
       $(go.Shape, { fromArrow: 'BackwardTriangle', stroke: '#666', fill: '#666', visible: false },
         new go.Binding('visible', 'bidirectional', (b) => b === true)),
-      // To arrow (always shown)
-      $(go.Shape, { toArrow: 'Standard', stroke: '#666', fill: '#666' })
+      // To arrow (shown when connected to a node)
+      $(go.Shape, { toArrow: 'Standard', stroke: '#666', fill: '#666' },
+        new go.Binding('visible', 'to', (to) => to !== undefined)),
+      // Canvas endpoint shape (configured per link type)
+      createCanvasEndpointShape($, '#666')
     )
   );
 
   // Flow link template (thicker, blue, Bezier curves, reshapable)
-  // Special feature: when toNode is null (link to canvas), shows cloud instead of arrow
   linkTemplateMap.add('flow',
     $(go.Link,
       { 
@@ -278,30 +306,11 @@ export function createLinkTemplateMap(): go.Map<string, go.Link> {
         toArrow: 'Standard', 
         stroke: '#4A90E2', 
         fill: '#4A90E2', 
-        scale: 1.5,
-        name: 'TO_ARROW'
+        scale: 1.5
       },
-        // Hide arrow when link ends on canvas (to === undefined)
-        new go.Binding('visible', 'to', function(to) {
-          return to !== undefined;
-        })),
-      // Cloud shape (shown when link ends on canvas - to === undefined)
-      $(go.Shape, {
-        figure: 'FlowCloud',
-        stroke: '#4A90E2',
-        fill: '#E3F2FD',
-        strokeWidth: 2,
-        width: 30,
-        height: 24,
-        segmentIndex: -1, // Position at the end of the link
-        segmentFraction: 1.0,
-        alignmentFocus: go.Spot.Left,
-        name: 'CLOUD_SHAPE'
-      },
-        // Show cloud only when link ends on canvas (to === undefined)
-        new go.Binding('visible', 'to', function(to) {
-          return to === undefined;
-        }))
+        new go.Binding('visible', 'to', (to) => to !== undefined)),
+      // Canvas endpoint shape (configured per link type)
+      createCanvasEndpointShape($, '#4A90E2')
     )
   );
 
@@ -332,8 +341,11 @@ export function createDefaultLinkTemplate(): go.Link {
     // From arrow (shown only when bidirectional)
     $(go.Shape, { fromArrow: 'BackwardTriangle', stroke: '#666', fill: '#666', visible: false },
       new go.Binding('visible', 'bidirectional', (b) => b === true)),
-    // To arrow (always shown)
-    $(go.Shape, { toArrow: 'Standard', stroke: '#666', fill: '#666' })
+    // To arrow (shown when connected to a node)
+    $(go.Shape, { toArrow: 'Standard', stroke: '#666', fill: '#666' },
+      new go.Binding('visible', 'to', (to) => to !== undefined)),
+    // Canvas endpoint shape (configured per link type)
+    createCanvasEndpointShape($, '#666')
   );
 }
 

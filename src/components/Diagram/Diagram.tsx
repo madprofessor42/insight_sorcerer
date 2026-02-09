@@ -7,6 +7,7 @@ import { useDiagramEvents } from '../../hooks/useDiagramEvents';
 import { useLinkTypeValidation } from '../../hooks/useLinkTypeValidation';
 import { useDiagramDragDrop } from '../../hooks/useDiagramDragDrop';
 import { useCustomLinkingTool } from '../../hooks/useCustomLinkingTool';
+import { useBidirectionalLinks } from '../../hooks/useBidirectionalLinks';
 
 interface DiagramProps {
   selectedLinkType: LinkType;
@@ -28,6 +29,9 @@ export function Diagram(props: DiagramProps) {
 
   // Setup custom linking tool for center port to edge linking
   useCustomLinkingTool(diagramRef);
+
+  // Setup automatic bidirectional link conversion
+  useBidirectionalLinks(diagramRef);
 
   const handleModelChange = (e: go.IncrementalData) => {
     const diagram = diagramRef.current?.getDiagram() || null;

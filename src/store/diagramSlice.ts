@@ -10,6 +10,7 @@ export interface SelectedEdgeData {
   from: go.Key;
   to: go.Key;
   category?: string;
+  bidirectional?: boolean;
 }
 
 interface DiagramState {

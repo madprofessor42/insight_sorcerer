@@ -55,6 +55,16 @@
   transform: translateY(0);
 }
 
+.edgeActionButton.active {
+  background: #4A90E2;
+  border-color: #4A90E2;
+}
+
+.edgeActionButton.active:hover {
+  background: #3d7ac5;
+  border-color: #3d7ac5;
+}
+
 .edgeActionIcon {
   font-size: 16px;
   flex-shrink: 0;

@@ -29,6 +29,7 @@ export function DiagramEditor() {
             from: selectedLink.data.from,
             to: selectedLink.data.to,
             category: selectedLink.data.category,
+            bidirectional: selectedLink.data.bidirectional === true,
           };
           dispatch(setSelectedEdge(serializableData));
         } else {

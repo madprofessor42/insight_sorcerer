@@ -213,10 +213,15 @@ export function createLinkTemplateMap(): go.Map<string, go.Link> {
       },
       new go.Binding('points').makeTwoWay(), // Save all route points to model (critical for preserving shape!)
       new go.Binding('curviness').makeTwoWay(), // Save curviness to model
+      new go.Binding('bidirectional').makeTwoWay(), // Save bidirectional state to model
       // Invisible thick shape for larger click area
       $(go.Shape, { isPanelMain: true, stroke: 'transparent', strokeWidth: 12 }),
       // Visible shape
       $(go.Shape, { isPanelMain: true, strokeWidth: 2, stroke: '#666' }),
+      // From arrow (shown only when bidirectional)
+      $(go.Shape, { fromArrow: 'BackwardTriangle', stroke: '#666', fill: '#666', visible: false },
+        new go.Binding('visible', 'bidirectional', (b) => b === true)),
+      // To arrow (always shown)
       $(go.Shape, { toArrow: 'Standard', stroke: '#666', fill: '#666' })
     )
   );
@@ -233,10 +238,15 @@ export function createLinkTemplateMap(): go.Map<string, go.Link> {
       },
       new go.Binding('points').makeTwoWay(), // Save all route points to model (critical for preserving shape!)
       new go.Binding('curviness').makeTwoWay(), // Save curviness to model
+      new go.Binding('bidirectional').makeTwoWay(), // Save bidirectional state to model
       // Invisible thick shape for larger click area
       $(go.Shape, { isPanelMain: true, stroke: 'transparent', strokeWidth: 14 }),
       // Visible shape (thicker blue flow)
       $(go.Shape, { isPanelMain: true, strokeWidth: 6, stroke: '#4A90E2' }),
+      // From arrow (shown only when bidirectional)
+      $(go.Shape, { fromArrow: 'BackwardTriangle', stroke: '#4A90E2', fill: '#4A90E2', scale: 1.5, visible: false },
+        new go.Binding('visible', 'bidirectional', (b) => b === true)),
+      // To arrow (always shown)
       $(go.Shape, { toArrow: 'Standard', stroke: '#4A90E2', fill: '#4A90E2', scale: 1.5 })
     )
   );
@@ -260,10 +270,15 @@ export function createDefaultLinkTemplate(): go.Link {
     },
     new go.Binding('points').makeTwoWay(), // Save all route points to model (critical for preserving shape!)
     new go.Binding('curviness').makeTwoWay(), // Save curviness to model
+    new go.Binding('bidirectional').makeTwoWay(), // Save bidirectional state to model
     // Invisible thick shape for larger click area
     $(go.Shape, { isPanelMain: true, stroke: 'transparent', strokeWidth: 12 }),
     // Visible shape
     $(go.Shape, { isPanelMain: true, strokeWidth: 2, stroke: '#666' }),
+    // From arrow (shown only when bidirectional)
+    $(go.Shape, { fromArrow: 'BackwardTriangle', stroke: '#666', fill: '#666', visible: false },
+      new go.Binding('visible', 'bidirectional', (b) => b === true)),
+    // To arrow (always shown)
     $(go.Shape, { toArrow: 'Standard', stroke: '#666', fill: '#666' })
   );
 }

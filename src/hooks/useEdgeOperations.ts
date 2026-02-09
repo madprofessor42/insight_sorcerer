@@ -76,7 +76,7 @@ export function useEdgeOperations() {
     diagram.commitTransaction('reverse link');
   }, []);
 
-  const makeBidirectional = useCallback((edgeData: SelectedEdgeData) => {
+  const toggleBidirectional = useCallback((edgeData: SelectedEdgeData) => {
     const diagram = go.Diagram.fromDiv(document.querySelector('.diagram-component') as HTMLDivElement);
     if (!diagram) return;
 
@@ -90,37 +90,19 @@ export function useEdgeOperations() {
     const link = diagram.findLinkForData(linkData);
     if (!link) return;
 
-    // Check if reverse link already exists
-    const fromKey = link.data.from;
-    const toKey = link.data.to;
+    diagram.startTransaction('toggle bidirectional');
     
-    const reverseExists = model.linkDataArray.some(
-      (linkData: go.ObjectData) => linkData.from === toKey && linkData.to === fromKey
-    );
-
-    if (reverseExists) {
-      alert('Обратная связь уже существует!');
-      return;
-    }
-
-    diagram.startTransaction('make bidirectional');
+    // Toggle bidirectional property
+    const currentValue = link.data.bidirectional === true;
+    model.setDataProperty(link.data, 'bidirectional', !currentValue);
     
-    // Create reverse link with same category
-    const newLinkData = {
-      from: toKey,
-      to: fromKey,
-      category: link.data.category || 'link',
-    };
-    
-    model.addLinkData(newLinkData);
-    
-    diagram.commitTransaction('make bidirectional');
+    diagram.commitTransaction('toggle bidirectional');
   }, []);
 
   return {
     resetCurve,
     reverseDirection,
-    makeBidirectional,
+    toggleBidirectional,
   };
 }
 

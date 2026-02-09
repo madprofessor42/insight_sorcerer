@@ -1,14 +1,28 @@
+import { useState, useEffect } from 'react';
 import { useAppSelector } from '../../../store/hooks';
 import { useEdgeOperations } from '../../../hooks/useEdgeOperations';
 import styles from './EdgePanel.module.css';
 
 export function EdgePanel() {
   const selectedEdge = useAppSelector((state) => state.diagram.selectedEdge);
-  const { resetCurve, reverseDirection, makeBidirectional } = useEdgeOperations();
+  const { resetCurve, reverseDirection, toggleBidirectional } = useEdgeOperations();
+  const [bidirectionalActive, setBidirectionalActive] = useState(false);
+
+  // Update bidirectional state when selected edge changes
+  useEffect(() => {
+    if (selectedEdge) {
+      setBidirectionalActive(selectedEdge.bidirectional === true);
+    }
+  }, [selectedEdge]);
 
   if (!selectedEdge) {
     return null;
   }
+
+  const handleToggleBidirectional = () => {
+    toggleBidirectional(selectedEdge);
+    setBidirectionalActive(!bidirectionalActive);
+  };
 
   return (
     <section className={styles.edgePanel}>
@@ -45,9 +59,9 @@ export function EdgePanel() {
         </button>
 
         <button
-          className={styles.edgeActionButton}
-          onClick={() => makeBidirectional(selectedEdge)}
-          title="Сделать связь двунаправленной"
+          className={`${styles.edgeActionButton} ${bidirectionalActive ? styles.active : ''}`}
+          onClick={handleToggleBidirectional}
+          title="Переключить двунаправленность"
         >
           <span className={styles.edgeActionIcon}>⇄</span>
           <span className={styles.edgeActionLabel}>Двунаправленная</span>

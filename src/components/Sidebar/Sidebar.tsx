@@ -1,6 +1,7 @@
 import { useAppSelector } from '../../store/hooks';
 import { usePaletteDragDrop } from '../../hooks/usePaletteDragDrop';
 import { useLinkTypeSelector } from '../../hooks/useLinkTypeSelector';
+import { EdgePanel } from './EdgePanel';
 import styles from './Sidebar.module.css';
 
 export function Sidebar() {
@@ -87,6 +88,9 @@ export function Sidebar() {
           </button>
         </div>
       </section>
+
+      {/* Edge Options Panel - shown when edge is selected */}
+      <EdgePanel />
     </aside>
   );
 }

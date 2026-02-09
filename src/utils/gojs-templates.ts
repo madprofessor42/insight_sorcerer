@@ -201,20 +201,42 @@ export function createLinkTemplateMap(): go.Map<string, go.Link> {
   const $ = go.GraphObject.make;
   const linkTemplateMap = new go.Map<string, go.Link>();
 
-  // Regular link template
+  // Regular link template - Bezier curves, reshapable
   linkTemplateMap.add('link',
     $(go.Link,
-      { routing: go.Link.AvoidsNodes, curve: go.Link.JumpOver },
-      $(go.Shape, { strokeWidth: 2, stroke: '#666' }),
+      { 
+        routing: go.Link.Normal, 
+        curve: go.Link.Bezier,
+        curviness: 0, // Default to straight line (not NaN which auto-calculates)
+        reshapable: true, // Allow user to reshape by dragging handles
+        adjusting: go.Link.Scale, // Scale intermediate points when nodes move (better than End)
+      },
+      new go.Binding('points').makeTwoWay(), // Save all route points to model (critical for preserving shape!)
+      new go.Binding('curviness').makeTwoWay(), // Save curviness to model
+      // Invisible thick shape for larger click area
+      $(go.Shape, { isPanelMain: true, stroke: 'transparent', strokeWidth: 12 }),
+      // Visible shape
+      $(go.Shape, { isPanelMain: true, strokeWidth: 2, stroke: '#666' }),
       $(go.Shape, { toArrow: 'Standard', stroke: '#666', fill: '#666' })
     )
   );
 
-  // Flow link template (thicker, blue, only from Stock)
+  // Flow link template (thicker, blue, Bezier curves, reshapable)
   linkTemplateMap.add('flow',
     $(go.Link,
-      { routing: go.Link.AvoidsNodes, curve: go.Link.JumpOver },
-      $(go.Shape, { strokeWidth: 6, stroke: '#4A90E2' }),
+      { 
+        routing: go.Link.Normal, 
+        curve: go.Link.Bezier,
+        curviness: 0, // Default to straight line (not NaN which auto-calculates)
+        reshapable: true, // Allow user to reshape by dragging handles
+        adjusting: go.Link.Scale, // Scale intermediate points when nodes move (better than End)
+      },
+      new go.Binding('points').makeTwoWay(), // Save all route points to model (critical for preserving shape!)
+      new go.Binding('curviness').makeTwoWay(), // Save curviness to model
+      // Invisible thick shape for larger click area
+      $(go.Shape, { isPanelMain: true, stroke: 'transparent', strokeWidth: 14 }),
+      // Visible shape (thicker blue flow)
+      $(go.Shape, { isPanelMain: true, strokeWidth: 6, stroke: '#4A90E2' }),
       $(go.Shape, { toArrow: 'Standard', stroke: '#4A90E2', fill: '#4A90E2', scale: 1.5 })
     )
   );
@@ -223,14 +245,25 @@ export function createLinkTemplateMap(): go.Map<string, go.Link> {
 }
 
 /**
- * Create default link template (fallback)
+ * Create default link template (fallback) - Bezier curves, reshapable
  */
 export function createDefaultLinkTemplate(): go.Link {
   const $ = go.GraphObject.make;
   
   return $(go.Link,
-    { routing: go.Link.AvoidsNodes, curve: go.Link.JumpOver },
-    $(go.Shape, { strokeWidth: 2, stroke: '#666' }),
+    { 
+      routing: go.Link.Normal, 
+      curve: go.Link.Bezier,
+      curviness: 0, // Default to straight line (not NaN which auto-calculates)
+      reshapable: true, // Allow user to reshape by dragging handles
+      adjusting: go.Link.Scale, // Scale intermediate points when nodes move (better than End)
+    },
+    new go.Binding('points').makeTwoWay(), // Save all route points to model (critical for preserving shape!)
+    new go.Binding('curviness').makeTwoWay(), // Save curviness to model
+    // Invisible thick shape for larger click area
+    $(go.Shape, { isPanelMain: true, stroke: 'transparent', strokeWidth: 12 }),
+    // Visible shape
+    $(go.Shape, { isPanelMain: true, strokeWidth: 2, stroke: '#666' }),
     $(go.Shape, { toArrow: 'Standard', stroke: '#666', fill: '#666' })
   );
 }

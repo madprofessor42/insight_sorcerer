@@ -1,0 +1,66 @@
+.edgePanel {
+  border-top: 1px solid #34495e;
+  padding: 20px 16px;
+  background-color: rgba(52, 73, 94, 0.5);
+}
+
+.edgeInfo {
+  margin-bottom: 12px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.edgeType {
+  font-size: 12px;
+  color: #95a5a6;
+  margin: 0 0 4px 0;
+}
+
+.edgeId {
+  font-size: 11px;
+  color: #7f8c8d;
+  margin: 0;
+  font-family: monospace;
+}
+
+.edgeActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.edgeActionButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #34495e;
+  border: 1px solid #4a5f7f;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #ecf0f1;
+  font-size: 13px;
+  text-align: left;
+}
+
+.edgeActionButton:hover {
+  background: #3d5265;
+  border-color: #5a6f8f;
+  transform: translateY(-1px);
+}
+
+.edgeActionButton:active {
+  transform: translateY(0);
+}
+
+.edgeActionIcon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.edgeActionLabel {
+  flex: 1;
+}
+

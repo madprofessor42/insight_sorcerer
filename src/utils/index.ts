@@ -9,9 +9,14 @@ export {
   createDefaultLinkTemplate
 } from './gojs-templates';
 
-// Export GoJS validation utilities
+// Export link validation utilities
 export {
+  hasDuplicateLink,
+  findReverseLink,
+  canCreateLink,
+  canRelinkToNodes,
+  canReverseLink,
   createLinkValidation,
   createRelinkValidation
-} from './gojs-validation';
+} from './link-validation';
 

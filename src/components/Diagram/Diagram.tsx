@@ -4,10 +4,9 @@ import { useRef } from 'react';
 import type { LinkType } from '../../store/diagramSlice';
 import { initializeDiagram } from '../../utils/gojs-config';
 import { useDiagramEvents } from '../../hooks/useDiagramEvents';
-import { useLinkTypeValidation } from '../../hooks/useLinkTypeValidation';
+import { useLinkManagement } from '../../hooks/useLinkManagement';
 import { useDiagramDragDrop } from '../../hooks/useDiagramDragDrop';
 import { useCustomLinkingTool } from '../../hooks/useCustomLinkingTool';
-import { useBidirectionalLinks } from '../../hooks/useBidirectionalLinks';
 
 interface DiagramProps {
   selectedLinkType: LinkType;
@@ -21,17 +20,14 @@ export function Diagram(props: DiagramProps) {
   // Setup diagram event listeners
   useDiagramEvents(diagramRef, props.onDiagramEvent);
 
-  // Setup link type validation
-  useLinkTypeValidation(diagramRef, props.selectedLinkType);
+  // Setup centralized link management (validation, duplicates, bidirectional)
+  useLinkManagement(diagramRef, props.selectedLinkType);
 
   // Setup drag-and-drop
   useDiagramDragDrop(diagramRef);
 
   // Setup custom linking tool for center port to edge linking
   useCustomLinkingTool(diagramRef);
-
-  // Setup automatic bidirectional link conversion
-  useBidirectionalLinks(diagramRef);
 
   const handleModelChange = (e: go.IncrementalData) => {
     const diagram = diagramRef.current?.getDiagram() || null;

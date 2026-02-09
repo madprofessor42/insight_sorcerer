@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import * as go from 'gojs';
 import type { SelectedEdgeData } from '../store/diagramSlice';
-import { canReverseLink } from '../utils/link-validators';
+import { canReverseLink } from '../utils/link-validation';
 
 /**
  * Hook to validate edge operations

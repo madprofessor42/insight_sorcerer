@@ -13,9 +13,6 @@ export {
 export {
   hasDuplicateLink,
   findReverseLink,
-  canCreateLink,
-  canRelinkToNodes,
-  canReverseLink,
   validateReverse,
   validateBidirectional,
   validateCanEndOnCanvas,

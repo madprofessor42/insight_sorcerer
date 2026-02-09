@@ -212,99 +212,6 @@ export function findReverseLink(
 // ============================================================================
 
 /**
- * Check if a link can be created between two nodes
- * Validates both node types and checks for duplicates
- * @param model - The GoJS GraphLinksModel
- * @param fromKey - Source node key
- * @param toKey - Target node key
- * @param linkType - Type of the link to create
- * @returns true if link can be created, false otherwise
- */
-export function canCreateLink(
-  model: go.GraphLinksModel,
-  fromKey: go.Key,
-  toKey: go.Key,
-  linkType: LinkType
-): boolean {
-  // Check for duplicate links
-  if (hasDuplicateLink(model, fromKey, toKey, linkType)) {
-    return false;
-  }
-  
-  return true;
-}
-
-/**
- * Check if a link can be relinked to new nodes
- * Validates both node types and checks for duplicates (excluding the link being relinked)
- * @param model - The GoJS GraphLinksModel
- * @param fromKey - New source node key
- * @param toKey - New target node key
- * @param linkType - Type of the link
- * @param linkKey - Key of the link being relinked
- * @returns true if link can be relinked, false otherwise
- */
-export function canRelinkToNodes(
-  model: go.GraphLinksModel,
-  fromKey: go.Key,
-  toKey: go.Key,
-  linkType: LinkType,
-  linkKey: go.Key
-): boolean {
-  // Check for duplicate links (excluding current link)
-  if (hasDuplicateLink(model, fromKey, toKey, linkType, linkKey)) {
-    return false;
-  }
-  
-  return true;
-}
-
-/**
- * Check if a link can be reversed without creating a duplicate
- * and without violating validation rules
- * @param model - The GoJS GraphLinksModel
- * @param fromKey - Current source node key
- * @param toKey - Current target node key
- * @param linkType - Type of the link
- * @param linkKey - Key of the link to reverse
- * @returns true if link can be reversed, false if reverse would create duplicate or violate rules
- */
-export function canReverseLink(
-  model: go.GraphLinksModel,
-  fromKey: go.Key,
-  toKey: go.Key,
-  linkType: string | undefined,
-  linkKey: go.Key
-): boolean {
-  // Check if reversing (toKey -> fromKey) would create a duplicate
-  // by checking if a link already exists from toKey to fromKey (excluding current link)
-  if (hasDuplicateLink(model, toKey, fromKey, linkType, linkKey)) {
-    return false;
-  }
-  
-  // Check if reversed direction would violate validation rules
-  // After reverse: toNode becomes source, fromNode becomes target
-  const fromNodeData = model.findNodeDataForKey(fromKey);
-  const toNodeData = model.findNodeDataForKey(toKey);
-  
-  if (!fromNodeData || !toNodeData) return false;
-  
-  const normalizedLinkType = linkType || DEFAULT_LINK_TYPE;
-  
-  // Validate that toNode can be a source (after reverse)
-  if (!isValidLinkSource(normalizedLinkType as LinkType, toNodeData.category)) {
-    return false;
-  }
-  
-  // Validate that fromNode can be a target (after reverse)
-  if (!isValidLinkTarget(normalizedLinkType as LinkType, fromNodeData.category)) {
-    return false;
-  }
-  
-  return true;
-}
-
-/**
  * Validate if a link can be reversed and get the reason
  * @param model - The GoJS GraphLinksModel
  * @param fromKey - Current source node key
@@ -320,6 +227,7 @@ export function validateReverse(
   linkType: string | undefined,
   linkKey: go.Key
 ): ValidationResult {
+  // Get node data
   const fromNodeData = model.findNodeDataForKey(fromKey);
   const toNodeData = model.findNodeDataForKey(toKey);
   

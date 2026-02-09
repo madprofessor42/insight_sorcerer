@@ -1,21 +1,12 @@
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { setLinkType } from '../../store/diagramSlice';
-import type { LinkType } from '../../store/diagramSlice';
+import { useAppSelector } from '../../store/hooks';
+import { usePaletteDragDrop } from '../../hooks/usePaletteDragDrop';
+import { useLinkTypeSelector } from '../../hooks/useLinkTypeSelector';
 import styles from './Sidebar.module.css';
 
 export function Sidebar() {
-  const dispatch = useAppDispatch();
   const selectedLinkType = useAppSelector((state) => state.diagram.selectedLinkType);
-
-  const handleDragStart = (e: React.DragEvent, nodeType: string, nodeData: any) => {
-    e.dataTransfer.setData('nodeType', nodeType);
-    e.dataTransfer.setData('nodeData', JSON.stringify(nodeData));
-    e.dataTransfer.effectAllowed = 'copy';
-  };
-
-  const handleLinkTypeChange = (type: LinkType) => {
-    dispatch(setLinkType(type));
-  };
+  const { handleDragStart } = usePaletteDragDrop();
+  const { handleLinkTypeChange } = useLinkTypeSelector();
 
   return (
     <aside className={styles.sidebar}>
@@ -99,4 +90,3 @@ export function Sidebar() {
     </aside>
   );
 }
-

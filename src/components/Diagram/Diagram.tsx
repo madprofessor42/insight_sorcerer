@@ -1,7 +1,7 @@
 import * as go from 'gojs';
 import { ReactDiagram } from 'gojs-react';
 import { useEffect, useRef } from 'react';
-import type { LinkType } from '../store/diagramSlice';
+import type { LinkType } from '../../store/diagramSlice';
 
 interface DiagramProps {
   selectedLinkType: LinkType;
@@ -9,7 +9,7 @@ interface DiagramProps {
   onModelChange: (e: go.IncrementalData, diagram: go.Diagram | null) => void;
 }
 
-export const DiagramWrapper = (props: DiagramProps) => {
+export function Diagram(props: DiagramProps) {
   const diagramRef = useRef<ReactDiagram>(null);
 
   useEffect(() => {
@@ -308,5 +308,5 @@ export const DiagramWrapper = (props: DiagramProps) => {
       linkDataArray={[]}
     />
   );
-};
+}
 

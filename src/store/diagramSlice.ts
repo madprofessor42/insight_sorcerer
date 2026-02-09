@@ -2,11 +2,14 @@ import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import * as go from 'gojs';
 
+export type LinkType = 'link' | 'flow';
+
 interface DiagramState {
   nodeDataArray: Array<go.ObjectData>;
   linkDataArray: Array<go.ObjectData>;
   modelData: go.ObjectData;
   skipsDiagramUpdate: boolean;
+  selectedLinkType: LinkType;
 }
 
 const initialState: DiagramState = {
@@ -14,6 +17,7 @@ const initialState: DiagramState = {
   linkDataArray: [],
   modelData: {},
   skipsDiagramUpdate: false,
+  selectedLinkType: 'link',
 };
 
 export const diagramSlice = createSlice({
@@ -21,6 +25,8 @@ export const diagramSlice = createSlice({
   initialState,
   reducers: {
     // Sync all data from GoJS model (called from handleModelChange)
+    // BEST PRACTICE: GoJS model is the single source of truth
+    // Redux just mirrors it for React components
     syncFromGoJS: (state, action: PayloadAction<{
       nodes: Array<go.ObjectData>;
       links: Array<go.ObjectData>;
@@ -35,16 +41,6 @@ export const diagramSlice = createSlice({
       state.skipsDiagramUpdate = true;
     },
 
-    // Add node from palette drop
-    addNode: (state, action: PayloadAction<{
-      nodeData: go.ObjectData;
-      allNodes: Array<go.ObjectData>;
-    }>) => {
-      // Use current nodes from GoJS to preserve positions
-      state.nodeDataArray = [...action.payload.allNodes, action.payload.nodeData];
-      state.skipsDiagramUpdate = false;
-    },
-
     // Reset skipsDiagramUpdate flag
     resetSkipFlag: (state) => {
       state.skipsDiagramUpdate = false;
@@ -57,14 +53,19 @@ export const diagramSlice = createSlice({
       state.modelData = {};
       state.skipsDiagramUpdate = false;
     },
+
+    // Set selected link type
+    setLinkType: (state, action: PayloadAction<LinkType>) => {
+      state.selectedLinkType = action.payload;
+    },
   },
 });
 
 export const { 
   syncFromGoJS, 
-  addNode, 
   resetSkipFlag, 
-  clearDiagram 
+  clearDiagram,
+  setLinkType 
 } = diagramSlice.actions;
 
 export default diagramSlice.reducer;

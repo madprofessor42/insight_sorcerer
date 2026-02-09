@@ -1,15 +1,16 @@
 import * as go from 'gojs';
 import { ReactDiagram } from 'gojs-react';
 import { useEffect, useRef } from 'react';
+import type { LinkType } from '../store/diagramSlice';
 
 interface DiagramProps {
   nodeDataArray: Array<go.ObjectData>;
   linkDataArray: Array<go.ObjectData>;
   modelData: go.ObjectData;
   skipsDiagramUpdate: boolean;
+  selectedLinkType: LinkType;
   onDiagramEvent: (e: go.DiagramEvent) => void;
   onModelChange: (e: go.IncrementalData, diagram: go.Diagram | null) => void;
-  onNodeDrop?: (nodeData: go.ObjectData, currentNodes: Array<go.ObjectData>) => void;
 }
 
 export const DiagramWrapper = (props: DiagramProps) => {
@@ -28,90 +29,132 @@ export const DiagramWrapper = (props: DiagramProps) => {
     };
   }, [props.onDiagramEvent]);
 
-  // Setup drag and drop handlers
+  // Update link validation when selectedLinkType changes
   useEffect(() => {
-    let diagramDiv: HTMLDivElement | null = null;
-    let handleDragEnter: ((e: DragEvent) => void) | null = null;
-    let handleDragOver: ((e: DragEvent) => void) | null = null;
-    let handleDrop: ((e: DragEvent) => void) | null = null;
+    if (diagramRef.current === null) return;
+    const diagram = diagramRef.current.getDiagram();
+    if (!(diagram instanceof go.Diagram)) return;
 
-    // Wait for diagram to be fully initialized
+    // Update linkingTool validation
+    diagram.toolManager.linkingTool.linkValidation = (fromNode: go.Node | null, _fromPort: go.GraphObject | null, _toNode: go.Node | null, _toPort: go.GraphObject | null) => {
+      if (!fromNode) return false;
+      
+      const linkType = props.selectedLinkType;
+      
+      // If creating a flow link, validate that source is a Stock node
+      if (linkType === 'flow') {
+        const fromData = fromNode.data;
+        if (fromData.category !== 'Stock') {
+          console.warn('⚠️  Flow links can only be created from Stock nodes!');
+          return false;
+        }
+      }
+      
+      return true;
+    };
+
+    // Update relinkingTool validation
+    diagram.toolManager.relinkingTool.linkValidation = (fromNode: go.Node | null, _fromPort: go.GraphObject | null, _toNode: go.Node | null, _toPort: go.GraphObject | null, link: go.Link | null) => {
+      if (!fromNode || !link) return false;
+      
+      // If the link is a flow, validate that source is a Stock node
+      if (link.data.category === 'flow') {
+        const fromData = fromNode.data;
+        if (fromData.category !== 'Stock') {
+          console.warn('⚠️  Flow links can only originate from Stock nodes!');
+          return false;
+        }
+      }
+      
+      return true;
+    };
+
+    // Create LinkDrawn event handler
+    const linkDrawnHandler = (e: go.DiagramEvent) => {
+      const link = e.subject;
+      if (link instanceof go.Link) {
+        const linkType = props.selectedLinkType;
+        diagram.model.setDataProperty(link.data, 'category', linkType);
+        console.log(`🔗 Link created with type: ${linkType}`);
+      }
+    };
+
+    // Add LinkDrawn listener
+    diagram.addDiagramListener('LinkDrawn', linkDrawnHandler);
+
+    console.log('🔄 Link validation updated for type:', props.selectedLinkType);
+
+    // Cleanup: remove listener when component unmounts or selectedLinkType changes
+    return () => {
+      diagram.removeDiagramListener('LinkDrawn', linkDrawnHandler);
+    };
+  }, [props.selectedLinkType]);
+
+  // Setup GoJS External Drag-and-Drop (best practice)
+  useEffect(() => {
     const timer = setTimeout(() => {
       if (!diagramRef.current) return;
       const diagram = diagramRef.current.getDiagram();
       if (!(diagram instanceof go.Diagram)) return;
 
-      diagramDiv = diagram.div;
+      const diagramDiv = diagram.div;
       if (!diagramDiv) return;
 
-      handleDragOver = (e: DragEvent) => {
+      // Use GoJS built-in external drag-and-drop support
+      const handleDragOver = (e: DragEvent) => {
         e.preventDefault();
-        e.stopPropagation();
+        const can = e.target as HTMLCanvasElement;
+        if (!(can instanceof HTMLCanvasElement)) return;
+
+        // Show feedback by setting dragging cursor
+        diagram.currentCursor = 'pointer';
       };
 
-      handleDragEnter = (e: DragEvent) => {
+      const handleDrop = (e: DragEvent) => {
         e.preventDefault();
-        e.stopPropagation();
-      };
-
-      handleDrop = (e: DragEvent) => {
-        console.log('🎯 Drop event triggered');
-        e.preventDefault();
-        e.stopPropagation();
         
         const can = e.target as HTMLCanvasElement;
-        if (!(can instanceof HTMLCanvasElement)) {
-          console.log('❌ Target is not canvas');
-          return;
-        }
+        if (!(can instanceof HTMLCanvasElement)) return;
+
+        const nodeDataStr = e.dataTransfer?.getData('nodeData');
+        if (!nodeDataStr) return;
 
         const bbox = can.getBoundingClientRect();
         const mx = e.clientX - bbox.left;
         const my = e.clientY - bbox.top;
         const point = diagram.transformViewToDoc(new go.Point(mx, my));
 
-        const nodeType = e.dataTransfer?.getData('nodeType');
-        const nodeDataStr = e.dataTransfer?.getData('nodeData');
-        
-        if (!nodeType || !nodeDataStr) {
-          console.log('❌ No nodeType or nodeData');
-          return;
-        }
-        
-        const nodeData = JSON.parse(nodeDataStr);
-        
-        // Get the current node data from GoJS model to preserve any position changes
-        const model = diagram.model as go.GraphLinksModel;
-        const currentNodeData = model.nodeDataArray.map(nd => ({ ...nd }));
-        console.log('📊 Current nodes in diagram:', currentNodeData);
-        
-        const newdata = {
-          ...nodeData,
-          loc: go.Point.stringify(point)
-        };
-        
-        console.log('✅ Calling onNodeDrop with:', newdata);
-        
-        // Call the parent callback with both current nodes and new node
-        if (props.onNodeDrop) {
-          props.onNodeDrop(newdata, currentNodeData);
+        // BEST PRACTICE: Use GoJS transaction to add node directly to model
+        diagram.startTransaction('Add Node from Palette');
+        try {
+          const nodeData = JSON.parse(nodeDataStr);
+          
+          // Add node directly to GoJS model (not through React!)
+          // GoJS will automatically trigger onModelChange which will sync to Redux
+          diagram.model.addNodeData({
+            ...nodeData,
+            loc: go.Point.stringify(point)
+          });
+          
+          console.log('✅ Node added to GoJS model via transaction');
+          diagram.commitTransaction('Add Node from Palette');
+        } catch (err) {
+          console.error('❌ Error adding node:', err);
+          diagram.rollbackTransaction();
         }
       };
 
-      diagramDiv.addEventListener('dragenter', handleDragEnter);
       diagramDiv.addEventListener('dragover', handleDragOver);
       diagramDiv.addEventListener('drop', handleDrop);
-    }, 100);
 
-    return () => {
-      clearTimeout(timer);
-      if (diagramDiv && handleDragEnter && handleDragOver && handleDrop) {
-        diagramDiv.removeEventListener('dragenter', handleDragEnter);
+      return () => {
         diagramDiv.removeEventListener('dragover', handleDragOver);
         diagramDiv.removeEventListener('drop', handleDrop);
-      }
-    };
-  }, [props.onNodeDrop]);
+      };
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []); // No dependencies - static setup
 
   const initDiagram = (): go.Diagram => {
     const $ = go.GraphObject.make;
@@ -123,6 +166,7 @@ export const DiagramWrapper = (props: DiagramProps) => {
       model: new go.GraphLinksModel({
         linkKeyProperty: 'key',
         nodeCategoryProperty: 'category',
+        linkCategoryProperty: 'category',
         makeUniqueKeyFunction: (m: go.Model, data: any) => {
           let k = data.key || 1;
           while (m.findNodeDataForKey(k)) k++;
@@ -217,7 +261,30 @@ export const DiagramWrapper = (props: DiagramProps) => {
         }, new go.Binding('text', 'name').makeTwoWay())
       );
 
-    // Link template
+    // Link template map for different link types
+    const linkTemplateMap = new go.Map<string, go.Link>();
+
+    // Regular link template
+    linkTemplateMap.add('link',
+      $(go.Link,
+        { routing: go.Link.AvoidsNodes, curve: go.Link.JumpOver },
+        $(go.Shape, { strokeWidth: 2, stroke: '#666' }),
+        $(go.Shape, { toArrow: 'Standard', stroke: '#666', fill: '#666' })
+      )
+    );
+
+    // Flow link template (thicker, blue, only from Stock)
+    linkTemplateMap.add('flow',
+      $(go.Link,
+        { routing: go.Link.AvoidsNodes, curve: go.Link.JumpOver },
+        $(go.Shape, { strokeWidth: 6, stroke: '#4A90E2' }),
+        $(go.Shape, { toArrow: 'Standard', stroke: '#4A90E2', fill: '#4A90E2', scale: 1.5 })
+      )
+    );
+
+    diagram.linkTemplateMap = linkTemplateMap;
+
+    // Default link template (fallback - same as 'link')
     diagram.linkTemplate =
       $(go.Link,
         { routing: go.Link.AvoidsNodes, curve: go.Link.JumpOver },

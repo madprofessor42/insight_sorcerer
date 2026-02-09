@@ -2,13 +2,14 @@ import { useEffect } from 'react';
 import * as go from 'gojs';
 import { DiagramWrapper } from './components/DiagramWrapper';
 import { Palette } from './components/Palette';
+import { LinkSelector } from './components/LinkSelector';
 import { useAppDispatch, useAppSelector } from './store/hooks';
-import { syncFromGoJS, addNode, resetSkipFlag } from './store/diagramSlice';
+import { syncFromGoJS, resetSkipFlag } from './store/diagramSlice';
 import './App.css';
 
 function App() {
   const dispatch = useAppDispatch();
-  const { nodeDataArray, linkDataArray, modelData, skipsDiagramUpdate } = useAppSelector(
+  const { nodeDataArray, linkDataArray, modelData, skipsDiagramUpdate, selectedLinkType } = useAppSelector(
     (state) => state.diagram
   );
 
@@ -77,18 +78,6 @@ function App() {
     }
   };
 
-  const handleNodeDrop = (nodeData: go.ObjectData, currentNodes: Array<go.ObjectData>) => {
-    console.log('📦 handleNodeDrop called with:', nodeData);
-    console.log('📦 Current nodes from diagram:', currentNodes);
-    console.log('📦 New array length:', currentNodes.length + 1);
-    
-    // Dispatch Redux action to add node
-    dispatch(addNode({
-      nodeData,
-      allNodes: currentNodes,
-    }));
-  };
-
   return (
     <div className="app-container">
       <header className="app-header">
@@ -99,6 +88,7 @@ function App() {
       <div className="main-content">
         <aside className="palette-panel">
           <Palette />
+          <LinkSelector />
         </aside>
         
         <main className="diagram-panel">
@@ -107,9 +97,9 @@ function App() {
             linkDataArray={linkDataArray}
             modelData={modelData}
             skipsDiagramUpdate={skipsDiagramUpdate}
+            selectedLinkType={selectedLinkType}
             onDiagramEvent={handleDiagramEvent}
             onModelChange={handleModelChange}
-            onNodeDrop={handleNodeDrop}
           />
         </main>
       </div>

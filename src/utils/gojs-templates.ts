@@ -300,6 +300,7 @@ export function createLinkTemplateMap(): go.Map<string, go.Link> {
         adjusting: go.Link.Scale, // Scale intermediate points when nodes move (better than End)
         toShortLength: 4, // Shortens path to prevent interfering with arrowhead
         fromShortLength: 4, // Same for bidirectional arrows
+        cursor: 'pointer', // Show pointer cursor on hover
       },
       new go.Binding('points').makeTwoWay(), // Save all route points to model (critical for preserving shape!)
       new go.Binding('curviness').makeTwoWay(), // Save curviness to model
@@ -340,6 +341,7 @@ export function createLinkTemplateMap(): go.Map<string, go.Link> {
         adjusting: go.Link.Scale, // Scale intermediate points when nodes move (better than End)
         toShortLength: 8, // Shortens path to prevent interfering with arrowhead
         fromShortLength: 8, // Same for bidirectional arrows
+        cursor: 'pointer', // Show pointer cursor on hover
       },
       new go.Binding('points').makeTwoWay(), // Save all route points to model (critical for preserving shape!)
       new go.Binding('curviness').makeTwoWay(), // Save curviness to model
@@ -385,6 +387,7 @@ export function createDefaultLinkTemplate(): go.Link {
       curviness: 0, // Default to straight line (not NaN which auto-calculates)
       reshapable: true, // Allow user to reshape by dragging handles
       adjusting: go.Link.Scale, // Scale intermediate points when nodes move (better than End)
+      cursor: 'pointer', // Show pointer cursor on hover
       toShortLength: 4, // Shortens path to prevent interfering with arrowhead
       fromShortLength: 4, // Same for bidirectional arrows
     },

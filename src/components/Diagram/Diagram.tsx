@@ -6,6 +6,7 @@ import { initializeDiagram } from '../../utils/gojs-config';
 import { useDiagramEvents } from '../../hooks/useDiagramEvents';
 import { useLinkTypeValidation } from '../../hooks/useLinkTypeValidation';
 import { useDiagramDragDrop } from '../../hooks/useDiagramDragDrop';
+import { useCustomLinkingTool } from '../../hooks/useCustomLinkingTool';
 
 interface DiagramProps {
   selectedLinkType: LinkType;
@@ -24,6 +25,9 @@ export function Diagram(props: DiagramProps) {
 
   // Setup drag-and-drop
   useDiagramDragDrop(diagramRef);
+
+  // Setup custom linking tool for center port to edge linking
+  useCustomLinkingTool(diagramRef);
 
   const handleModelChange = (e: go.IncrementalData) => {
     const diagram = diagramRef.current?.getDiagram() || null;

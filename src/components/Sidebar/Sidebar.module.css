@@ -1,0 +1,215 @@
+.sidebar {
+  width: 260px;
+  height: 100%;
+  background-color: #2c3e50;
+  border-right: 1px solid #34495e;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.header {
+  padding: 20px;
+  border-bottom: 1px solid #34495e;
+  background: #2c3e50;
+}
+
+.title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #ecf0f1;
+  letter-spacing: 0.3px;
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #95a5a6;
+}
+
+.section {
+  padding: 20px 16px;
+}
+
+.sectionTitle {
+  margin: 0 0 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: #95a5a6;
+}
+
+/* Node Items Section */
+.nodeList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nodeCard {
+  cursor: move;
+  cursor: grab;
+  user-select: none;
+  background: #34495e;
+  border: 1px solid #4a5f7f;
+  border-radius: 8px;
+  padding: 12px;
+  transition: transform 0.2s, border-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nodeCard:active {
+  cursor: grabbing;
+  opacity: 0.8;
+}
+
+.nodeCard:hover {
+  border-color: #5a6f8f;
+  transform: translateY(-2px);
+}
+
+.nodeIcon {
+  flex-shrink: 0;
+}
+
+.stockIcon {
+  width: 48px;
+  height: 32px;
+  background: #4A90E2;
+  border-radius: 4px;
+}
+
+.variableIcon {
+  width: 40px;
+  height: 40px;
+  background: #50C878;
+  border-radius: 50%;
+}
+
+.nodeInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.nodeName {
+  font-size: 14px;
+  font-weight: 500;
+  color: #ecf0f1;
+  margin: 0 0 4px;
+}
+
+.nodeDescription {
+  font-size: 11px;
+  color: #95a5a6;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Link Type Section */
+.linkTypeButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.linkTypeButton {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 12px;
+  background: #34495e;
+  border: 2px solid #4a5f7f;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.linkTypeButton:hover {
+  border-color: #5a6f8f;
+  transform: translateY(-2px);
+}
+
+.linkTypeButton.active {
+  border-color: #4A90E2;
+  background: rgba(74, 144, 226, 0.1);
+}
+
+.linkPreview {
+  position: relative;
+  width: 60px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.linkLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: #ecf0f1;
+}
+
+/* Flow style (толстая связь) */
+.flowStyle .flowLine {
+  width: 50px;
+  height: 6px;
+  background: #4A90E2;
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  border-radius: 2px;
+}
+
+.flowStyle .flowArrow {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-left: 10px solid #4A90E2;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+}
+
+/* Link style (пунктирная связь) */
+.linkStyle {
+  display: flex;
+  align-items: center;
+}
+
+.linkStyle .linkLine {
+  width: 50px;
+  height: 2px;
+  background: repeating-linear-gradient(
+    to right,
+    #888 0,
+    #888 4px,
+    transparent 4px,
+    transparent 8px
+  );
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.linkStyle .linkArrow {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8px solid #888;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+}
+

@@ -1,7 +1,6 @@
 import * as go from 'gojs';
 import { DiagramWrapper } from './components/DiagramWrapper';
-import { Palette } from './components/Palette';
-import { LinkSelector } from './components/LinkSelector';
+import { Sidebar } from './components/Sidebar';
 import { useAppDispatch, useAppSelector } from './store/hooks';
 import { syncFromGoJS } from './store/diagramSlice';
 import './App.css';
@@ -67,16 +66,8 @@ function App() {
 
   return (
     <div className="app-container">
-      <header className="app-header">
-        <h1>🔮 Insight Sorcerer</h1>
-        <p>System Dynamics Modeling Tool</p>
-      </header>
-      
       <div className="main-content">
-        <aside className="palette-panel">
-          <Palette />
-          <LinkSelector />
-        </aside>
+        <Sidebar />
         
         <main className="diagram-panel">
           <DiagramWrapper

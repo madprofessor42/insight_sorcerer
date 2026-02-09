@@ -18,8 +18,9 @@ export function initializeDiagram(): go.Diagram {
     'grid.visible': true,
     'grid.gridCellSize': new go.Size(20, 20),
     // Initialize custom tools (proper GoJS extension pattern)
-    linkingTool: $(CustomLinkingTool),
-    relinkingTool: $(CustomRelinkingTool),
+    // Enable unconnected links (links ending on canvas) - allows creating Cloud nodes by drawing links to empty space
+    linkingTool: $(CustomLinkingTool, { isUnconnectedLinkValid: true }),
+    relinkingTool: $(CustomRelinkingTool, { isUnconnectedLinkValid: true }),
     model: new go.GraphLinksModel({
       linkKeyProperty: 'key',
       nodeCategoryProperty: 'category',

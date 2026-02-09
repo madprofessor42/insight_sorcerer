@@ -19,6 +19,7 @@ import {
  * 3. Prevents duplicate links of the same type
  * 4. Automatically converts to bidirectional when reverse link is created
  *    (only for link types that support bidirectional mode)
+ * 5. Automatically deletes Cloud nodes when their connected links are removed
  */
 export function useLinkManagement(
   diagramRef: React.RefObject<ReactDiagram | null>,
@@ -148,10 +149,84 @@ export function useLinkManagement(
     };
 
     // ========================================================================
-    // REGISTER EVENT LISTENER
+    // EVENT HANDLER: SelectionDeleted
+    // ========================================================================
+    
+    const handleSelectionDeleted = (e: go.DiagramEvent) => {
+      const deletedParts = e.subject as go.Set<go.Part>;
+      if (!deletedParts || !(deletedParts instanceof go.Set)) return;
+
+      const model = diagram.model as go.GraphLinksModel;
+      if (!(model instanceof go.GraphLinksModel)) return;
+
+      // Collect Cloud nodes that were explicitly deleted by user
+      const explicitlyDeletedCloudKeys = new Set<go.Key>();
+      
+      // Collect Cloud nodes that might need to be auto-deleted
+      const cloudNodesToCheck = new Set<go.Key>();
+
+      // First pass: identify what was deleted
+      deletedParts.each((part) => {
+        if (part instanceof go.Node && part.data.category === 'Cloud') {
+          // Cloud node was explicitly selected and deleted by user
+          explicitlyDeletedCloudKeys.add(part.data.key);
+          console.log(`🌥️🗑️  Cloud node '${part.data.key}' explicitly deleted by user`);
+        } else if (part instanceof go.Link) {
+          const link = part as go.Link;
+          const fromKey = link.data.from;
+          const toKey = link.data.to;
+
+          console.log(`🗑️  Link deleted: from=${fromKey}, to=${toKey}`);
+
+          // Check if fromNode is a Cloud (and wasn't explicitly deleted)
+          const fromNodeData = model.findNodeDataForKey(fromKey);
+          if (fromNodeData && fromNodeData.category === 'Cloud' && !explicitlyDeletedCloudKeys.has(fromKey)) {
+            cloudNodesToCheck.add(fromKey);
+          }
+
+          // Check if toNode is a Cloud (and wasn't explicitly deleted)
+          const toNodeData = model.findNodeDataForKey(toKey);
+          if (toNodeData && toNodeData.category === 'Cloud' && !explicitlyDeletedCloudKeys.has(toKey)) {
+            cloudNodesToCheck.add(toKey);
+          }
+        }
+      });
+
+      // Second pass: auto-delete orphaned Cloud nodes
+      cloudNodesToCheck.forEach((cloudKey) => {
+        const cloudNode = diagram.findNodeForKey(cloudKey);
+        if (!cloudNode) {
+          // Node was already deleted (shouldn't happen, but safe to check)
+          return;
+        }
+
+        // Count remaining links connected to this Cloud
+        const connectedLinks = cloudNode.findLinksConnected();
+        const linkCount = connectedLinks.count;
+
+        if (linkCount === 0) {
+          // No links remain - delete the orphaned Cloud node
+          console.log(`🌥️💨 Auto-deleting orphaned Cloud node '${cloudKey}' (no remaining links)`);
+          
+          // NOTE: SelectionDeleted is already called within a transaction,
+          // so we can modify model directly without starting a new transaction
+          const nodeData = model.findNodeDataForKey(cloudKey);
+          if (nodeData) {
+            model.removeNodeData(nodeData);
+            console.log(`✅ Orphaned Cloud node '${cloudKey}' removed`);
+          }
+        } else {
+          console.log(`ℹ️  Cloud node '${cloudKey}' kept (${linkCount} link(s) remaining)`);
+        }
+      });
+    };
+
+    // ========================================================================
+    // REGISTER EVENT LISTENERS
     // ========================================================================
     
     diagram.addDiagramListener('LinkDrawn', handleLinkDrawn);
+    diagram.addDiagramListener('SelectionDeleted', handleSelectionDeleted);
 
     // ========================================================================
     // CLEANUP
@@ -160,6 +235,7 @@ export function useLinkManagement(
     return () => {
       if (diagram instanceof go.Diagram) {
         diagram.removeDiagramListener('LinkDrawn', handleLinkDrawn);
+        diagram.removeDiagramListener('SelectionDeleted', handleSelectionDeleted);
       }
     };
   }, [diagramRef, selectedLinkType]);

@@ -12,8 +12,23 @@ import {
   getLinkValidationErrorFrom,
   getLinkValidationErrorTo,
   canLinkEndOnCanvas,
+  canLinkBeBidirectional,
   DEFAULT_LINK_TYPE
 } from '../config/diagram-rules';
+
+// ============================================================================
+// VALIDATION RESULT TYPE
+// ============================================================================
+
+/**
+ * Result of validation operation with reason
+ */
+export interface ValidationResult {
+  /** Whether the operation is valid */
+  isValid: boolean;
+  /** Human-readable reason (error message or success message) */
+  reason: string;
+}
 
 // ============================================================================
 // BASIC LINK CHECKS
@@ -164,6 +179,73 @@ export function canReverseLink(
   }
   
   return true;
+}
+
+/**
+ * Validate if a link can be reversed and get the reason
+ * @param model - The GoJS GraphLinksModel
+ * @param fromKey - Current source node key
+ * @param toKey - Current target node key
+ * @param linkType - Type of the link
+ * @param linkKey - Key of the link to reverse
+ * @returns Validation result with reason
+ */
+export function validateReverse(
+  model: go.GraphLinksModel,
+  fromKey: go.Key,
+  toKey: go.Key,
+  linkType: string | undefined,
+  linkKey: go.Key
+): ValidationResult {
+  const fromNodeData = model.findNodeDataForKey(fromKey);
+  const toNodeData = model.findNodeDataForKey(toKey);
+  
+  if (!fromNodeData || !toNodeData) {
+    return { isValid: false, reason: 'Узлы не найдены' };
+  }
+  
+  const normalizedLinkType = (linkType || DEFAULT_LINK_TYPE) as LinkType;
+  
+  // Check if reversing (toKey -> fromKey) would create a duplicate
+  if (hasDuplicateLink(model, toKey, fromKey, linkType, linkKey)) {
+    return { isValid: false, reason: 'Разворот создаст дубликат связи' };
+  }
+  
+  // Validate that toNode can be a source (after reverse)
+  if (!isValidLinkSource(normalizedLinkType, toNodeData.category)) {
+    return { 
+      isValid: false, 
+      reason: getLinkValidationErrorFrom(normalizedLinkType)
+    };
+  }
+  
+  // Validate that fromNode can be a target (after reverse)
+  if (!isValidLinkTarget(normalizedLinkType, fromNodeData.category)) {
+    return { 
+      isValid: false, 
+      reason: getLinkValidationErrorTo(normalizedLinkType)
+    };
+  }
+  
+  return { isValid: true, reason: 'Развернуть направление связи' };
+}
+
+/**
+ * Validate if a link can be made bidirectional and get the reason
+ * @param linkType - Type of the link
+ * @returns Validation result with reason
+ */
+export function validateBidirectional(linkType: string | undefined): ValidationResult {
+  const normalizedLinkType = (linkType || DEFAULT_LINK_TYPE) as LinkType;
+  
+  if (!canLinkBeBidirectional(normalizedLinkType)) {
+    return { 
+      isValid: false, 
+      reason: `Связи типа '${normalizedLinkType}' не могут быть двунаправленными`
+    };
+  }
+  
+  return { isValid: true, reason: 'Переключить двунаправленность' };
 }
 
 // ============================================================================

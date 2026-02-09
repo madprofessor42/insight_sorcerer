@@ -1,14 +1,14 @@
-import { useAppSelector } from '../../store/hooks';
+import { useAppSelector, useAppDispatch } from '../../store/hooks';
+import { setLinkType } from '../../store/diagramSlice';
 import { usePaletteDragDrop } from '../../hooks/usePaletteDragDrop';
-import { useLinkTypeSelector } from '../../hooks/useLinkTypeSelector';
 import { EdgePanel } from './EdgePanel';
 import { LINK_CONFIGURATIONS } from '../../config/diagram-rules';
 import styles from './Sidebar.module.css';
 
 export function Sidebar() {
+  const dispatch = useAppDispatch();
   const selectedLinkType = useAppSelector((state) => state.diagram.selectedLinkType);
   const { handleDragStart } = usePaletteDragDrop();
-  const { handleLinkTypeChange } = useLinkTypeSelector();
 
   return (
     <aside className={styles.sidebar}>
@@ -68,7 +68,7 @@ export function Sidebar() {
             <button
               key={config.id}
               className={`${styles.linkTypeButton} ${selectedLinkType === config.id ? styles.active : ''}`}
-              onClick={() => handleLinkTypeChange(config.id)}
+              onClick={() => dispatch(setLinkType(config.id))}
               title={config.ui.description}
             >
               <div className={`${styles.linkPreview} ${styles[config.ui.previewClassName]}`}>

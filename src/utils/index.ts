@@ -16,7 +16,18 @@ export {
   canCreateLink,
   canRelinkToNodes,
   canReverseLink,
+  validateReverse,
+  validateBidirectional,
   createLinkValidation,
   createRelinkValidation
 } from './link-validation';
+export type { ValidationResult } from './link-validation';
+
+// Export diagram access utilities
+export {
+  getDiagramFromDOM,
+  findLinkByKey,
+  withLink
+} from './diagram-access';
+export type { DiagramAccessResult } from './diagram-access';
 

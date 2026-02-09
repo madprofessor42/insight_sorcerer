@@ -2,13 +2,18 @@ import { useState, useEffect } from 'react';
 import { useAppSelector } from '../../../store/hooks';
 import { useEdgeOperations } from '../../../hooks/useEdgeOperations';
 import { useEdgeValidation } from '../../../hooks/useEdgeValidation';
-import { canLinkBeBidirectional, normalizeLinkType } from '../../../config/diagram-rules';
+import { normalizeLinkType } from '../../../config/diagram-rules';
 import styles from './EdgePanel.module.css';
 
 export function EdgePanel() {
   const selectedEdge = useAppSelector((state) => state.diagram.selectedEdge);
   const { resetCurve, reverseDirection, toggleBidirectional } = useEdgeOperations();
-  const { canReverse, reverseReason } = useEdgeValidation(selectedEdge);
+  const { 
+    canReverse, 
+    reverseReason, 
+    canBeBidirectional, 
+    bidirectionalReason 
+  } = useEdgeValidation(selectedEdge);
   const [bidirectionalActive, setBidirectionalActive] = useState(false);
 
   // Update bidirectional state when selected edge changes
@@ -23,7 +28,6 @@ export function EdgePanel() {
   }
 
   const linkType = normalizeLinkType(selectedEdge.category);
-  const canBeBidirectional = canLinkBeBidirectional(linkType);
 
   const handleToggleBidirectional = () => {
     toggleBidirectional(selectedEdge);
@@ -69,11 +73,7 @@ export function EdgePanel() {
           className={`${styles.edgeActionButton} ${bidirectionalActive ? styles.active : ''}`}
           onClick={handleToggleBidirectional}
           disabled={!canBeBidirectional}
-          title={
-            canBeBidirectional 
-              ? "Переключить двунаправленность" 
-              : `Связи типа '${linkType}' не могут быть двунаправленными`
-          }
+          title={bidirectionalReason}
         >
           <span className={styles.edgeActionIcon}>⇄</span>
           <span className={styles.edgeActionLabel}>Двунаправленная</span>

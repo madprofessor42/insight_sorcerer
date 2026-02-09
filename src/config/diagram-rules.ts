@@ -62,10 +62,7 @@ export interface LinkConfiguration {
   canBeBidirectional: boolean;
   /** Can this link type end on canvas (toNode: null) - automatically creates Cloud node at endpoint */
   canEndOnCanvas: boolean;
-  /** Error message when source node is invalid */
-  errorMessageFrom?: string;
-  /** Error message when target node is invalid */
-  errorMessageTo?: string;
+  // Note: Error messages are automatically generated based on allowedFromNodes and allowedToNodes
 }
 
 /**
@@ -118,9 +115,7 @@ export const LINK_CONFIGURATIONS: LinkConfiguration[] = [
     allowedFromNodes: ['Stock', 'Cloud'], // Can connect from Stock or Cloud (Cloud can be source when reversing link)
     allowedToNodes: ['Stock', 'Cloud'], // Can connect TO Stock or Cloud (Cloud is auto-created when drawing to canvas)
     canBeBidirectional: false, // Flow cannot be bidirectional - creates 2 separate links
-    canEndOnCanvas: true, // Flow can end on canvas (toNode: null) - auto-creates Cloud node at endpoint
-    errorMessageFrom: 'Flow links can only be created FROM Stock or Cloud nodes',
-    errorMessageTo: 'Flow links can only connect TO Stock or Cloud nodes'
+    canEndOnCanvas: true // Flow can end on canvas (toNode: null) - auto-creates Cloud node at endpoint
   }
 ];
 
@@ -177,36 +172,34 @@ export function isValidLinkTarget(linkType: LinkType, toNodeType: string): boole
 
 /**
  * Get error message for source node validation
+ * Messages are automatically generated based on allowedFromNodes
  */
 export function getLinkValidationErrorFrom(linkType: LinkType): string {
   const config = getLinkConfiguration(linkType);
-  if (!config) return 'Invalid link source';
+  if (!config) return 'Неверный источник связи';
   
-  if (config.errorMessageFrom) return config.errorMessageFrom;
-  
-  // Generate default message based on allowed nodes
+  // Always generate message based on allowed nodes
   if (config.allowedFromNodes.length > 0) {
-    return `Links of type '${linkType}' can only be created from: ${config.allowedFromNodes.join(', ')}`;
+    return `Связи типа '${linkType}' можно создавать только ОТ: ${config.allowedFromNodes.join(', ')}`;
   }
   
-  return 'Invalid link source';
+  return 'Неверный источник связи';
 }
 
 /**
  * Get error message for target node validation
+ * Messages are automatically generated based on allowedToNodes
  */
 export function getLinkValidationErrorTo(linkType: LinkType): string {
   const config = getLinkConfiguration(linkType);
-  if (!config) return 'Invalid link target';
+  if (!config) return 'Неверная цель связи';
   
-  if (config.errorMessageTo) return config.errorMessageTo;
-  
-  // Generate default message based on allowed nodes
+  // Always generate message based on allowed nodes
   if (config.allowedToNodes.length > 0) {
-    return `Links of type '${linkType}' can only connect to: ${config.allowedToNodes.join(', ')}`;
+    return `Связи типа '${linkType}' можно подключать только К: ${config.allowedToNodes.join(', ')}`;
   }
   
-  return 'Invalid link target';
+  return 'Неверная цель связи';
 }
 
 /**

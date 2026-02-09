@@ -35,13 +35,13 @@ function createCanvasEndpointShape($: any, color: string): go.GraphObject {
   return $(go.Shape, {
     figure: 'FlowCloud',
     stroke: color,
-    fill: color.replace('E2', 'F2FD'), // Lighter version for fill
+    fill: 'white', // White fill for cloud
     strokeWidth: 2,
-    width: 30,
-    height: 24,
-    segmentIndex: -1,
-    segmentFraction: 1.0,
-    alignmentFocus: go.Spot.Left,
+    width: 40, // Larger cloud
+    height: 32,
+    segmentIndex: -1, // At the end of the link
+    segmentFraction: 1.0, // At the very end
+    alignmentFocus: go.Spot.Center, // Center the cloud on the line endpoint
     name: 'CANVAS_ENDPOINT'
   },
     // Show only when: link ends on canvas AND config says to show cloud
@@ -262,6 +262,8 @@ export function createLinkTemplateMap(): go.Map<string, go.Link> {
         curviness: 0, // Default to straight line (not NaN which auto-calculates)
         reshapable: true, // Allow user to reshape by dragging handles
         adjusting: go.Link.Scale, // Scale intermediate points when nodes move (better than End)
+        toShortLength: 4, // Shortens path to prevent interfering with arrowhead
+        fromShortLength: 4, // Same for bidirectional arrows
       },
       new go.Binding('points').makeTwoWay(), // Save all route points to model (critical for preserving shape!)
       new go.Binding('curviness').makeTwoWay(), // Save curviness to model
@@ -271,10 +273,23 @@ export function createLinkTemplateMap(): go.Map<string, go.Link> {
       // Visible shape
       $(go.Shape, { isPanelMain: true, strokeWidth: 2, stroke: '#666' }),
       // From arrow (shown only when bidirectional)
-      $(go.Shape, { fromArrow: 'BackwardTriangle', stroke: '#666', fill: '#666', visible: false },
+      $(go.Shape, { 
+        fromArrow: 'BackwardTriangle', 
+        stroke: '#666', 
+        fill: '#666', 
+        scale: 1.3,
+        strokeWidth: 0, // No outline, just fill
+        visible: false 
+      },
         new go.Binding('visible', 'bidirectional', (b) => b === true)),
       // To arrow (shown when connected to a node)
-      $(go.Shape, { toArrow: 'Standard', stroke: '#666', fill: '#666' },
+      $(go.Shape, { 
+        toArrow: 'Standard', 
+        stroke: '#666', 
+        fill: '#666',
+        scale: 1.3,
+        strokeWidth: 0 // No outline, just fill
+      },
         new go.Binding('visible', 'to', (to) => to !== undefined)),
       // Canvas endpoint shape (configured per link type)
       createCanvasEndpointShape($, '#666')
@@ -290,6 +305,8 @@ export function createLinkTemplateMap(): go.Map<string, go.Link> {
         curviness: 0, // Default to straight line (not NaN which auto-calculates)
         reshapable: true, // Allow user to reshape by dragging handles
         adjusting: go.Link.Scale, // Scale intermediate points when nodes move (better than End)
+        toShortLength: 8, // Shortens path to prevent interfering with arrowhead
+        fromShortLength: 8, // Same for bidirectional arrows
       },
       new go.Binding('points').makeTwoWay(), // Save all route points to model (critical for preserving shape!)
       new go.Binding('curviness').makeTwoWay(), // Save curviness to model
@@ -299,14 +316,22 @@ export function createLinkTemplateMap(): go.Map<string, go.Link> {
       // Visible shape (thicker blue flow)
       $(go.Shape, { isPanelMain: true, strokeWidth: 6, stroke: '#4A90E2' }),
       // From arrow (shown only when bidirectional)
-      $(go.Shape, { fromArrow: 'BackwardTriangle', stroke: '#4A90E2', fill: '#4A90E2', scale: 1.5, visible: false },
+      $(go.Shape, { 
+        fromArrow: 'BackwardTriangle', 
+        stroke: '#4A90E2', 
+        fill: '#4A90E2', 
+        scale: 2.0,
+        strokeWidth: 0, // No outline, just fill
+        visible: false 
+      },
         new go.Binding('visible', 'bidirectional', (b) => b === true)),
       // To arrow (shown when connected to a node)
       $(go.Shape, { 
         toArrow: 'Standard', 
         stroke: '#4A90E2', 
         fill: '#4A90E2', 
-        scale: 1.5
+        scale: 2.0,
+        strokeWidth: 0 // No outline, just fill
       },
         new go.Binding('visible', 'to', (to) => to !== undefined)),
       // Canvas endpoint shape (configured per link type)
@@ -330,6 +355,8 @@ export function createDefaultLinkTemplate(): go.Link {
       curviness: 0, // Default to straight line (not NaN which auto-calculates)
       reshapable: true, // Allow user to reshape by dragging handles
       adjusting: go.Link.Scale, // Scale intermediate points when nodes move (better than End)
+      toShortLength: 4, // Shortens path to prevent interfering with arrowhead
+      fromShortLength: 4, // Same for bidirectional arrows
     },
     new go.Binding('points').makeTwoWay(), // Save all route points to model (critical for preserving shape!)
     new go.Binding('curviness').makeTwoWay(), // Save curviness to model
@@ -339,10 +366,23 @@ export function createDefaultLinkTemplate(): go.Link {
     // Visible shape
     $(go.Shape, { isPanelMain: true, strokeWidth: 2, stroke: '#666' }),
     // From arrow (shown only when bidirectional)
-    $(go.Shape, { fromArrow: 'BackwardTriangle', stroke: '#666', fill: '#666', visible: false },
+    $(go.Shape, { 
+      fromArrow: 'BackwardTriangle', 
+      stroke: '#666', 
+      fill: '#666', 
+      scale: 1.3,
+      strokeWidth: 0, // No outline, just fill
+      visible: false 
+    },
       new go.Binding('visible', 'bidirectional', (b) => b === true)),
     // To arrow (shown when connected to a node)
-    $(go.Shape, { toArrow: 'Standard', stroke: '#666', fill: '#666' },
+    $(go.Shape, { 
+      toArrow: 'Standard', 
+      stroke: '#666', 
+      fill: '#666',
+      scale: 1.3,
+      strokeWidth: 0 // No outline, just fill
+    },
       new go.Binding('visible', 'to', (to) => to !== undefined)),
     // Canvas endpoint shape (configured per link type)
     createCanvasEndpointShape($, '#666')

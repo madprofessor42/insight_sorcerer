@@ -18,6 +18,7 @@ export {
   canReverseLink,
   validateReverse,
   validateBidirectional,
+  validateCanEndOnCanvas,
   createLinkValidation,
   createRelinkValidation
 } from './link-validation';

@@ -17,13 +17,13 @@ hooks/
 │   ├── useEdgeValidation.ts       # Edge validation logic
 │   └── useLinkManagement.ts       # Link creation and management
 │
-├── tools/            # Custom GoJS tools
-│   └── useCustomLinkingTool.ts    # Custom linking tool configuration
-│
 └── palette/          # Palette-related hooks
     └── usePaletteDragDrop.ts      # Drag & drop from palette
 
 ```
+
+**Note:** Custom GoJS tools are now implemented as proper extensions in `src/extensions/` 
+and initialized in `gojs-config.ts` following the official GoJS pattern.
 
 ## Usage
 
@@ -45,9 +45,6 @@ Manage diagram-level functionality including events, model synchronization, sele
 
 ### Edge Hooks
 Handle edge/link operations, validation, and management within the diagram.
-
-### Tools Hooks
-Custom GoJS tools configuration and initialization.
 
 ### Palette Hooks
 Manage interactions with the node palette, including drag-and-drop functionality.

@@ -5,6 +5,7 @@ import {
   createLinkTemplateMap,
   createDefaultLinkTemplate
 } from './gojs-templates';
+import { CustomLinkingTool, CustomRelinkingTool } from '../extensions';
 
 /**
  * Initialize and configure a GoJS diagram
@@ -16,6 +17,9 @@ export function initializeDiagram(): go.Diagram {
     'undoManager.isEnabled': true,
     'grid.visible': true,
     'grid.gridCellSize': new go.Size(20, 20),
+    // Initialize custom tools (proper GoJS extension pattern)
+    linkingTool: $(CustomLinkingTool),
+    relinkingTool: $(CustomRelinkingTool),
     model: new go.GraphLinksModel({
       linkKeyProperty: 'key',
       nodeCategoryProperty: 'category',

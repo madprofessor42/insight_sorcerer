@@ -145,94 +145,9 @@ export function getAllLinkTypes(): LinkType[] {
 }
 
 /**
- * Validate if a link can be created from a specific node type
- */
-export function isValidLinkSource(linkType: LinkType, fromNodeType: string): boolean {
-  const config = getLinkConfiguration(linkType);
-  if (!config) return true; // No config = allow all
-  
-  // Empty array means all types are allowed
-  if (config.allowedFromNodes.length === 0) return true;
-  
-  return config.allowedFromNodes.includes(fromNodeType as NodeType);
-}
-
-/**
- * Validate if a link can be created to a specific node type
- */
-export function isValidLinkTarget(linkType: LinkType, toNodeType: string): boolean {
-  const config = getLinkConfiguration(linkType);
-  if (!config) return true; // No config = allow all
-  
-  // Empty array means all types are allowed
-  if (config.allowedToNodes.length === 0) return true;
-  
-  return config.allowedToNodes.includes(toNodeType as NodeType);
-}
-
-/**
- * Get error message for source node validation
- * Messages are automatically generated based on allowedFromNodes
- */
-export function getLinkValidationErrorFrom(linkType: LinkType): string {
-  const config = getLinkConfiguration(linkType);
-  if (!config) return 'Неверный источник связи';
-  
-  // Always generate message based on allowed nodes
-  if (config.allowedFromNodes.length > 0) {
-    return `Связи типа '${linkType}' можно создавать только ОТ: ${config.allowedFromNodes.join(', ')}`;
-  }
-  
-  return 'Неверный источник связи';
-}
-
-/**
- * Get error message for target node validation
- * Messages are automatically generated based on allowedToNodes
- */
-export function getLinkValidationErrorTo(linkType: LinkType): string {
-  const config = getLinkConfiguration(linkType);
-  if (!config) return 'Неверная цель связи';
-  
-  // Always generate message based on allowed nodes
-  if (config.allowedToNodes.length > 0) {
-    return `Связи типа '${linkType}' можно подключать только К: ${config.allowedToNodes.join(', ')}`;
-  }
-  
-  return 'Неверная цель связи';
-}
-
-/**
- * Check if a link type can be bidirectional
- */
-export function canLinkBeBidirectional(linkType: LinkType): boolean {
-  const config = getLinkConfiguration(linkType);
-  if (!config) return true; // Default to true if no config exists
-  
-  return config.canBeBidirectional;
-}
-
-/**
  * Normalize link type - returns the actual type or default if undefined
+ * This is the only helper function that can be used by UI components
  */
 export function normalizeLinkType(category: string | undefined): LinkType {
   return (category || DEFAULT_LINK_TYPE) as LinkType;
-}
-
-/**
- * Check if two links are of the same type
- */
-export function isSameLinkType(type1: string | undefined, type2: string | undefined): boolean {
-  return normalizeLinkType(type1) === normalizeLinkType(type2);
-}
-
-/**
- * Check if a link type can end on canvas (toNode: null)
- * When true, a Cloud node will be automatically created at the endpoint
- */
-export function canLinkEndOnCanvas(linkType: LinkType): boolean {
-  const config = getLinkConfiguration(linkType);
-  if (!config) return false; // Default to false if no config exists
-  
-  return config.canEndOnCanvas;
 }

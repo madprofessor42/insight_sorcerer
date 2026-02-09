@@ -2,8 +2,15 @@ import { useEffect } from 'react';
 import * as go from 'gojs';
 import type { ReactDiagram } from 'gojs-react';
 import type { LinkType } from '../../config/diagram-rules';
-import { canLinkBeBidirectional, canLinkEndOnCanvas, normalizeLinkType, isValidLinkTarget } from '../../config/diagram-rules';
-import { hasDuplicateLink, findReverseLink, createLinkValidation, createRelinkValidation } from '../../utils/link-validation';
+import { normalizeLinkType } from '../../config/diagram-rules';
+import { 
+  hasDuplicateLink, 
+  findReverseLink, 
+  createLinkValidation, 
+  createRelinkValidation,
+  validateCanEndOnCanvas,
+  validateBidirectional
+} from '../../utils/link-validation';
 
 /**
  * Centralized hook for all link management:
@@ -57,14 +64,20 @@ export function useLinkManagement(
       
       console.log(`🔗 LinkDrawn: type=${linkType}, from=${fromKey}, to=${toKey}, points=${link.points.count}`);
       
-      // Step 1.5: If link ends on canvas, create a Cloud node at endpoint
-      // Only for link types that allow ending on canvas AND connecting to Cloud nodes
-      if (toKey === undefined && canLinkEndOnCanvas(linkType)) {
-        // CRITICAL: Check if this link type can connect to Cloud nodes
-        // If not, the link should not be created at all
-        if (!isValidLinkTarget(linkType, 'Cloud')) {
-          console.warn(`⚠️ Links of type '${linkType}' cannot connect to Cloud nodes - removing link`);
-          // Remove the link since it cannot connect to Cloud
+      // Step 1.5: If link ends on canvas, validate and create a Cloud node at endpoint
+      if (toKey === undefined) {
+        // Get fromNode data for validation
+        const fromNodeData = model.findNodeDataForKey(fromKey);
+        if (!fromNodeData) {
+          console.warn(`⚠️ Source node not found - removing link`);
+          model.removeLinkData(link.data);
+          return;
+        }
+        
+        // Validate if this link can end on canvas
+        const canvasValidation = validateCanEndOnCanvas(linkType, fromNodeData.category);
+        if (!canvasValidation.isValid) {
+          console.warn(`⚠️ ${canvasValidation.reason} - removing link`);
           model.removeLinkData(link.data);
           return;
         }
@@ -110,8 +123,10 @@ export function useLinkManagement(
         return;
       }
       
-      // Step 4: Check if this link type can be bidirectional
-      if (!canLinkBeBidirectional(linkType)) {
+      // Step 4: Check if this specific link can be physically bidirectional
+      const bidirectionalValidation = validateBidirectional(model, fromKey, actualToKey, link.data.category);
+      if (!bidirectionalValidation.isValid) {
+        console.log(`ℹ️  ${bidirectionalValidation.reason} - keeping as separate links`);
         return;
       }
 

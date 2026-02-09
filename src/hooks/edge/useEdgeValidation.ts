@@ -36,8 +36,18 @@ export function useEdgeValidation(selectedEdge: SelectedEdgeData | null) {
   const bidirectionalValidation = useMemo(() => {
     if (!selectedEdge) return { canBeBidirectional: false, reason: '' };
 
-    // Use centralized validation for bidirectional
-    const validation = validateBidirectional(selectedEdge.category);
+    const result = getDiagramFromDOM();
+    if (!result) return { canBeBidirectional: false, reason: '' };
+
+    const { model } = result;
+    
+    // Use centralized validation for bidirectional with node information
+    const validation = validateBidirectional(
+      model,
+      selectedEdge.from,
+      selectedEdge.to,
+      selectedEdge.category
+    );
 
     return {
       canBeBidirectional: validation.isValid,

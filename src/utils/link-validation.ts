@@ -10,7 +10,8 @@ import {
   isValidLinkSource, 
   isValidLinkTarget, 
   getLinkValidationErrorFrom,
-  getLinkValidationErrorTo
+  getLinkValidationErrorTo,
+  canLinkEndOnCanvas
 } from '../config/diagram-rules';
 
 // ============================================================================
@@ -167,8 +168,19 @@ export function createLinkValidation(linkType: LinkType) {
       return false;
     }
     
+    // Handle links ending on canvas (toNode: null)
+    if (!toNode) {
+      // Check if this link type can end on canvas
+      if (!canLinkEndOnCanvas(linkType)) {
+        console.warn(`⚠️ Links of type '${linkType}' cannot end on canvas`);
+        return false;
+      }
+      // Source validation already passed, so link to canvas is allowed
+      return true;
+    }
+    
     // Validate target node (if target is known)
-    if (toNode && !isValidLinkTarget(linkType, toNodeType)) {
+    if (!isValidLinkTarget(linkType, toNodeType)) {
       console.warn(`⚠️  ${getLinkValidationErrorTo(linkType)}!`);
       return false;
     }
@@ -212,14 +224,25 @@ export function createRelinkValidation() {
       return false;
     }
     
+    // Handle relinking to canvas (toNode: null)
+    if (!toNode) {
+      // Check if this link type can end on canvas
+      if (!canLinkEndOnCanvas(linkType)) {
+        console.warn(`⚠️ Links of type '${linkType}' cannot end on canvas`);
+        return false;
+      }
+      // Source validation already passed, so relink to canvas is allowed
+      return true;
+    }
+    
     // Validate target node (if target is known)
-    if (toNode && !isValidLinkTarget(linkType, toNodeType)) {
+    if (!isValidLinkTarget(linkType, toNodeType)) {
       console.warn(`⚠️  ${getLinkValidationErrorTo(linkType)}!`);
       return false;
     }
     
     // Check for duplicate links of the same type (excluding current link being relinked)
-    if (toNode && fromNode.diagram) {
+    if (fromNode.diagram) {
       const model = fromNode.diagram.model as go.GraphLinksModel;
       if (model instanceof go.GraphLinksModel) {
         if (hasDuplicateLink(model, fromNode.data.key, toNode.data.key, linkType, link.data.key)) {

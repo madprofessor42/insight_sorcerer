@@ -32,8 +32,6 @@ export function useLinkManagement(
     // Update relinkingTool validation
     diagram.toolManager.relinkingTool.linkValidation = createRelinkValidation();
 
-    console.log('🔄 Link validation updated for type:', selectedLinkType);
-
     // ========================================================================
     // EVENT HANDLER: LinkDrawn
     // ========================================================================
@@ -47,14 +45,20 @@ export function useLinkManagement(
 
       // Step 1: Set link category (type)
       diagram.model.setDataProperty(link.data, 'category', selectedLinkType);
-      console.log(`🔗 Link created with type: ${selectedLinkType}`);
-
+      
       const linkType = normalizeLinkType(link.data.category);
       const fromKey = link.data.from;
       const toKey = link.data.to;
+      
+      // For links ending on canvas, ensure we have points saved
+      if (toKey === undefined && link.points.count > 0) {
+        const points = link.points.toArray();
+        diagram.model.setDataProperty(link.data, 'points', points);
+      }
 
-      // Step 2: Check for duplicate links (should be caught by validation, but double-check)
-      if (hasDuplicateLink(model, fromKey, toKey, link.data.category, link.data.key)) {
+      // Step 2: Check for duplicate links only if connecting to a node
+      // Links to canvas (toKey === undefined) are always allowed
+      if (toKey !== undefined && hasDuplicateLink(model, fromKey, toKey, link.data.category, link.data.key)) {
         diagram.startTransaction('remove duplicate');
         model.removeLinkData(link.data);
         diagram.commitTransaction('remove duplicate');
@@ -62,12 +66,17 @@ export function useLinkManagement(
         return;
       }
       
-      // Step 3: Check if this link type can be bidirectional
+      // Step 3: Skip bidirectional logic for links to canvas
+      if (toKey === undefined) {
+        return;
+      }
+      
+      // Step 4: Check if this link type can be bidirectional
       if (!canLinkBeBidirectional(linkType)) {
-        return; // Allow creating 2 separate links (but no duplicates!)
+        return;
       }
 
-      // Step 4: Check if reverse link of the SAME TYPE exists
+      // Step 5: Check if reverse link of the SAME TYPE exists
       const reverseLink = findReverseLink(model, fromKey, toKey, link.data.category, link.data.key);
 
       if (reverseLink) {
@@ -80,7 +89,6 @@ export function useLinkManagement(
         model.setDataProperty(reverseLink, 'bidirectional', true);
         
         diagram.commitTransaction('convert to bidirectional');
-        console.log(`🔄 Converted to bidirectional link`);
       }
     };
 

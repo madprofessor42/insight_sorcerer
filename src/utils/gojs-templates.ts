@@ -1,6 +1,32 @@
 import * as go from 'gojs';
 
 /**
+ * Define custom cloud shape for flow endpoints
+ * This creates a cloud-like shape using bezier curves
+ */
+function defineCloudShape() {
+  go.Shape.defineFigureGenerator('FlowCloud', (_shape, w, h) => {
+    const geo = new go.Geometry();
+    const fig = new go.PathFigure(0.5 * w, 0.2 * h, true); // Start at top center
+    
+    // Create cloud-like shape with curves
+    fig.add(new go.PathSegment(go.PathSegment.Bezier, 0.9 * w, 0.4 * h, 0.8 * w, 0.1 * h, 0.95 * w, 0.3 * h));
+    fig.add(new go.PathSegment(go.PathSegment.Bezier, 0.8 * w, 0.8 * h, 1.0 * w, 0.5 * h, 0.95 * w, 0.7 * h));
+    fig.add(new go.PathSegment(go.PathSegment.Bezier, 0.3 * w, 0.85 * h, 0.6 * w, 0.9 * h, 0.4 * w, 0.9 * h));
+    fig.add(new go.PathSegment(go.PathSegment.Bezier, 0.1 * w, 0.5 * h, 0.15 * w, 0.8 * h, 0.05 * w, 0.65 * h));
+    fig.add(new go.PathSegment(go.PathSegment.Bezier, 0.5 * w, 0.2 * h, 0.05 * w, 0.35 * h, 0.2 * w, 0.15 * h));
+    
+    geo.add(fig);
+    geo.spot1 = new go.Spot(0.2, 0.3);
+    geo.spot2 = new go.Spot(0.8, 0.7);
+    return geo;
+  });
+}
+
+// Initialize cloud shape definition
+defineCloudShape();
+
+/**
  * Create node template map with different node types
  */
 export function createNodeTemplateMap(): go.Map<string, go.Node> {
@@ -227,6 +253,7 @@ export function createLinkTemplateMap(): go.Map<string, go.Link> {
   );
 
   // Flow link template (thicker, blue, Bezier curves, reshapable)
+  // Special feature: when toNode is null (link to canvas), shows cloud instead of arrow
   linkTemplateMap.add('flow',
     $(go.Link,
       { 
@@ -246,8 +273,35 @@ export function createLinkTemplateMap(): go.Map<string, go.Link> {
       // From arrow (shown only when bidirectional)
       $(go.Shape, { fromArrow: 'BackwardTriangle', stroke: '#4A90E2', fill: '#4A90E2', scale: 1.5, visible: false },
         new go.Binding('visible', 'bidirectional', (b) => b === true)),
-      // To arrow (always shown)
-      $(go.Shape, { toArrow: 'Standard', stroke: '#4A90E2', fill: '#4A90E2', scale: 1.5 })
+      // To arrow (shown when connected to a node)
+      $(go.Shape, { 
+        toArrow: 'Standard', 
+        stroke: '#4A90E2', 
+        fill: '#4A90E2', 
+        scale: 1.5,
+        name: 'TO_ARROW'
+      },
+        // Hide arrow when link ends on canvas (to === undefined)
+        new go.Binding('visible', 'to', function(to) {
+          return to !== undefined;
+        })),
+      // Cloud shape (shown when link ends on canvas - to === undefined)
+      $(go.Shape, {
+        figure: 'FlowCloud',
+        stroke: '#4A90E2',
+        fill: '#E3F2FD',
+        strokeWidth: 2,
+        width: 30,
+        height: 24,
+        segmentIndex: -1, // Position at the end of the link
+        segmentFraction: 1.0,
+        alignmentFocus: go.Spot.Left,
+        name: 'CLOUD_SHAPE'
+      },
+        // Show cloud only when link ends on canvas (to === undefined)
+        new go.Binding('visible', 'to', function(to) {
+          return to === undefined;
+        }))
     )
   );
 

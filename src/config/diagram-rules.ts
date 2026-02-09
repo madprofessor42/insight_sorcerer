@@ -22,6 +22,8 @@ export interface LinkValidationRule {
   allowedToNodes: NodeType[];
   /** Can this link type be bidirectional (single link with two arrows) */
   canBeBidirectional: boolean;
+  /** Can this link type end on canvas (toNode: null) */
+  canEndOnCanvas: boolean;
   /** Error message when source node is invalid */
   errorMessageFrom?: string;
   /** Error message when target node is invalid */
@@ -38,6 +40,7 @@ export const LINK_VALIDATION_RULES: LinkValidationRule[] = [
     allowedFromNodes: ['Stock'],
     allowedToNodes: ['Stock'],
     canBeBidirectional: false, // Flow cannot be bidirectional - creates 2 separate links
+    canEndOnCanvas: true, // Flow can end on canvas (toNode: null) - represents source/sink outside system
     errorMessageFrom: 'Flow links can only be created FROM Stock nodes',
     errorMessageTo: 'Flow links can only connect TO Stock nodes'
   },
@@ -46,6 +49,7 @@ export const LINK_VALIDATION_RULES: LinkValidationRule[] = [
     allowedFromNodes: [], // Can connect from any node type
     allowedToNodes: [], // Can connect to any node type
     canBeBidirectional: true, // Link can be bidirectional - single link with two arrows
+    canEndOnCanvas: false, // Regular links must connect to nodes
   }
 ];
 
@@ -138,4 +142,14 @@ export function normalizeLinkType(category: string | undefined): LinkType {
  */
 export function isSameLinkType(type1: string | undefined, type2: string | undefined): boolean {
   return normalizeLinkType(type1) === normalizeLinkType(type2);
+}
+
+/**
+ * Check if a link type can end on canvas (toNode: null)
+ */
+export function canLinkEndOnCanvas(linkType: LinkType): boolean {
+  const rule = getLinkValidationRule(linkType);
+  if (!rule) return false; // Default to false if no rule exists
+  
+  return rule.canEndOnCanvas;
 }

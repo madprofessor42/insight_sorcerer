@@ -4,37 +4,43 @@ import type { ReactDiagram } from 'gojs-react';
 
 /**
  * Custom LinkingTool that redirects links from center port to outer port
+ * Also supports creating links to canvas (toNode: null) for flow links
  */
 class CustomLinkingTool extends go.LinkingTool {
   /**
    * Override insertLink to redirect center port connections to outer port
+   * Handles special case when toNode is null (link to canvas)
    */
   public insertLink(
     fromnode: go.Node,
     fromport: go.GraphObject,
-    tonode: go.Node,
-    toport: go.GraphObject
+    tonode: go.Node | null,
+    toport: go.GraphObject | null
   ): go.Link | null {
-    // Redirect center port to outer port
+    // Redirect center port to outer port for source
     const actualFromPort = fromport.name === 'CENTER_PORT' 
       ? fromnode.findObject('OUTER_SHAPE') || fromport
       : fromport;
     
-    const actualToPort = toport.name === 'CENTER_PORT'
+    // Handle target port only if toNode exists
+    const actualToPort = (tonode && toport && toport.name === 'CENTER_PORT')
       ? tonode.findObject('OUTER_SHAPE') || toport
       : toport;
 
     // Create link with actual ports (outer shapes)
+    // toNode and toPort can be null for links to canvas
     return super.insertLink(fromnode, actualFromPort, tonode, actualToPort);
   }
 }
 
 /**
  * Custom RelinkingTool that redirects links from center port to outer port
+ * Also supports relinking to canvas (newNode: null) for flow links
  */
 class CustomRelinkingTool extends go.RelinkingTool {
   /**
    * Override reconnectLink to redirect center port connections to outer port
+   * Handles special case when newNode is null (relink to canvas)
    */
   public reconnectLink(
     existingLink: go.Link,
@@ -43,6 +49,7 @@ class CustomRelinkingTool extends go.RelinkingTool {
     toend: boolean
   ): boolean {
     // Redirect center port to outer port if it's a center port
+    // Only do this if newnode exists (not relinking to canvas)
     const actualPort = (newport && newport.name === 'CENTER_PORT' && newnode)
       ? newnode.findObject('OUTER_SHAPE') || newport
       : newport;
@@ -61,8 +68,15 @@ export function useCustomLinkingTool(diagramRef: RefObject<ReactDiagram | null>)
     if (!diagram) return;
 
     // Replace the default tools with our custom ones
-    diagram.toolManager.linkingTool = new CustomLinkingTool();
-    diagram.toolManager.relinkingTool = new CustomRelinkingTool();
+    const customLinkingTool = new CustomLinkingTool();
+    const customRelinkingTool = new CustomRelinkingTool();
+    
+    // Enable unconnected links (links ending on canvas)
+    customLinkingTool.isUnconnectedLinkValid = true;
+    customRelinkingTool.isUnconnectedLinkValid = true;
+    
+    diagram.toolManager.linkingTool = customLinkingTool;
+    diagram.toolManager.relinkingTool = customRelinkingTool;
 
   }, [diagramRef]);
 }

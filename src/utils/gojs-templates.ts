@@ -11,7 +11,20 @@ export function createNodeTemplateMap(): go.Map<string, go.Node> {
   nodeTemplateMap.add('Stock', 
     $(go.Node, 'Spot',
       { 
-        locationSpot: go.Spot.Center
+        locationSpot: go.Spot.Center,
+        // Show/hide connection handler on hover
+        mouseEnter: (_e: go.InputEvent, thisObj: go.GraphObject) => {
+          if (thisObj instanceof go.Node) {
+            const port = thisObj.findObject('CENTER_PORT');
+            if (port) port.opacity = 1;
+          }
+        },
+        mouseLeave: (_e: go.InputEvent, thisObj: go.GraphObject) => {
+          if (thisObj instanceof go.Node) {
+            const port = thisObj.findObject('CENTER_PORT');
+            if (port) port.opacity = 0;
+          }
+        }
       },
       new go.Binding('location', 'loc', go.Point.parse).makeTwoWay(go.Point.stringify),
       // Outer shape - for dragging and visual bounds (named for custom linking tool)
@@ -48,7 +61,8 @@ export function createNodeTemplateMap(): go.Map<string, go.Node> {
         cursor: 'pointer',
         portId: 'center',
         fromLinkable: true,
-        toLinkable: true
+        toLinkable: true,
+        opacity: 0 // Invisible by default, shown on hover (but still active for linking!)
       })
     )
   );
@@ -57,7 +71,20 @@ export function createNodeTemplateMap(): go.Map<string, go.Node> {
   nodeTemplateMap.add('Variable',
     $(go.Node, 'Spot',
       { 
-        locationSpot: go.Spot.Center
+        locationSpot: go.Spot.Center,
+        // Show/hide connection handler on hover
+        mouseEnter: (_e: go.InputEvent, thisObj: go.GraphObject) => {
+          if (thisObj instanceof go.Node) {
+            const port = thisObj.findObject('CENTER_PORT');
+            if (port) port.opacity = 1;
+          }
+        },
+        mouseLeave: (_e: go.InputEvent, thisObj: go.GraphObject) => {
+          if (thisObj instanceof go.Node) {
+            const port = thisObj.findObject('CENTER_PORT');
+            if (port) port.opacity = 0;
+          }
+        }
       },
       new go.Binding('location', 'loc', go.Point.parse).makeTwoWay(go.Point.stringify),
       // Outer shape - for dragging and visual bounds (named for custom linking tool)
@@ -94,7 +121,8 @@ export function createNodeTemplateMap(): go.Map<string, go.Node> {
         cursor: 'pointer',
         portId: 'center',
         fromLinkable: true,
-        toLinkable: true
+        toLinkable: true,
+        opacity: 0 // Invisible by default, shown on hover (but still active for linking!)
       })
     )
   );
@@ -110,7 +138,20 @@ export function createDefaultNodeTemplate(): go.Node {
   
   return $(go.Node, 'Spot',
     { 
-      locationSpot: go.Spot.Center
+      locationSpot: go.Spot.Center,
+      // Show/hide connection handler on hover
+      mouseEnter: (_e: go.InputEvent, thisObj: go.GraphObject) => {
+        if (thisObj instanceof go.Node) {
+          const port = thisObj.findObject('CENTER_PORT');
+          if (port) port.visible = true;
+        }
+      },
+      mouseLeave: (_e: go.InputEvent, thisObj: go.GraphObject) => {
+        if (thisObj instanceof go.Node) {
+          const port = thisObj.findObject('CENTER_PORT');
+          if (port) port.visible = false;
+        }
+      }
     },
     new go.Binding('location', 'loc', go.Point.parse).makeTwoWay(go.Point.stringify),
     // Outer shape - for dragging and visual bounds (named for custom linking tool)
@@ -147,7 +188,8 @@ export function createDefaultNodeTemplate(): go.Node {
       cursor: 'pointer',
       portId: 'center',
       fromLinkable: true,
-      toLinkable: true
+      toLinkable: true,
+      visible: false // Hidden by default, shown on hover
     })
   );
 }

@@ -1,14 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import * as go from 'gojs';
 import { DiagramWrapper } from './components/DiagramWrapper';
 import { Palette } from './components/Palette';
+import { useAppDispatch, useAppSelector } from './store/hooks';
+import { syncFromGoJS, addNode, resetSkipFlag } from './store/diagramSlice';
 import './App.css';
 
 function App() {
-  const [nodeDataArray, setNodeDataArray] = useState<Array<go.ObjectData>>([]);
-  const [linkDataArray, setLinkDataArray] = useState<Array<go.ObjectData>>([]);
-  const [modelData, setModelData] = useState<go.ObjectData>({});
-  const [skipsDiagramUpdate, setSkipsDiagramUpdate] = useState(false);
+  const dispatch = useAppDispatch();
+  const { nodeDataArray, linkDataArray, modelData, skipsDiagramUpdate } = useAppSelector(
+    (state) => state.diagram
+  );
 
   const handleModelChange = (changes: go.IncrementalData, diagram: go.Diagram | null) => {
     if (!changes) return;
@@ -39,21 +41,17 @@ function App() {
     // Get nodes from GoJS (with all latest changes already applied)
     const currentNodes = model.nodeDataArray.map(nd => ({ ...nd }));
     console.log('📊 Syncing nodes from GoJS:', currentNodes.length);
-    setNodeDataArray(currentNodes);
 
     // Get links from GoJS (with all latest changes already applied)
     const currentLinks = model.linkDataArray.map(ld => ({ ...ld }));
     console.log('📊 Syncing links from GoJS:', currentLinks.length);
-    setLinkDataArray(currentLinks);
 
-    // Update model data if changed
-    if (changes.modelData) {
-      setModelData(changes.modelData);
-    }
-
-    // IMPORTANT: Set skipsDiagramUpdate to true since GoJS already has this update
-    // This prevents a feedback loop where React updates trigger diagram updates
-    setSkipsDiagramUpdate(true);
+    // Dispatch Redux action to sync from GoJS
+    dispatch(syncFromGoJS({
+      nodes: currentNodes,
+      links: currentLinks,
+      modelData: changes.modelData,
+    }));
   };
 
   // Reset skipsDiagramUpdate flag after state updates
@@ -61,11 +59,11 @@ function App() {
     if (skipsDiagramUpdate) {
       // Reset flag after a brief delay to allow React to process updates
       const timer = setTimeout(() => {
-        setSkipsDiagramUpdate(false);
+        dispatch(resetSkipFlag());
       }, 10);
       return () => clearTimeout(timer);
     }
-  }, [skipsDiagramUpdate]);
+  }, [skipsDiagramUpdate, dispatch]);
 
   const handleDiagramEvent = (e: go.DiagramEvent) => {
     const name = e.name;
@@ -82,15 +80,13 @@ function App() {
   const handleNodeDrop = (nodeData: go.ObjectData, currentNodes: Array<go.ObjectData>) => {
     console.log('📦 handleNodeDrop called with:', nodeData);
     console.log('📦 Current nodes from diagram:', currentNodes);
+    console.log('📦 New array length:', currentNodes.length + 1);
     
-    // Use the current nodes from diagram (with latest positions) 
-    // instead of React state to avoid losing position changes
-    const newArray = [...currentNodes, nodeData];
-    console.log('📦 New array length:', newArray.length);
-    
-    // Don't skip diagram update - we're setting new data
-    setSkipsDiagramUpdate(false);
-    setNodeDataArray(newArray);
+    // Dispatch Redux action to add node
+    dispatch(addNode({
+      nodeData,
+      allNodes: currentNodes,
+    }));
   };
 
   return (

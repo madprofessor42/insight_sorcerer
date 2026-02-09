@@ -1,17 +1,15 @@
-import { useEffect } from 'react';
 import * as go from 'gojs';
 import { DiagramWrapper } from './components/DiagramWrapper';
 import { Palette } from './components/Palette';
 import { LinkSelector } from './components/LinkSelector';
 import { useAppDispatch, useAppSelector } from './store/hooks';
-import { syncFromGoJS, resetSkipFlag } from './store/diagramSlice';
+import { syncFromGoJS } from './store/diagramSlice';
 import './App.css';
 
 function App() {
   const dispatch = useAppDispatch();
-  const { nodeDataArray, linkDataArray, modelData, skipsDiagramUpdate, selectedLinkType } = useAppSelector(
-    (state) => state.diagram
-  );
+  // Only read selectedLinkType - diagram data is stored but NOT passed back to GoJS!
+  const { selectedLinkType } = useAppSelector((state) => state.diagram);
 
   const handleModelChange = (changes: go.IncrementalData, diagram: go.Diagram | null) => {
     if (!changes) return;
@@ -55,17 +53,6 @@ function App() {
     }));
   };
 
-  // Reset skipsDiagramUpdate flag after state updates
-  useEffect(() => {
-    if (skipsDiagramUpdate) {
-      // Reset flag after a brief delay to allow React to process updates
-      const timer = setTimeout(() => {
-        dispatch(resetSkipFlag());
-      }, 10);
-      return () => clearTimeout(timer);
-    }
-  }, [skipsDiagramUpdate, dispatch]);
-
   const handleDiagramEvent = (e: go.DiagramEvent) => {
     const name = e.name;
     switch (name) {
@@ -93,10 +80,6 @@ function App() {
         
         <main className="diagram-panel">
           <DiagramWrapper
-            nodeDataArray={nodeDataArray}
-            linkDataArray={linkDataArray}
-            modelData={modelData}
-            skipsDiagramUpdate={skipsDiagramUpdate}
             selectedLinkType={selectedLinkType}
             onDiagramEvent={handleDiagramEvent}
             onModelChange={handleModelChange}

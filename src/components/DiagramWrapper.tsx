@@ -4,10 +4,6 @@ import { useEffect, useRef } from 'react';
 import type { LinkType } from '../store/diagramSlice';
 
 interface DiagramProps {
-  nodeDataArray: Array<go.ObjectData>;
-  linkDataArray: Array<go.ObjectData>;
-  modelData: go.ObjectData;
-  skipsDiagramUpdate: boolean;
   selectedLinkType: LinkType;
   onDiagramEvent: (e: go.DiagramEvent) => void;
   onModelChange: (e: go.IncrementalData, diagram: go.Diagram | null) => void;
@@ -305,11 +301,11 @@ export const DiagramWrapper = (props: DiagramProps) => {
       ref={diagramRef}
       divClassName='diagram-component'
       initDiagram={initDiagram}
-      nodeDataArray={props.nodeDataArray}
-      linkDataArray={props.linkDataArray}
-      modelData={props.modelData}
       onModelChange={handleModelChange}
-      skipsDiagramUpdate={props.skipsDiagramUpdate}
+      // BEST PRACTICE: Pass empty arrays - GoJS manages its own state
+      // We don't update these after initialization
+      nodeDataArray={[]}
+      linkDataArray={[]}
     />
   );
 };

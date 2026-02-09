@@ -3,10 +3,10 @@ import { ReactDiagram } from 'gojs-react';
 import { useRef } from 'react';
 import type { LinkType } from '../../config/diagram-rules';
 import { initializeDiagram } from '../../utils/gojs-config';
-import { useDiagramEvents } from '../../hooks/useDiagramEvents';
-import { useLinkManagement } from '../../hooks/useLinkManagement';
-import { useDiagramDragDrop } from '../../hooks/useDiagramDragDrop';
-import { useCustomLinkingTool } from '../../hooks/useCustomLinkingTool';
+import { useDiagramEvents } from '../../hooks/diagram/useDiagramEvents';
+import { useLinkManagement } from '../../hooks/edge/useLinkManagement';
+import { useDiagramDragDrop } from '../../hooks/diagram/useDiagramDragDrop';
+import { useCustomLinkingTool } from '../../hooks/tools/useCustomLinkingTool';
 
 interface DiagramProps {
   selectedLinkType: LinkType;

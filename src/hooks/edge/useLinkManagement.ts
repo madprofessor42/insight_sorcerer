@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import * as go from 'gojs';
 import type { ReactDiagram } from 'gojs-react';
-import type { LinkType } from '../config/diagram-rules';
-import { canLinkBeBidirectional, canLinkEndOnCanvas, normalizeLinkType, isValidLinkTarget } from '../config/diagram-rules';
-import { hasDuplicateLink, findReverseLink, createLinkValidation, createRelinkValidation } from '../utils/link-validation';
+import type { LinkType } from '../../config/diagram-rules';
+import { canLinkBeBidirectional, canLinkEndOnCanvas, normalizeLinkType, isValidLinkTarget } from '../../config/diagram-rules';
+import { hasDuplicateLink, findReverseLink, createLinkValidation, createRelinkValidation } from '../../utils/link-validation';
 
 /**
  * Centralized hook for all link management:

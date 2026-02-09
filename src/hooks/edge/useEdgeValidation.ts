@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
-import type { SelectedEdgeData } from '../store/diagramSlice';
-import { validateReverse, validateBidirectional } from '../utils/link-validation';
-import { getDiagramFromDOM } from '../utils/diagram-access';
+import type { SelectedEdgeData } from '../../store/diagramSlice';
+import { validateReverse, validateBidirectional } from '../../utils/link-validation';
+import { getDiagramFromDOM } from '../../utils/diagram-access';
 
 /**
  * Hook to validate edge operations

@@ -1,6 +1,6 @@
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { setLinkType } from '../../store/diagramSlice';
-import { usePaletteDragDrop } from '../../hooks/usePaletteDragDrop';
+import { usePaletteDragDrop } from '../../hooks/palette/usePaletteDragDrop';
 import { EdgePanel } from './EdgePanel';
 import { LINK_CONFIGURATIONS } from '../../config/diagram-rules';
 import styles from './Sidebar.module.css';

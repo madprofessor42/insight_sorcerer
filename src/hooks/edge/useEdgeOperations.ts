@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
 import * as go from 'gojs';
-import type { SelectedEdgeData } from '../store/diagramSlice';
-import { canLinkBeBidirectional, normalizeLinkType } from '../config/diagram-rules';
-import { withLink } from '../utils/diagram-access';
+import type { SelectedEdgeData } from '../../store/diagramSlice';
+import { canLinkBeBidirectional, normalizeLinkType } from '../../config/diagram-rules';
+import { withLink } from '../../utils/diagram-access';
 
 /**
  * Hook for edge operations (reset curve, reverse, bidirectional)

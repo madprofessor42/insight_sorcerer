@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import * as go from 'gojs';
-import { useAppDispatch } from '../store/hooks';
-import { syncFromGoJS } from '../store/diagramSlice';
+import { useAppDispatch } from '../../store/hooks';
+import { syncFromGoJS } from '../../store/diagramSlice';
 
 /**
  * Check if there are any changes that need processing

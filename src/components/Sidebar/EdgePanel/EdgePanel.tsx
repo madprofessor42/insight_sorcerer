@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAppSelector } from '../../../store/hooks';
-import { useEdgeOperations } from '../../../hooks/useEdgeOperations';
-import { useEdgeValidation } from '../../../hooks/useEdgeValidation';
+import { useEdgeOperations } from '../../../hooks/edge/useEdgeOperations';
+import { useEdgeValidation } from '../../../hooks/edge/useEdgeValidation';
 import { normalizeLinkType } from '../../../config/diagram-rules';
 import styles from './EdgePanel.module.css';
 

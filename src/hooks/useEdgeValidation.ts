@@ -2,8 +2,8 @@ import { useMemo } from 'react';
 import * as go from 'gojs';
 import type { SelectedEdgeData } from '../store/diagramSlice';
 import { hasDuplicateLink } from '../utils/link-validation';
+import type { LinkType } from '../config/diagram-rules';
 import { isValidLinkSource, isValidLinkTarget, getLinkValidationErrorFrom, getLinkValidationErrorTo, DEFAULT_LINK_TYPE } from '../config/diagram-rules';
-import type { LinkType } from '../store/diagramSlice';
 
 /**
  * Hook to validate edge operations

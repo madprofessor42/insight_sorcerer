@@ -1,7 +1,7 @@
 import * as go from 'gojs';
 import { ReactDiagram } from 'gojs-react';
 import { useRef } from 'react';
-import type { LinkType } from '../../store/diagramSlice';
+import type { LinkType } from '../../config/diagram-rules';
 import { initializeDiagram } from '../../utils/gojs-config';
 import { useDiagramEvents } from '../../hooks/useDiagramEvents';
 import { useLinkManagement } from '../../hooks/useLinkManagement';

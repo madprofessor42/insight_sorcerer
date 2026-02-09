@@ -2,6 +2,7 @@ import { useAppSelector } from '../../store/hooks';
 import { usePaletteDragDrop } from '../../hooks/usePaletteDragDrop';
 import { useLinkTypeSelector } from '../../hooks/useLinkTypeSelector';
 import { EdgePanel } from './EdgePanel';
+import { LINK_CONFIGURATIONS } from '../../config/diagram-rules';
 import styles from './Sidebar.module.css';
 
 export function Sidebar() {
@@ -59,33 +60,24 @@ export function Sidebar() {
         </div>
       </section>
 
-      {/* Link Type Section */}
+      {/* Link Type Section - Dynamic from configuration */}
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Connection Type</h2>
         <div className={styles.linkTypeButtons}>
-          {/* Flow Type Button */}
-          <button
-            className={`${styles.linkTypeButton} ${selectedLinkType === 'flow' ? styles.active : ''}`}
-            onClick={() => handleLinkTypeChange('flow')}
-          >
-            <div className={`${styles.linkPreview} ${styles.flowStyle}`}>
-              <div className={styles.flowLine} />
-              <div className={styles.flowArrow} />
-            </div>
-            <span className={styles.linkLabel}>Flow</span>
-          </button>
-          
-          {/* Link Type Button */}
-          <button
-            className={`${styles.linkTypeButton} ${selectedLinkType === 'link' ? styles.active : ''}`}
-            onClick={() => handleLinkTypeChange('link')}
-          >
-            <div className={`${styles.linkPreview} ${styles.linkStyle}`}>
-              <div className={styles.linkLine} />
-              <div className={styles.linkArrow} />
-            </div>
-            <span className={styles.linkLabel}>Link</span>
-          </button>
+          {LINK_CONFIGURATIONS.map((config) => (
+            <button
+              key={config.id}
+              className={`${styles.linkTypeButton} ${selectedLinkType === config.id ? styles.active : ''}`}
+              onClick={() => handleLinkTypeChange(config.id)}
+              title={config.ui.description}
+            >
+              <div className={`${styles.linkPreview} ${styles[config.ui.previewClassName]}`}>
+                <div className={styles[`${config.id}Line`]} />
+                <div className={styles[`${config.id}Arrow`]} />
+              </div>
+              <span className={styles.linkLabel}>{config.ui.label}</span>
+            </button>
+          ))}
         </div>
       </section>
 

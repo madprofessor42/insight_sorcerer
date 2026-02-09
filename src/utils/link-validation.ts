@@ -4,7 +4,7 @@
  */
 
 import * as go from 'gojs';
-import type { LinkType } from '../store/diagramSlice';
+import type { LinkType } from '../config/diagram-rules';
 import { 
   isSameLinkType,
   isValidLinkSource, 

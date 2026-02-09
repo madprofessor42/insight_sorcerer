@@ -1,5 +1,3 @@
-import type { LinkType } from '../store/diagramSlice';
-
 /**
  * Node types available in the diagram
  */
@@ -12,16 +10,50 @@ export type NodeType = 'Stock' | 'Variable' | 'Cloud';
 export type ManuallyCreatableNodeType = 'Stock' | 'Variable';
 
 /**
- * Default link type when category is not specified
+ * GoJS visual styles for a link
  */
-export const DEFAULT_LINK_TYPE: LinkType = 'link';
+export interface LinkVisualStyle {
+  /** Main stroke color */
+  stroke: string;
+  /** Stroke width */
+  strokeWidth: number;
+  /** Arrow scale */
+  arrowScale: number;
+  /** Width of invisible click area */
+  clickAreaWidth: number;
+  /** ToShortLength - shortens path to prevent interfering with arrowhead */
+  toShortLength: number;
+  /** FromShortLength - same for bidirectional arrows */
+  fromShortLength: number;
+}
 
 /**
- * Link validation rule
+ * UI metadata for displaying link type in sidebar
  */
-export interface LinkValidationRule {
-  /** Link type */
-  linkType: LinkType;
+export interface LinkUIMetadata {
+  /** Display label for UI */
+  label: string;
+  /** CSS class name for styling preview */
+  previewClassName: string;
+  /** Description (optional, for tooltips) */
+  description?: string;
+}
+
+/**
+ * Complete link configuration
+ * Single source of truth for ALL link type settings
+ */
+export interface LinkConfiguration {
+  /** Unique identifier for this link type */
+  id: string;
+  
+  // UI Metadata
+  ui: LinkUIMetadata;
+  
+  // Visual Styles
+  style: LinkVisualStyle;
+  
+  // Validation Rules
   /** Allowed source node types (empty array means all types allowed) */
   allowedFromNodes: NodeType[];
   /** Allowed target node types (empty array means all types allowed) */
@@ -37,73 +69,124 @@ export interface LinkValidationRule {
 }
 
 /**
- * Diagram validation configuration
- * This is the single source of truth for all link validation rules
+ * ALL LINK CONFIGURATIONS
+ * Single source of truth for everything about link types
+ * To add a new link type, just add a new entry here - no other files need to be changed!
  */
-export const LINK_VALIDATION_RULES: LinkValidationRule[] = [
+export const LINK_CONFIGURATIONS: LinkConfiguration[] = [
   {
-    linkType: 'flow',
+    id: 'link',
+    
+    ui: {
+      label: 'Link',
+      previewClassName: 'linkStyle',
+      description: 'Influence link - shows dependencies between elements'
+    },
+    
+    style: {
+      stroke: '#666',
+      strokeWidth: 2,
+      arrowScale: 1.3,
+      clickAreaWidth: 12,
+      toShortLength: 4,
+      fromShortLength: 4
+    },
+    
+    allowedFromNodes: [], // Can connect from any node type
+    allowedToNodes: [], // Can connect to any node type
+    canBeBidirectional: true, // Link can be bidirectional - single link with two arrows
+    canEndOnCanvas: false // Regular links must connect to nodes
+  },
+  {
+    id: 'flow',
+    
+    ui: {
+      label: 'Flow',
+      previewClassName: 'flowStyle',
+      description: 'Flow link - shows material/information flow between stocks'
+    },
+    
+    style: {
+      stroke: '#4A90E2',
+      strokeWidth: 6,
+      arrowScale: 2.0,
+      clickAreaWidth: 14,
+      toShortLength: 8,
+      fromShortLength: 8
+    },
+    
     allowedFromNodes: ['Stock', 'Cloud'], // Can connect from Stock or Cloud (Cloud can be source when reversing link)
     allowedToNodes: ['Stock', 'Cloud'], // Can connect TO Stock or Cloud (Cloud is auto-created when drawing to canvas)
     canBeBidirectional: false, // Flow cannot be bidirectional - creates 2 separate links
     canEndOnCanvas: true, // Flow can end on canvas (toNode: null) - auto-creates Cloud node at endpoint
     errorMessageFrom: 'Flow links can only be created FROM Stock or Cloud nodes',
     errorMessageTo: 'Flow links can only connect TO Stock or Cloud nodes'
-  },
-  {
-    linkType: 'link',
-    allowedFromNodes: [], // Can connect from any node type
-    allowedToNodes: [], // Can connect to any node type
-    canBeBidirectional: true, // Link can be bidirectional - single link with two arrows
-    canEndOnCanvas: false // Regular links must connect to nodes
   }
 ];
 
 /**
- * Get validation rule for a specific link type
+ * Generate LinkType from configurations
+ * This makes LinkType dynamic - add new type to LINK_CONFIGURATIONS and it's automatically available
  */
-export function getLinkValidationRule(linkType: LinkType): LinkValidationRule | undefined {
-  return LINK_VALIDATION_RULES.find(rule => rule.linkType === linkType);
+export type LinkType = typeof LINK_CONFIGURATIONS[number]['id'];
+
+/**
+ * Default link type when category is not specified
+ */
+export const DEFAULT_LINK_TYPE: LinkType = 'link';
+
+/**
+ * Get configuration for a specific link type
+ */
+export function getLinkConfiguration(linkType: LinkType): LinkConfiguration | undefined {
+  return LINK_CONFIGURATIONS.find(config => config.id === linkType);
+}
+
+/**
+ * Get all available link types (for UI, selectors, etc.)
+ */
+export function getAllLinkTypes(): LinkType[] {
+  return LINK_CONFIGURATIONS.map(config => config.id);
 }
 
 /**
  * Validate if a link can be created from a specific node type
  */
 export function isValidLinkSource(linkType: LinkType, fromNodeType: string): boolean {
-  const rule = getLinkValidationRule(linkType);
-  if (!rule) return true; // No rule = allow all
+  const config = getLinkConfiguration(linkType);
+  if (!config) return true; // No config = allow all
   
   // Empty array means all types are allowed
-  if (rule.allowedFromNodes.length === 0) return true;
+  if (config.allowedFromNodes.length === 0) return true;
   
-  return rule.allowedFromNodes.includes(fromNodeType as NodeType);
+  return config.allowedFromNodes.includes(fromNodeType as NodeType);
 }
 
 /**
  * Validate if a link can be created to a specific node type
  */
 export function isValidLinkTarget(linkType: LinkType, toNodeType: string): boolean {
-  const rule = getLinkValidationRule(linkType);
-  if (!rule) return true; // No rule = allow all
+  const config = getLinkConfiguration(linkType);
+  if (!config) return true; // No config = allow all
   
   // Empty array means all types are allowed
-  if (rule.allowedToNodes.length === 0) return true;
+  if (config.allowedToNodes.length === 0) return true;
   
-  return rule.allowedToNodes.includes(toNodeType as NodeType);
+  return config.allowedToNodes.includes(toNodeType as NodeType);
 }
 
 /**
  * Get error message for source node validation
  */
 export function getLinkValidationErrorFrom(linkType: LinkType): string {
-  const rule = getLinkValidationRule(linkType);
-  if (!rule) return 'Invalid link source';
+  const config = getLinkConfiguration(linkType);
+  if (!config) return 'Invalid link source';
   
-  if (rule.errorMessageFrom) return rule.errorMessageFrom;
+  if (config.errorMessageFrom) return config.errorMessageFrom;
   
   // Generate default message based on allowed nodes
-  if (rule.allowedFromNodes.length > 0) {
-    return `Links of type '${linkType}' can only be created from: ${rule.allowedFromNodes.join(', ')}`;
+  if (config.allowedFromNodes.length > 0) {
+    return `Links of type '${linkType}' can only be created from: ${config.allowedFromNodes.join(', ')}`;
   }
   
   return 'Invalid link source';
@@ -113,14 +196,14 @@ export function getLinkValidationErrorFrom(linkType: LinkType): string {
  * Get error message for target node validation
  */
 export function getLinkValidationErrorTo(linkType: LinkType): string {
-  const rule = getLinkValidationRule(linkType);
-  if (!rule) return 'Invalid link target';
+  const config = getLinkConfiguration(linkType);
+  if (!config) return 'Invalid link target';
   
-  if (rule.errorMessageTo) return rule.errorMessageTo;
+  if (config.errorMessageTo) return config.errorMessageTo;
   
   // Generate default message based on allowed nodes
-  if (rule.allowedToNodes.length > 0) {
-    return `Links of type '${linkType}' can only connect to: ${rule.allowedToNodes.join(', ')}`;
+  if (config.allowedToNodes.length > 0) {
+    return `Links of type '${linkType}' can only connect to: ${config.allowedToNodes.join(', ')}`;
   }
   
   return 'Invalid link target';
@@ -130,10 +213,10 @@ export function getLinkValidationErrorTo(linkType: LinkType): string {
  * Check if a link type can be bidirectional
  */
 export function canLinkBeBidirectional(linkType: LinkType): boolean {
-  const rule = getLinkValidationRule(linkType);
-  if (!rule) return true; // Default to true if no rule exists
+  const config = getLinkConfiguration(linkType);
+  if (!config) return true; // Default to true if no config exists
   
-  return rule.canBeBidirectional;
+  return config.canBeBidirectional;
 }
 
 /**
@@ -155,8 +238,8 @@ export function isSameLinkType(type1: string | undefined, type2: string | undefi
  * When true, a Cloud node will be automatically created at the endpoint
  */
 export function canLinkEndOnCanvas(linkType: LinkType): boolean {
-  const rule = getLinkValidationRule(linkType);
-  if (!rule) return false; // Default to false if no rule exists
+  const config = getLinkConfiguration(linkType);
+  if (!config) return false; // Default to false if no config exists
   
-  return rule.canEndOnCanvas;
+  return config.canEndOnCanvas;
 }

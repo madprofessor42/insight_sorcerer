@@ -1,8 +1,8 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import * as go from 'gojs';
-
-export type LinkType = 'link' | 'flow';
+import type { LinkType } from '../config/diagram-rules';
+import { DEFAULT_LINK_TYPE } from '../config/diagram-rules';
 
 // Serializable edge data for Redux (no GoJS objects like List2)
 export interface SelectedEdgeData {
@@ -27,7 +27,7 @@ const initialState: DiagramState = {
   nodeDataArray: [],
   linkDataArray: [],
   modelData: {},
-  selectedLinkType: 'link',
+  selectedLinkType: DEFAULT_LINK_TYPE,
   selectedEdge: null,
 };
 

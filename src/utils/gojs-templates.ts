@@ -1,4 +1,5 @@
 import * as go from 'gojs';
+import { LINK_CONFIGURATIONS } from '../config/diagram-rules';
 
 /**
  * Define custom cloud shape for Cloud nodes
@@ -283,138 +284,113 @@ export function createDefaultNodeTemplate(): go.Node {
 }
 
 /**
- * Create link template map with different link types
+ * Create link template map dynamically from configuration
+ * All link types are generated from LINK_CONFIGURATIONS - fully dynamic!
  */
 export function createLinkTemplateMap(): go.Map<string, go.Link> {
   const $ = go.GraphObject.make;
   const linkTemplateMap = new go.Map<string, go.Link>();
 
-  // Regular link template - Bezier curves, reshapable
-  linkTemplateMap.add('link',
-    $(go.Link,
-      { 
-        routing: go.Link.Normal, 
-        curve: go.Link.Bezier,
-        curviness: 0, // Default to straight line (not NaN which auto-calculates)
-        reshapable: true, // Allow user to reshape by dragging handles
-        adjusting: go.Link.Scale, // Scale intermediate points when nodes move (better than End)
-        toShortLength: 4, // Shortens path to prevent interfering with arrowhead
-        fromShortLength: 4, // Same for bidirectional arrows
-        cursor: 'pointer', // Show pointer cursor on hover
-      },
-      new go.Binding('points').makeTwoWay(), // Save all route points to model (critical for preserving shape!)
-      new go.Binding('curviness').makeTwoWay(), // Save curviness to model
-      new go.Binding('bidirectional').makeTwoWay(), // Save bidirectional state to model
-      // Invisible thick shape for larger click area
-      $(go.Shape, { isPanelMain: true, stroke: 'transparent', strokeWidth: 12 }),
-      // Visible shape
-      $(go.Shape, { isPanelMain: true, strokeWidth: 2, stroke: '#666' }),
-      // From arrow (shown only when bidirectional)
-      $(go.Shape, { 
-        fromArrow: 'BackwardTriangle', 
-        stroke: '#666', 
-        fill: '#666', 
-        scale: 1.3,
-        strokeWidth: 0, // No outline, just fill
-        visible: false 
-      },
-        new go.Binding('visible', 'bidirectional', (b) => b === true)),
-      // To arrow (always shown now, as links always connect to nodes)
-      $(go.Shape, { 
-        toArrow: 'Standard', 
-        stroke: '#666', 
-        fill: '#666',
-        scale: 1.3,
-        strokeWidth: 0 // No outline, just fill
-      })
-    )
-  );
-
-  // Flow link template (thicker, blue, Bezier curves, reshapable)
-  linkTemplateMap.add('flow',
-    $(go.Link,
-      { 
-        routing: go.Link.Normal, 
-        curve: go.Link.Bezier,
-        curviness: 0, // Default to straight line (not NaN which auto-calculates)
-        reshapable: true, // Allow user to reshape by dragging handles
-        adjusting: go.Link.Scale, // Scale intermediate points when nodes move (better than End)
-        toShortLength: 8, // Shortens path to prevent interfering with arrowhead
-        fromShortLength: 8, // Same for bidirectional arrows
-        cursor: 'pointer', // Show pointer cursor on hover
-      },
-      new go.Binding('points').makeTwoWay(), // Save all route points to model (critical for preserving shape!)
-      new go.Binding('curviness').makeTwoWay(), // Save curviness to model
-      new go.Binding('bidirectional').makeTwoWay(), // Save bidirectional state to model
-      // Invisible thick shape for larger click area
-      $(go.Shape, { isPanelMain: true, stroke: 'transparent', strokeWidth: 14 }),
-      // Visible shape (thicker blue flow)
-      $(go.Shape, { isPanelMain: true, strokeWidth: 6, stroke: '#4A90E2' }),
-      // From arrow (shown only when bidirectional)
-      $(go.Shape, { 
-        fromArrow: 'BackwardTriangle', 
-        stroke: '#4A90E2', 
-        fill: '#4A90E2', 
-        scale: 2.0,
-        strokeWidth: 0, // No outline, just fill
-        visible: false 
-      },
-        new go.Binding('visible', 'bidirectional', (b) => b === true)),
-      // To arrow (always shown now, as links always connect to nodes)
-      $(go.Shape, { 
-        toArrow: 'Standard', 
-        stroke: '#4A90E2', 
-        fill: '#4A90E2', 
-        scale: 2.0,
-        strokeWidth: 0 // No outline, just fill
-      })
-    )
-  );
+  // Generate template for each configured link type
+  LINK_CONFIGURATIONS.forEach(config => {
+    const { id, style } = config;
+    
+    linkTemplateMap.add(id,
+      $(go.Link,
+        { 
+          routing: go.Link.Normal, 
+          curve: go.Link.Bezier,
+          curviness: 0, // Default to straight line (not NaN which auto-calculates)
+          reshapable: true, // Allow user to reshape by dragging handles
+          adjusting: go.Link.Scale, // Scale intermediate points when nodes move (better than End)
+          toShortLength: style.toShortLength,
+          fromShortLength: style.fromShortLength,
+          cursor: 'pointer', // Show pointer cursor on hover
+        },
+        new go.Binding('points').makeTwoWay(), // Save all route points to model (critical for preserving shape!)
+        new go.Binding('curviness').makeTwoWay(), // Save curviness to model
+        new go.Binding('bidirectional').makeTwoWay(), // Save bidirectional state to model
+        // Invisible thick shape for larger click area
+        $(go.Shape, { isPanelMain: true, stroke: 'transparent', strokeWidth: style.clickAreaWidth }),
+        // Visible shape
+        $(go.Shape, { isPanelMain: true, strokeWidth: style.strokeWidth, stroke: style.stroke }),
+        // From arrow (shown only when bidirectional)
+        $(go.Shape, { 
+          fromArrow: 'BackwardTriangle', 
+          stroke: style.stroke, 
+          fill: style.stroke, 
+          scale: style.arrowScale,
+          strokeWidth: 0, // No outline, just fill
+          visible: false 
+        },
+          new go.Binding('visible', 'bidirectional', (b) => b === true)),
+        // To arrow (always shown)
+        $(go.Shape, { 
+          toArrow: 'Standard', 
+          stroke: style.stroke, 
+          fill: style.stroke,
+          scale: style.arrowScale,
+          strokeWidth: 0 // No outline, just fill
+        })
+      )
+    );
+  });
 
   return linkTemplateMap;
 }
 
 /**
- * Create default link template (fallback) - Bezier curves, reshapable
+ * Create default link template (fallback) - uses DEFAULT_LINK_TYPE configuration
  */
 export function createDefaultLinkTemplate(): go.Link {
   const $ = go.GraphObject.make;
+  
+  // Get default configuration
+  const defaultConfig = LINK_CONFIGURATIONS.find(c => c.id === 'link');
+  const style = defaultConfig?.style || {
+    stroke: '#666',
+    strokeWidth: 2,
+    arrowScale: 1.3,
+    clickAreaWidth: 12,
+    toShortLength: 4,
+    fromShortLength: 4
+  };
   
   return $(go.Link,
     { 
       routing: go.Link.Normal, 
       curve: go.Link.Bezier,
-      curviness: 0, // Default to straight line (not NaN which auto-calculates)
-      reshapable: true, // Allow user to reshape by dragging handles
-      adjusting: go.Link.Scale, // Scale intermediate points when nodes move (better than End)
-      cursor: 'pointer', // Show pointer cursor on hover
-      toShortLength: 4, // Shortens path to prevent interfering with arrowhead
-      fromShortLength: 4, // Same for bidirectional arrows
+      curviness: 0,
+      reshapable: true,
+      adjusting: go.Link.Scale,
+      cursor: 'pointer',
+      toShortLength: style.toShortLength,
+      fromShortLength: style.fromShortLength,
     },
-    new go.Binding('points').makeTwoWay(), // Save all route points to model (critical for preserving shape!)
-    new go.Binding('curviness').makeTwoWay(), // Save curviness to model
-    new go.Binding('bidirectional').makeTwoWay(), // Save bidirectional state to model
+    new go.Binding('points').makeTwoWay(),
+    new go.Binding('curviness').makeTwoWay(),
+    new go.Binding('bidirectional').makeTwoWay(),
     // Invisible thick shape for larger click area
-    $(go.Shape, { isPanelMain: true, stroke: 'transparent', strokeWidth: 12 }),
+    $(go.Shape, { isPanelMain: true, stroke: 'transparent', strokeWidth: style.clickAreaWidth }),
     // Visible shape
-    $(go.Shape, { isPanelMain: true, strokeWidth: 2, stroke: '#666' }),
+    $(go.Shape, { isPanelMain: true, strokeWidth: style.strokeWidth, stroke: style.stroke }),
     // From arrow (shown only when bidirectional)
     $(go.Shape, { 
       fromArrow: 'BackwardTriangle', 
-      stroke: '#666', 
-      fill: '#666', 
-      scale: 1.3,
-      strokeWidth: 0, // No outline, just fill
+      stroke: style.stroke, 
+      fill: style.stroke, 
+      scale: style.arrowScale,
+      strokeWidth: 0,
       visible: false 
     },
       new go.Binding('visible', 'bidirectional', (b) => b === true)),
-    // To arrow (always shown now, as links always connect to nodes)
+    // To arrow (always shown)
     $(go.Shape, { 
       toArrow: 'Standard', 
-      stroke: '#666', 
-      fill: '#666',
-      scale: 1.3,
-      strokeWidth: 0 // No outline, just fill
+      stroke: style.stroke, 
+      fill: style.stroke,
+      scale: style.arrowScale,
+      strokeWidth: 0
     })
   );
 }

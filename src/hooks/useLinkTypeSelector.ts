@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useAppDispatch } from '../store/hooks';
 import { setLinkType } from '../store/diagramSlice';
-import type { LinkType } from '../store/diagramSlice';
+import type { LinkType } from '../config/diagram-rules';
 
 /**
  * Hook to handle link type selection

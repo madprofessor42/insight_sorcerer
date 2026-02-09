@@ -156,28 +156,17 @@ export function createNodeTemplateMap(): go.Map<string, go.Node> {
 
   // Cloud node template - automatically created when linking to canvas
   // This node CANNOT be created manually through sidebar
+  // Cloud nodes don't have UI handlers for creating links, but can be source/target when reversing existing links
   nodeTemplateMap.add('Cloud',
     $(go.Node, 'Spot',
       { 
         locationSpot: go.Spot.Center,
         selectable: true,
-        deletable: true,
-        // Show/hide connection handler on hover
-        mouseEnter: (_e: go.InputEvent, thisObj: go.GraphObject) => {
-          if (thisObj instanceof go.Node) {
-            const port = thisObj.findObject('CENTER_PORT');
-            if (port) port.opacity = 1;
-          }
-        },
-        mouseLeave: (_e: go.InputEvent, thisObj: go.GraphObject) => {
-          if (thisObj instanceof go.Node) {
-            const port = thisObj.findObject('CENTER_PORT');
-            if (port) port.opacity = 0;
-          }
-        }
+        deletable: true
+        // No visual linking handlers - links can only be reversed to/from Cloud, not created manually
       },
       new go.Binding('location', 'loc', go.Point.parse).makeTwoWay(go.Point.stringify),
-      // Cloud shape - outer visual element
+      // Cloud shape - outer visual element (can receive connections programmatically)
       $(go.Shape, 'FlowCloud', {
         name: 'OUTER_SHAPE',
         fill: 'white',
@@ -187,6 +176,9 @@ export function createNodeTemplateMap(): go.Map<string, go.Node> {
         height: 64,
         cursor: 'move',
         portId: 'outer',
+        // Can accept connections but not create them
+        fromLinkable: false,
+        toLinkable: false,
         fromSpot: go.Spot.AllSides,
         toSpot: go.Spot.AllSides
       }),
@@ -197,22 +189,8 @@ export function createNodeTemplateMap(): go.Map<string, go.Node> {
         font: 'bold 12px sans-serif',
         editable: true,
         text: '' // Empty by default
-      }, new go.Binding('text', 'name').makeTwoWay()),
-      // Center circle - clickable port that delegates to outer shape
-      $(go.Shape, 'Circle', {
-        name: 'CENTER_PORT',
-        alignment: go.Spot.Center,
-        width: 20,
-        height: 20,
-        fill: '#4A90E2',
-        stroke: '#2E5C8A',
-        strokeWidth: 2,
-        cursor: 'pointer',
-        portId: 'center',
-        fromLinkable: true,
-        toLinkable: true,
-        opacity: 0 // Invisible by default, shown on hover (but still active for linking!)
-      })
+      }, new go.Binding('text', 'name').makeTwoWay())
+      // No CENTER_PORT - Cloud is a passive endpoint
     )
   );
 

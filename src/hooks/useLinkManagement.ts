@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import * as go from 'gojs';
 import type { ReactDiagram } from 'gojs-react';
 import type { LinkType } from '../store/diagramSlice';
-import { canLinkBeBidirectional, canLinkEndOnCanvas, normalizeLinkType } from '../config/diagram-rules';
+import { canLinkBeBidirectional, canLinkEndOnCanvas, normalizeLinkType, isValidLinkTarget } from '../config/diagram-rules';
 import { hasDuplicateLink, findReverseLink, createLinkValidation, createRelinkValidation } from '../utils/link-validation';
 
 /**
@@ -58,8 +58,17 @@ export function useLinkManagement(
       console.log(`🔗 LinkDrawn: type=${linkType}, from=${fromKey}, to=${toKey}, points=${link.points.count}`);
       
       // Step 1.5: If link ends on canvas, create a Cloud node at endpoint
-      // Only for link types that allow ending on canvas
+      // Only for link types that allow ending on canvas AND connecting to Cloud nodes
       if (toKey === undefined && canLinkEndOnCanvas(linkType)) {
+        // CRITICAL: Check if this link type can connect to Cloud nodes
+        // If not, the link should not be created at all
+        if (!isValidLinkTarget(linkType, 'Cloud')) {
+          console.warn(`⚠️ Links of type '${linkType}' cannot connect to Cloud nodes - removing link`);
+          // Remove the link since it cannot connect to Cloud
+          model.removeLinkData(link.data);
+          return;
+        }
+        
         // Get endpoint coordinates from diagram.lastInput (where user released mouse)
         // We can't use link.points because GoJS doesn't store points for unconnected links
         const endPoint = diagram.lastInput.documentPoint.copy();

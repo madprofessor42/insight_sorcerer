@@ -122,12 +122,13 @@ export function canRelinkToNodes(
 
 /**
  * Check if a link can be reversed without creating a duplicate
+ * and without violating validation rules
  * @param model - The GoJS GraphLinksModel
  * @param fromKey - Current source node key
  * @param toKey - Current target node key
  * @param linkType - Type of the link
  * @param linkKey - Key of the link to reverse
- * @returns true if link can be reversed, false if reverse would create duplicate
+ * @returns true if link can be reversed, false if reverse would create duplicate or violate rules
  */
 export function canReverseLink(
   model: go.GraphLinksModel,
@@ -138,7 +139,30 @@ export function canReverseLink(
 ): boolean {
   // Check if reversing (toKey -> fromKey) would create a duplicate
   // by checking if a link already exists from toKey to fromKey (excluding current link)
-  return !hasDuplicateLink(model, toKey, fromKey, linkType, linkKey);
+  if (hasDuplicateLink(model, toKey, fromKey, linkType, linkKey)) {
+    return false;
+  }
+  
+  // Check if reversed direction would violate validation rules
+  // After reverse: toNode becomes source, fromNode becomes target
+  const fromNodeData = model.findNodeDataForKey(fromKey);
+  const toNodeData = model.findNodeDataForKey(toKey);
+  
+  if (!fromNodeData || !toNodeData) return false;
+  
+  const normalizedLinkType = linkType || 'link';
+  
+  // Validate that toNode can be a source (after reverse)
+  if (!isValidLinkSource(normalizedLinkType as LinkType, toNodeData.category)) {
+    return false;
+  }
+  
+  // Validate that fromNode can be a target (after reverse)
+  if (!isValidLinkTarget(normalizedLinkType as LinkType, fromNodeData.category)) {
+    return false;
+  }
+  
+  return true;
 }
 
 // ============================================================================
@@ -175,7 +199,15 @@ export function createLinkValidation(linkType: LinkType) {
         console.warn(`⚠️ Links of type '${linkType}' cannot end on canvas`);
         return false;
       }
-      // Source validation already passed, so link to canvas is allowed
+      
+      // CRITICAL: Check if this link type can connect to Cloud nodes
+      // (Cloud node will be auto-created when link ends on canvas)
+      if (!isValidLinkTarget(linkType, 'Cloud')) {
+        console.warn(`⚠️ ${getLinkValidationErrorTo(linkType)} (cannot create Cloud node)`);
+        return false;
+      }
+      
+      // Source validation passed and Cloud is allowed as target
       return true;
     }
     
@@ -231,7 +263,15 @@ export function createRelinkValidation() {
         console.warn(`⚠️ Links of type '${linkType}' cannot end on canvas`);
         return false;
       }
-      // Source validation already passed, so relink to canvas is allowed
+      
+      // CRITICAL: Check if this link type can connect to Cloud nodes
+      // (Cloud node will be auto-created when relink ends on canvas)
+      if (!isValidLinkTarget(linkType, 'Cloud')) {
+        console.warn(`⚠️ ${getLinkValidationErrorTo(linkType)} (cannot create Cloud node)`);
+        return false;
+      }
+      
+      // Source validation passed and Cloud is allowed as target
       return true;
     }
     

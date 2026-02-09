@@ -43,8 +43,8 @@ export interface LinkValidationRule {
 export const LINK_VALIDATION_RULES: LinkValidationRule[] = [
   {
     linkType: 'flow',
-    allowedFromNodes: ['Stock', 'Cloud'], // Can connect from Stock or Cloud (Cloud represents external source/sink)
-    allowedToNodes: ['Stock', 'Cloud'], // Can connect to Stock or Cloud (Cloud is auto-created when drawing to canvas)
+    allowedFromNodes: ['Stock', 'Cloud'], // Can connect from Stock or Cloud (Cloud can be source when reversing link)
+    allowedToNodes: ['Stock', 'Cloud'], // Can connect TO Stock or Cloud (Cloud is auto-created when drawing to canvas)
     canBeBidirectional: false, // Flow cannot be bidirectional - creates 2 separate links
     canEndOnCanvas: true, // Flow can end on canvas (toNode: null) - auto-creates Cloud node at endpoint
     errorMessageFrom: 'Flow links can only be created FROM Stock or Cloud nodes',

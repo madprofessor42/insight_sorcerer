@@ -8,7 +8,7 @@ import styles from './EdgePanel.module.css';
 export function EdgePanel() {
   const selectedEdge = useAppSelector((state) => state.diagram.selectedEdge);
   const { resetCurve, reverseDirection, toggleBidirectional } = useEdgeOperations();
-  const { canReverse } = useEdgeValidation(selectedEdge);
+  const { canReverse, reverseReason } = useEdgeValidation(selectedEdge);
   const [bidirectionalActive, setBidirectionalActive] = useState(false);
 
   // Update bidirectional state when selected edge changes
@@ -59,11 +59,7 @@ export function EdgePanel() {
           className={styles.edgeActionButton}
           onClick={() => reverseDirection(selectedEdge)}
           disabled={!canReverse}
-          title={
-            canReverse
-              ? "Развернуть направление связи"
-              : "Разворот создаст дубликат связи"
-          }
+          title={reverseReason}
         >
           <span className={styles.edgeActionIcon}>↔️</span>
           <span className={styles.edgeActionLabel}>Развернуть</span>

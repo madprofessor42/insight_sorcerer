@@ -2,13 +2,18 @@ import { useCallback } from 'react';
 import * as go from 'gojs';
 import type { SelectedEdgeData } from '../../store/diagramSlice';
 import { withLink } from '../../utils/diagram-access';
-import { validateBidirectional } from '../../utils/link-validation';
+import { validateBidirectional, validateReverse } from '../../utils/link-validation';
 
 /**
  * Hook for edge operations (reset curve, reverse, bidirectional)
  */
 export function useEdgeOperations() {
 
+  /**
+   * Reset link curve to default straight line
+   * Note: No validation needed - this is a pure UI operation that doesn't
+   * change the graph structure, only the visual representation of the link
+   */
   const resetCurve = useCallback((edgeData: SelectedEdgeData) => {
     withLink(edgeData.key, (diagram, _model, _linkData, link) => {
       diagram.startTransaction('reset curve');
@@ -36,7 +41,21 @@ export function useEdgeOperations() {
   }, []);
 
   const reverseDirection = useCallback((edgeData: SelectedEdgeData) => {
-    withLink(edgeData.key, (diagram, _model, _linkData, link) => {
+    withLink(edgeData.key, (diagram, model, _linkData, link) => {
+      // Validate if this link can be reversed
+      const validation = validateReverse(
+        model, 
+        link.data.from, 
+        link.data.to, 
+        link.data.category, 
+        link.data.key
+      );
+      
+      if (!validation.isValid) {
+        console.warn(`⚠️  ${validation.reason}`);
+        return;
+      }
+
       diagram.startTransaction('reverse link');
       
       // Swap from and to

@@ -7,10 +7,13 @@
 import { useState, useEffect } from 'react';
 import { useDiagramPersistence } from '../../../hooks/diagram/useDiagramPersistence';
 import { useToast } from '../../Toast';
+import { useAppDispatch } from '../../../store/hooks';
+import { clearDiagram } from '../../../store/diagramSlice';
 import type { DiagramMetadata } from '../../../utils/database';
 import styles from './DiagramStorage.module.css';
 
 export function DiagramStorage() {
+  const dispatch = useAppDispatch();
   const {
     saveDiagram,
     loadDiagram,
@@ -23,6 +26,8 @@ export function DiagramStorage() {
 
   const [diagramName, setDiagramName] = useState('');
   const [savedDiagrams, setSavedDiagrams] = useState<DiagramMetadata[]>([]);
+  const [currentDiagramId, setCurrentDiagramId] = useState<string | null>(null);
+  const [currentDiagramName, setCurrentDiagramName] = useState<string>('');
 
   // Load saved diagrams on mount
   useEffect(() => {
@@ -38,14 +43,33 @@ export function DiagramStorage() {
     }
   };
 
+  // Сохранить текущую диаграмму (перезапись)
   const handleSave = async () => {
+    if (!currentDiagramId || !currentDiagramName) {
+      return;
+    }
+
+    try {
+      await saveDiagram(currentDiagramName, currentDiagramId);
+      toast.showSuccess(`Диаграмма "${currentDiagramName}" обновлена!`);
+      await loadSavedDiagrams();
+    } catch (err) {
+      console.error('Failed to save diagram:', err);
+      toast.showError('Не удалось сохранить диаграмму');
+    }
+  };
+
+  // Сохранить как новую диаграмму
+  const handleSaveAs = async () => {
     if (!diagramName.trim()) {
       return;
     }
 
     try {
-      await saveDiagram(diagramName.trim());
-      toast.showSuccess('Диаграмма успешно сохранена!');
+      const newId = await saveDiagram(diagramName.trim());
+      setCurrentDiagramId(newId);
+      setCurrentDiagramName(diagramName.trim());
+      toast.showSuccess(`Диаграмма "${diagramName.trim()}" создана!`);
       setDiagramName('');
       await loadSavedDiagrams();
     } catch (err) {
@@ -54,10 +78,12 @@ export function DiagramStorage() {
     }
   };
 
-  const handleLoad = async (id: string) => {
+  const handleLoad = async (id: string, name: string) => {
     try {
       await loadDiagram(id);
-      toast.showSuccess('Диаграмма успешно загружена!');
+      setCurrentDiagramId(id);
+      setCurrentDiagramName(name);
+      toast.showSuccess(`Диаграмма "${name}" загружена!`);
     } catch (err) {
       console.error('Failed to load diagram:', err);
       toast.showError('Не удалось загрузить диаграмму');
@@ -73,11 +99,26 @@ export function DiagramStorage() {
 
     try {
       await deleteDiagram(id);
+      // Если удаляем текущую диаграмму, сбрасываем состояние
+      if (id === currentDiagramId) {
+        setCurrentDiagramId(null);
+        setCurrentDiagramName('');
+      }
       toast.showSuccess('Диаграмма удалена');
       await loadSavedDiagrams();
     } catch (err) {
       console.error('Failed to delete diagram:', err);
       toast.showError('Не удалось удалить диаграмму');
+    }
+  };
+
+  // Создать новую диаграмму (очистить canvas)
+  const handleNew = () => {
+    if (confirm('Создать новую диаграмму? Несохранённые изменения будут потеряны.')) {
+      dispatch(clearDiagram());
+      setCurrentDiagramId(null);
+      setCurrentDiagramName('');
+      toast.showInfo('Создана новая диаграмма');
     }
   };
 
@@ -90,12 +131,6 @@ export function DiagramStorage() {
       hour: '2-digit',
       minute: '2-digit',
     });
-  };
-
-  const handleKeyPress = (event: React.KeyboardEvent) => {
-    if (event.key === 'Enter' && diagramName.trim()) {
-      handleSave();
-    }
   };
 
   const [isExpanded, setIsExpanded] = useState(false);
@@ -115,25 +150,88 @@ export function DiagramStorage() {
 
       {isExpanded && (
         <div className={styles.content}>
+          {/* New diagram button */}
+          <button
+            className={`${styles.button} ${styles.newButton}`}
+            onClick={handleNew}
+            disabled={status === 'saving'}
+            title="Создать новую диаграмму"
+          >
+            ➕ Новая диаграмма
+          </button>
+
+          <div className={styles.divider} />
+
+          {/* Current diagram info */}
+          {currentDiagramId && (
+            <div className={styles.currentDiagram}>
+              <div className={styles.currentDiagramLabel}>Текущая диаграмма:</div>
+              <div className={styles.currentDiagramName}>{currentDiagramName}</div>
+            </div>
+          )}
 
           {/* Save section */}
           <div className={styles.saveSection}>
-            <input
-              type="text"
-              className={styles.input}
-              placeholder="Название диаграммы..."
-              value={diagramName}
-              onChange={(e) => setDiagramName(e.target.value)}
-              onKeyPress={handleKeyPress}
-              disabled={status === 'saving'}
-            />
-            <button
-              className={`${styles.button} ${styles.saveButton}`}
-              onClick={handleSave}
-              disabled={!diagramName.trim() || status === 'saving'}
-            >
-              {status === 'saving' ? 'Сохранение...' : 'Сохранить'}
-            </button>
+            {currentDiagramId ? (
+              <>
+                <button
+                  className={`${styles.button} ${styles.saveButton}`}
+                  onClick={handleSave}
+                  disabled={status === 'saving'}
+                  title="Перезаписать текущую диаграмму"
+                >
+                  {status === 'saving' ? 'Сохранение...' : '💾 Сохранить'}
+                </button>
+                
+                <input
+                  type="text"
+                  className={styles.input}
+                  placeholder="Сохранить как..."
+                  value={diagramName}
+                  onChange={(e) => setDiagramName(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && diagramName.trim()) {
+                      handleSaveAs();
+                    }
+                  }}
+                  disabled={status === 'saving'}
+                />
+                
+                <button
+                  className={`${styles.button} ${styles.saveAsButton}`}
+                  onClick={handleSaveAs}
+                  disabled={!diagramName.trim() || status === 'saving'}
+                  title="Сохранить как новую диаграмму"
+                >
+                  📝 Сохранить как
+                </button>
+              </>
+            ) : (
+              <>
+                <input
+                  type="text"
+                  className={styles.input}
+                  placeholder="Название диаграммы..."
+                  value={diagramName}
+                  onChange={(e) => setDiagramName(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && diagramName.trim()) {
+                      handleSaveAs();
+                    }
+                  }}
+                  disabled={status === 'saving'}
+                />
+                
+                <button
+                  className={`${styles.button} ${styles.saveButton}`}
+                  onClick={handleSaveAs}
+                  disabled={!diagramName.trim() || status === 'saving'}
+                  title="Сохранить диаграмму"
+                >
+                  {status === 'saving' ? 'Сохранение...' : '💾 Сохранить'}
+                </button>
+              </>
+            )}
           </div>
 
           <div className={styles.divider} />
@@ -159,8 +257,8 @@ export function DiagramStorage() {
                 {savedDiagrams.map((diagram) => (
                   <div
                     key={diagram.id}
-                    className={styles.diagramItem}
-                    onClick={() => handleLoad(diagram.id)}
+                    className={`${styles.diagramItem} ${diagram.id === currentDiagramId ? styles.diagramItemActive : ''}`}
+                    onClick={() => handleLoad(diagram.id, diagram.name)}
                     title="Нажмите, чтобы загрузить"
                   >
                     <div className={styles.diagramInfo}>

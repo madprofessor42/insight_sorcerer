@@ -45,6 +45,30 @@
   gap: var(--spacing-md);
 }
 
+.currentDiagram {
+  padding: var(--spacing-md);
+  background: var(--dark-bg-tertiary);
+  border-radius: var(--border-radius-md);
+  border: var(--input-border-width) solid var(--primary-color);
+}
+
+.currentDiagramLabel {
+  font-size: var(--font-size-xs);
+  color: var(--dark-text-secondary);
+  margin-bottom: var(--spacing-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.currentDiagramName {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--primary-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .saveSection {
   display: flex;
   flex-direction: column;
@@ -121,6 +145,64 @@
   transform: none;
 }
 
+.saveAsButton {
+  background: var(--secondary-color);
+  border-color: var(--secondary-color);
+  color: var(--text-on-primary);
+}
+
+.saveAsButton:hover:not(:disabled) {
+  background: #2e9d60;
+  border-color: #2e9d60;
+  transform: translateY(-1px);
+}
+
+.saveAsButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.saveAsButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--dark-bg-disabled);
+  border-color: var(--dark-border-disabled);
+  color: var(--dark-text-tertiary);
+}
+
+.saveAsButton:disabled:hover {
+  transform: none;
+}
+
+.newButton {
+  background: transparent;
+  border-color: var(--dark-border-secondary);
+  color: var(--dark-text-primary);
+  font-weight: var(--font-weight-normal);
+}
+
+.newButton:hover:not(:disabled) {
+  background: var(--dark-bg-tertiary);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  transform: translateY(-1px);
+}
+
+.newButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.newButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.newButton:disabled:hover {
+  transform: none;
+  background: transparent;
+  border-color: var(--dark-border-secondary);
+  color: var(--dark-text-primary);
+}
+
 .divider {
   height: var(--input-border-width);
   background-color: var(--dark-border-primary);
@@ -184,6 +266,15 @@
 
 .diagramItem:active {
   transform: translateY(0);
+}
+
+.diagramItemActive {
+  border-color: var(--primary-color) !important;
+  background: rgba(74, 144, 226, 0.15) !important;
+}
+
+.diagramItemActive .diagramName {
+  color: var(--primary-color);
 }
 
 .diagramInfo {

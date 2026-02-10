@@ -9,16 +9,18 @@ import { CustomLinkingTool, CustomRelinkingTool } from '../extensions';
  * Initialize and configure a GoJS diagram
  */
 export function initializeDiagram(): go.Diagram {
-  const $ = go.GraphObject.make;
-  
-  const diagram = $(go.Diagram, {
+  // Using modern GoJS 2.2+ syntax without go.GraphObject.make
+  const diagram = new go.Diagram({
     'undoManager.isEnabled': true,
     'grid.visible': true,
     'grid.gridCellSize': new go.Size(20, 20),
+    // Enable infinite scrolling - allows panning without limits
+    // This fixes the issue where canvas stops moving when nodes reach viewport edge
+    scrollMode: go.ScrollMode.Infinite,
     // Initialize custom tools (proper GoJS extension pattern)
     // Enable unconnected links (links ending on canvas) - allows creating Cloud nodes by drawing links to empty space
-    linkingTool: $(CustomLinkingTool, { isUnconnectedLinkValid: true }),
-    relinkingTool: $(CustomRelinkingTool, { isUnconnectedLinkValid: true }),
+    linkingTool: new CustomLinkingTool({ isUnconnectedLinkValid: true }),
+    relinkingTool: new CustomRelinkingTool({ isUnconnectedLinkValid: true }),
     model: new go.GraphLinksModel({
       linkKeyProperty: 'key',
       nodeCategoryProperty: 'category',
@@ -31,6 +33,14 @@ export function initializeDiagram(): go.Diagram {
       // GoJS will ensure uniqueness within the model
     })
   });
+
+  // Configure DragSelectingTool for Shift + drag selection
+  // DragSelectingTool is built-in and allows selecting multiple elements by dragging a box
+  // - delay: time to wait before starting drag selection (default: 175ms)
+  //   This allows quick drag = panning, delayed drag = box selection
+  // - isPartialInclusion: true = select elements that are partially in the box
+  diagram.toolManager.dragSelectingTool.delay = 175;
+  diagram.toolManager.dragSelectingTool.isPartialInclusion = true;
 
   // Set up node and link templates from configuration
   // All node and link types are defined in NODE_CONFIGURATIONS and LINK_CONFIGURATIONS

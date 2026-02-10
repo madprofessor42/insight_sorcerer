@@ -1,0 +1,23 @@
+.overview-component {
+  width: 250px;
+  height: 180px;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #4a5f7f;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Hide GoJS license watermark in overview */
+.overview-component > div > div[style*="position: absolute"] {
+  display: none !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .overview-component {
+    width: 100%;
+    height: 120px;
+  }
+}
+

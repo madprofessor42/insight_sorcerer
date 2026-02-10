@@ -1,6 +1,6 @@
 import * as go from 'gojs';
 import { ReactDiagram } from 'gojs-react';
-import { useRef } from 'react';
+import { useRef, forwardRef, useImperativeHandle } from 'react';
 import type { LinkType } from '../../config/diagram-rules';
 import { initializeDiagram } from '../../utils/gojs-config';
 import { useDiagramEvents } from '../../hooks/diagram/useDiagramEvents';
@@ -14,8 +14,17 @@ interface DiagramProps {
   onModelChange: (e: go.IncrementalData, diagram: go.Diagram | null) => void;
 }
 
-export function Diagram(props: DiagramProps) {
+export interface DiagramHandle {
+  getDiagram: () => go.Diagram | null;
+}
+
+export const Diagram = forwardRef<DiagramHandle, DiagramProps>((props, ref) => {
   const diagramRef = useRef<ReactDiagram>(null);
+  
+  // Expose getDiagram method to parent components
+  useImperativeHandle(ref, () => ({
+    getDiagram: () => diagramRef.current?.getDiagram() || null,
+  }));
   
   // Get diagram data from Redux (GoJS best practice: pass data to ReactDiagram)
   const { nodeDataArray, linkDataArray, modelData, skipsDiagramUpdate } = useAppSelector(
@@ -52,4 +61,6 @@ export function Diagram(props: DiagramProps) {
       skipsDiagramUpdate={skipsDiagramUpdate}
     />
   );
-}
+});
+
+Diagram.displayName = 'Diagram';

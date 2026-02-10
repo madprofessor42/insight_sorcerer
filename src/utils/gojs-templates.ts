@@ -1,5 +1,9 @@
 import * as go from 'gojs';
-import { LINK_CONFIGURATIONS, type LinkConfiguration } from '../config/diagram-rules';
+import { 
+  LINK_CONFIGURATIONS, 
+  NODE_CONFIGURATIONS,
+  type LinkConfiguration
+} from '../config/diagram-rules';
 
 /**
  * Helper function to create tooltip Adornment for links
@@ -73,258 +77,126 @@ function defineCloudShape() {
 defineCloudShape();
 
 /**
- * Create node template map with different node types
+ * Create node template map dynamically from configuration
+ * All node types are generated from NODE_CONFIGURATIONS - fully dynamic!
  */
 export function createNodeTemplateMap(): go.Map<string, go.Node> {
   const $ = go.GraphObject.make;
   const nodeTemplateMap = new go.Map<string, go.Node>();
 
-  // Stock node template - center circle for interaction, links draw from rectangle edges
-  nodeTemplateMap.add('Stock', 
-    $(go.Node, 'Spot',
-      { 
-        locationSpot: go.Spot.Center,
-        // Show/hide connection handler on hover
-        mouseEnter: (_e: go.InputEvent, thisObj: go.GraphObject) => {
-          if (thisObj instanceof go.Node) {
-            const port = thisObj.findObject('CENTER_PORT');
-            if (port) port.opacity = 1;
-          }
-        },
-        mouseLeave: (_e: go.InputEvent, thisObj: go.GraphObject) => {
-          if (thisObj instanceof go.Node) {
-            const port = thisObj.findObject('CENTER_PORT');
-            if (port) port.opacity = 0;
-          }
-        }
-      },
-      new go.Binding('location', 'loc', go.Point.parse).makeTwoWay(go.Point.stringify),
-      // Outer shape - for dragging and visual bounds (named for custom linking tool)
-      $(go.Shape, 'Rectangle', {
+  // Generate template for each configured node type
+  NODE_CONFIGURATIONS.forEach(config => {
+    const { id, style, port, selectConnectedLinksOnClick } = config;
+    
+    // Build node template elements
+    const nodeElements: go.GraphObject[] = [];
+    
+    // Create outer shape (main visual element)
+    nodeElements.push(
+      $(go.Shape, style.shape, {
         name: 'OUTER_SHAPE',
-        fill: '#4A90E2',
-        stroke: '#2E5C8A',
-        strokeWidth: 2,
-        width: 120,
-        height: 60,
+        fill: style.fill,
+        stroke: style.stroke,
+        strokeWidth: style.strokeWidth,
+        width: style.width,
+        height: style.height,
         cursor: 'move',
         portId: 'outer',
-        // NO fromLinkable/toLinkable - this is for dragging only
-        // Links will be redirected here by CustomLinkingTool
+        // Outer shape is for dragging only - links redirect to it via CustomLinkingTool
         fromSpot: go.Spot.AllSides,
         toSpot: go.Spot.AllSides
-      }),
-      // Text
-      $(go.TextBlock, {
-        margin: 8,
-        stroke: 'white',
-        font: 'bold 14px sans-serif',
-        editable: true
-      }, new go.Binding('text', 'name').makeTwoWay()),
-      // Center circle - clickable port that delegates to outer shape
-      $(go.Shape, 'Circle', {
-        name: 'CENTER_PORT',
-        alignment: go.Spot.Center,
-        width: 20,
-        height: 20,
-        fill: '#2E5C8A',
-        stroke: '#1E3C5A',
-        strokeWidth: 2,
-        cursor: 'pointer',
-        portId: 'center',
-        fromLinkable: true,
-        toLinkable: true,
-        opacity: 0 // Invisible by default, shown on hover (but still active for linking!)
       })
-    )
-  );
-
-  // Variable node template - center circle for interaction, links draw from ellipse edges
-  nodeTemplateMap.add('Variable',
-    $(go.Node, 'Spot',
-      { 
-        locationSpot: go.Spot.Center,
-        // Show/hide connection handler on hover
-        mouseEnter: (_e: go.InputEvent, thisObj: go.GraphObject) => {
-          if (thisObj instanceof go.Node) {
-            const port = thisObj.findObject('CENTER_PORT');
-            if (port) port.opacity = 1;
-          }
-        },
-        mouseLeave: (_e: go.InputEvent, thisObj: go.GraphObject) => {
-          if (thisObj instanceof go.Node) {
-            const port = thisObj.findObject('CENTER_PORT');
-            if (port) port.opacity = 0;
-          }
-        }
-      },
-      new go.Binding('location', 'loc', go.Point.parse).makeTwoWay(go.Point.stringify),
-      // Outer shape - for dragging and visual bounds (named for custom linking tool)
-      $(go.Shape, 'Ellipse', {
-        name: 'OUTER_SHAPE',
-        fill: '#50C878',
-        stroke: '#2E7D4E',
-        strokeWidth: 2,
-        width: 100,
-        height: 100,
-        cursor: 'move',
-        portId: 'outer',
-        // NO fromLinkable/toLinkable - this is for dragging only
-        // Links will be redirected here by CustomLinkingTool
-        fromSpot: go.Spot.AllSides,
-        toSpot: go.Spot.AllSides
-      }),
-      // Text
+    );
+    
+    // Create text block
+    nodeElements.push(
       $(go.TextBlock, {
         margin: 8,
-        stroke: 'white',
-        font: 'bold 14px sans-serif',
-        editable: true
-      }, new go.Binding('text', 'name').makeTwoWay()),
-      // Center circle - clickable port that delegates to outer shape
-      $(go.Shape, 'Circle', {
-        name: 'CENTER_PORT',
-        alignment: go.Spot.Center,
-        width: 20,
-        height: 20,
-        fill: '#2E7D4E',
-        stroke: '#1E5D3E',
-        strokeWidth: 2,
-        cursor: 'pointer',
-        portId: 'center',
-        fromLinkable: true,
-        toLinkable: true,
-        opacity: 0 // Invisible by default, shown on hover (but still active for linking!)
-      })
-    )
-  );
-
-  // Cloud node template - automatically created when linking to canvas
-  // This node CANNOT be created manually through sidebar
-  // Cloud nodes don't have UI handlers for creating links, but can be source/target when reversing existing links
-  nodeTemplateMap.add('Cloud',
-    $(go.Node, 'Spot',
-      { 
-        locationSpot: go.Spot.Center,
-        selectable: true,
-        deletable: true,
-        // When clicking on Cloud, select both Cloud and its connected links
-        click: (e: go.InputEvent, node: go.GraphObject) => {
-          if (!(node instanceof go.Node)) return;
-          const diagram = node.diagram;
-          if (!diagram) return;
-          
-          // Collect Cloud node and all its connected links
-          const selection = new go.Set<go.Part>();
-          selection.add(node);
-          
-          // Add all links connected to this Cloud node
-          node.findLinksConnected().each((link: go.Link) => {
-            selection.add(link);
-          });
-          
-          // Select all collected parts (Cloud + its links)
-          diagram.selectCollection(selection);
-          
-          // Prevent default selection behavior
-          e.handled = true;
-        }
-        // No visual linking handlers - links can only be reversed to/from Cloud, not created manually
-      },
-      new go.Binding('location', 'loc', go.Point.parse).makeTwoWay(go.Point.stringify),
-      // Cloud shape - outer visual element (can receive connections programmatically)
-      $(go.Shape, 'FlowCloud', {
-        name: 'OUTER_SHAPE',
-        fill: 'white',
-        stroke: '#4A90E2',
-        strokeWidth: 2,
-        width: 80,
-        height: 64,
-        cursor: 'move',
-        portId: 'outer',
-        // Can accept connections but not create them
-        fromLinkable: false,
-        toLinkable: false,
-        fromSpot: go.Spot.AllSides,
-        toSpot: go.Spot.AllSides
-      }),
-      // Text (optional, can be edited)
-      $(go.TextBlock, {
-        margin: 8,
-        stroke: '#4A90E2',
-        font: 'bold 12px sans-serif',
-        editable: true,
-        text: '' // Empty by default
+        stroke: style.textColor,
+        font: style.font,
+        editable: style.textEditable,
+        text: style.defaultText || ''
       }, new go.Binding('text', 'name').makeTwoWay())
-      // No CENTER_PORT - Cloud is a passive endpoint
-    )
-  );
+    );
+    
+    // Create center port if configured
+    if (port.showCenterPort) {
+      nodeElements.push(
+        $(go.Shape, 'Circle', {
+          name: 'CENTER_PORT',
+          alignment: go.Spot.Center,
+          width: port.centerPortSize || 20,
+          height: port.centerPortSize || 20,
+          fill: port.centerPortFill || style.stroke,
+          stroke: port.centerPortStroke || style.stroke,
+          strokeWidth: 2,
+          cursor: 'pointer',
+          portId: 'center',
+          fromLinkable: port.fromLinkable,
+          toLinkable: port.toLinkable,
+          opacity: 0 // Invisible by default, shown on hover (but still active for linking!)
+        })
+      );
+    }
+    
+    // Build node config object
+    const nodeConfig: any = {
+      locationSpot: go.Spot.Center,
+      selectable: true,
+      deletable: true
+    };
+    
+    // Add mouse handlers for center port visibility (only if port exists)
+    if (port.showCenterPort) {
+      nodeConfig.mouseEnter = (_e: go.InputEvent, thisObj: go.GraphObject) => {
+        if (thisObj instanceof go.Node) {
+          const centerPort = thisObj.findObject('CENTER_PORT');
+          if (centerPort) centerPort.opacity = 1;
+        }
+      };
+      nodeConfig.mouseLeave = (_e: go.InputEvent, thisObj: go.GraphObject) => {
+        if (thisObj instanceof go.Node) {
+          const centerPort = thisObj.findObject('CENTER_PORT');
+          if (centerPort) centerPort.opacity = 0;
+        }
+      };
+    }
+    
+    // Add custom click handler for Cloud (select node + connected links)
+    if (selectConnectedLinksOnClick) {
+      nodeConfig.click = (e: go.InputEvent, node: go.GraphObject) => {
+        if (!(node instanceof go.Node)) return;
+        const diagram = node.diagram;
+        if (!diagram) return;
+        
+        // Collect node and all its connected links
+        const selection = new go.Set<go.Part>();
+        selection.add(node);
+        
+        // Add all links connected to this node
+        node.findLinksConnected().each((link: go.Link) => {
+          selection.add(link);
+        });
+        
+        // Select all collected parts
+        diagram.selectCollection(selection);
+        
+        // Prevent default selection behavior
+        e.handled = true;
+      };
+    }
+    
+    // Create and add the node template
+    nodeTemplateMap.add(id,
+      $(go.Node, 'Spot',
+        nodeConfig,
+        new go.Binding('location', 'loc', go.Point.parse).makeTwoWay(go.Point.stringify),
+        ...nodeElements
+      )
+    );
+  });
 
   return nodeTemplateMap;
-}
-
-/**
- * Create default node template (fallback) - center circle for interaction, links draw from shape edges
- */
-export function createDefaultNodeTemplate(): go.Node {
-  const $ = go.GraphObject.make;
-  
-  return $(go.Node, 'Spot',
-    { 
-      locationSpot: go.Spot.Center,
-      // Show/hide connection handler on hover
-      mouseEnter: (_e: go.InputEvent, thisObj: go.GraphObject) => {
-        if (thisObj instanceof go.Node) {
-          const port = thisObj.findObject('CENTER_PORT');
-          if (port) port.visible = true;
-        }
-      },
-      mouseLeave: (_e: go.InputEvent, thisObj: go.GraphObject) => {
-        if (thisObj instanceof go.Node) {
-          const port = thisObj.findObject('CENTER_PORT');
-          if (port) port.visible = false;
-        }
-      }
-    },
-    new go.Binding('location', 'loc', go.Point.parse).makeTwoWay(go.Point.stringify),
-    // Outer shape - for dragging and visual bounds (named for custom linking tool)
-    $(go.Shape, 'RoundedRectangle', {
-      name: 'OUTER_SHAPE',
-      fill: '#999',
-      stroke: '#666',
-      strokeWidth: 2,
-      width: 100,
-      height: 60,
-      cursor: 'move',
-      portId: 'outer',
-      // NO fromLinkable/toLinkable - this is for dragging only
-      // Links will be redirected here by CustomLinkingTool
-      fromSpot: go.Spot.AllSides,
-      toSpot: go.Spot.AllSides
-    }),
-    // Text
-    $(go.TextBlock, {
-      margin: 8,
-      stroke: 'white',
-      font: 'bold 14px sans-serif',
-      editable: true
-    }, new go.Binding('text', 'name').makeTwoWay()),
-    // Center circle - clickable port that delegates to outer shape
-    $(go.Shape, 'Circle', {
-      name: 'CENTER_PORT',
-      alignment: go.Spot.Center,
-      width: 20,
-      height: 20,
-      fill: '#666',
-      stroke: '#444',
-      strokeWidth: 2,
-      cursor: 'pointer',
-      portId: 'center',
-      fromLinkable: true,
-      toLinkable: true,
-      visible: false // Hidden by default, shown on hover
-    })
-  );
 }
 
 /**
@@ -457,136 +329,3 @@ export function createLinkTemplateMap(): go.Map<string, go.Link> {
 
   return linkTemplateMap;
 }
-
-/**
- * Create default link template (fallback) - uses DEFAULT_LINK_TYPE configuration
- */
-export function createDefaultLinkTemplate(): go.Link {
-  const $ = go.GraphObject.make;
-  
-  // Get default configuration (should be 'link')
-  const defaultConfig = LINK_CONFIGURATIONS.find(c => c.id === 'link');
-  const style = defaultConfig?.style || {
-    stroke: '#666',
-    strokeWidth: 2,
-    arrowScale: 1.3,
-    clickAreaWidth: 12,
-    toShortLength: 4,
-    fromShortLength: 4
-  };
-  
-  const displayProperties = defaultConfig?.displayProperties || [];
-  
-  // Build link template elements array
-  const linkElements: go.GraphObject[] = [];
-  
-  // Add invisible thick shape for larger click area
-  linkElements.push(
-    $(go.Shape, { isPanelMain: true, stroke: 'transparent', strokeWidth: style.clickAreaWidth })
-  );
-  
-  // Add visible shape
-  linkElements.push(
-    $(go.Shape, { isPanelMain: true, strokeWidth: style.strokeWidth, stroke: style.stroke })
-  );
-  
-  // Add from arrow (shown only when bidirectional)
-  linkElements.push(
-    $(go.Shape, { 
-      fromArrow: 'BackwardTriangle', 
-      stroke: style.stroke, 
-      fill: style.stroke, 
-      scale: style.arrowScale,
-      strokeWidth: 0,
-      visible: false 
-    },
-      new go.Binding('visible', 'bidirectional', (b) => b === true))
-  );
-  
-  // Add to arrow (always shown)
-  linkElements.push(
-    $(go.Shape, { 
-      toArrow: 'Standard', 
-      stroke: style.stroke, 
-      fill: style.stroke,
-      scale: style.arrowScale,
-      strokeWidth: 0
-    })
-  );
-  
-  // Add TextBlock labels for properties that are NOT tooltips
-  const labelProperties = displayProperties.filter(prop => !prop.showAsTooltip);
-  labelProperties.forEach(prop => {
-    // Create a panel with background shape and text for better visibility
-    const panelConfig: any = {
-      segmentOrientation: go.Link.OrientUpright, // Keep panel readable
-      // Use middle of the link if not specified
-      segmentIndex: prop.segmentIndex !== undefined ? prop.segmentIndex : NaN, // NaN = middle
-      segmentFraction: prop.segmentFraction !== undefined ? prop.segmentFraction : 0.5,
-      visible: false // Hidden by default, shown only when text is not empty
-    };
-    
-    // Add positioning offset if specified
-    if (prop.segmentOffset) {
-      panelConfig.segmentOffset = new go.Point(prop.segmentOffset.x, prop.segmentOffset.y);
-    }
-    
-    linkElements.push(
-      $(go.Panel, 'Auto', panelConfig,
-        // Show panel only when text is not empty
-        new go.Binding('visible', prop.dataKey, (val) => {
-          return val !== undefined && val !== null && val !== '';
-        }).makeTwoWay(),
-        // Background shape with border - uses link's color
-        $(go.Shape, 'RoundedRectangle',
-          {
-            fill: 'rgba(255, 255, 255, 0.95)', // Almost opaque white
-            stroke: style.stroke, // Use link's color for border
-            strokeWidth: 1.5,
-            parameter1: 3 // Corner radius
-          }
-        ),
-        // Text with improved styling - uses link's color
-        $(go.TextBlock,
-          {
-            margin: new go.Margin(4, 6, 4, 6), // top, right, bottom, left padding
-            font: 'bold 12px sans-serif', // Bold and larger font
-            stroke: style.stroke, // Use link's color for text
-            editable: prop.editable || false,
-            textAlign: 'center'
-          },
-          new go.Binding('text', prop.dataKey).makeTwoWay()
-        )
-      )
-    );
-  });
-  
-  // Create tooltip if default config has tooltip properties
-  const tooltip = defaultConfig ? createLinkTooltip(defaultConfig) : null;
-  
-  // Create the link config
-  const linkConfig: any = { 
-    routing: go.Link.Normal, 
-    curve: go.Link.Bezier,
-    curviness: 0,
-    reshapable: true,
-    adjusting: go.Link.Scale,
-    cursor: 'pointer',
-    toShortLength: style.toShortLength,
-    fromShortLength: style.fromShortLength
-  };
-  
-  // Add tooltip if exists
-  if (tooltip) {
-    linkConfig.toolTip = tooltip;
-  }
-  
-  return $(go.Link,
-    linkConfig,
-    new go.Binding('points').makeTwoWay(), // Save link route points
-    new go.Binding('curviness').makeTwoWay(),
-    new go.Binding('bidirectional').makeTwoWay(),
-    ...linkElements
-  );
-}
-

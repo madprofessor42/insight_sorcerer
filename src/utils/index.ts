@@ -4,9 +4,7 @@ export { initializeDiagram } from './gojs-config';
 // Export GoJS template utilities
 export {
   createNodeTemplateMap,
-  createDefaultNodeTemplate,
-  createLinkTemplateMap,
-  createDefaultLinkTemplate
+  createLinkTemplateMap
 } from './gojs-templates';
 
 // Export link validation utilities

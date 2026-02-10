@@ -1,9 +1,7 @@
 import * as go from 'gojs';
 import {
   createNodeTemplateMap,
-  createDefaultNodeTemplate,
-  createLinkTemplateMap,
-  createDefaultLinkTemplate
+  createLinkTemplateMap
 } from './gojs-templates';
 import { CustomLinkingTool, CustomRelinkingTool } from '../extensions';
 
@@ -31,13 +29,10 @@ export function initializeDiagram(): go.Diagram {
     })
   });
 
-  // Set up node templates
+  // Set up node and link templates from configuration
+  // All node and link types are defined in NODE_CONFIGURATIONS and LINK_CONFIGURATIONS
   diagram.nodeTemplateMap = createNodeTemplateMap();
-  diagram.nodeTemplate = createDefaultNodeTemplate();
-
-  // Set up link templates
   diagram.linkTemplateMap = createLinkTemplateMap();
-  diagram.linkTemplate = createDefaultLinkTemplate();
 
   return diagram;
 }

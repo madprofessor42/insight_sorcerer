@@ -10,6 +10,191 @@ export type NodeType = 'Stock' | 'Variable' | 'Cloud';
 export type ManuallyCreatableNodeType = 'Stock' | 'Variable';
 
 /**
+ * GoJS shape types for nodes
+ */
+export type NodeShapeType = 'Rectangle' | 'Ellipse' | 'RoundedRectangle' | 'FlowCloud';
+
+/**
+ * GoJS visual styles for a node
+ */
+export interface NodeVisualStyle {
+  /** Shape type (Rectangle, Ellipse, RoundedRectangle, FlowCloud) */
+  shape: NodeShapeType;
+  /** Fill color */
+  fill: string;
+  /** Stroke (border) color */
+  stroke: string;
+  /** Stroke width */
+  strokeWidth: number;
+  /** Width of the node */
+  width: number;
+  /** Height of the node */
+  height: number;
+  /** Text color */
+  textColor: string;
+  /** Font for text */
+  font: string;
+  /** Whether text is editable */
+  textEditable: boolean;
+  /** Default text value */
+  defaultText?: string;
+}
+
+/**
+ * Port configuration for node
+ */
+export interface NodePortConfig {
+  /** Whether to show center port for linking */
+  showCenterPort: boolean;
+  /** Center port fill color */
+  centerPortFill?: string;
+  /** Center port stroke color */
+  centerPortStroke?: string;
+  /** Center port size */
+  centerPortSize?: number;
+  /** Whether links can originate from this node */
+  fromLinkable: boolean;
+  /** Whether links can end at this node */
+  toLinkable: boolean;
+}
+
+/**
+ * Complete node configuration
+ * Single source of truth for ALL node type settings
+ */
+export interface NodeConfiguration {
+  /** Unique identifier for this node type */
+  id: NodeType;
+  
+  /** Display label for UI */
+  label: string;
+  
+  /** Description (for tooltips, etc.) */
+  description?: string;
+  
+  /** Visual styles */
+  style: NodeVisualStyle;
+  
+  /** Port configuration */
+  port: NodePortConfig;
+  
+  /** Whether this node can be manually created by user (false for Cloud) */
+  manuallyCreatable: boolean;
+  
+  /** Custom click behavior (for Cloud - select node + connected links) */
+  selectConnectedLinksOnClick?: boolean;
+}
+
+/**
+ * ALL NODE CONFIGURATIONS
+ * Single source of truth for everything about node types
+ * To add a new node type, just add a new entry here!
+ */
+export const NODE_CONFIGURATIONS: NodeConfiguration[] = [
+  {
+    id: 'Stock',
+    label: 'Stock',
+    description: 'Stock node - represents an accumulation or reservoir',
+    
+    style: {
+      shape: 'Rectangle',
+      fill: '#4A90E2',
+      stroke: '#2E5C8A',
+      strokeWidth: 2,
+      width: 120,
+      height: 60,
+      textColor: 'white',
+      font: 'bold 14px sans-serif',
+      textEditable: true,
+      defaultText: 'Stock'
+    },
+    
+    port: {
+      showCenterPort: true,
+      centerPortFill: '#2E5C8A',
+      centerPortStroke: '#1E3C5A',
+      centerPortSize: 20,
+      fromLinkable: true,
+      toLinkable: true
+    },
+    
+    manuallyCreatable: true
+  },
+  {
+    id: 'Variable',
+    label: 'Variable',
+    description: 'Variable node - represents a calculated value or parameter',
+    
+    style: {
+      shape: 'Ellipse',
+      fill: '#50C878',
+      stroke: '#2E7D4E',
+      strokeWidth: 2,
+      width: 100,
+      height: 100,
+      textColor: 'white',
+      font: 'bold 14px sans-serif',
+      textEditable: true,
+      defaultText: 'Variable'
+    },
+    
+    port: {
+      showCenterPort: true,
+      centerPortFill: '#2E7D4E',
+      centerPortStroke: '#1E5D3E',
+      centerPortSize: 20,
+      fromLinkable: true,
+      toLinkable: true
+    },
+    
+    manuallyCreatable: true
+  },
+  {
+    id: 'Cloud',
+    label: 'Cloud',
+    description: 'Cloud node - automatically created endpoint for flows',
+    
+    style: {
+      shape: 'FlowCloud',
+      fill: 'white',
+      stroke: '#4A90E2',
+      strokeWidth: 2,
+      width: 80,
+      height: 64,
+      textColor: '#4A90E2',
+      font: 'bold 12px sans-serif',
+      textEditable: true,
+      defaultText: ''
+    },
+    
+    port: {
+      showCenterPort: false, // Cloud has no visible center port
+      fromLinkable: false, // Cannot initiate links
+      toLinkable: false // Cannot initiate links (but can be target/source when reversing)
+    },
+    
+    manuallyCreatable: false, // Cloud is only created automatically
+    selectConnectedLinksOnClick: true // Select Cloud + its links when clicked
+  }
+];
+
+/**
+ * Get configuration for a specific node type
+ */
+export function getNodeConfiguration(nodeType: NodeType): NodeConfiguration | undefined {
+  return NODE_CONFIGURATIONS.find(config => config.id === nodeType);
+}
+
+/**
+ * Get all manually creatable node types (for UI, sidebar, etc.)
+ */
+export function getManuallyCreatableNodeTypes(): ManuallyCreatableNodeType[] {
+  return NODE_CONFIGURATIONS
+    .filter(config => config.manuallyCreatable)
+    .map(config => config.id) as ManuallyCreatableNodeType[];
+}
+
+/**
  * GoJS visual styles for a link
  */
 export interface LinkVisualStyle {

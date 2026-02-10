@@ -2,7 +2,7 @@ import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { setLinkType } from '../../store/diagramSlice';
 import { usePaletteDragDrop } from '../../hooks/palette/usePaletteDragDrop';
 import { EdgePanel } from './EdgePanel';
-import { LINK_CONFIGURATIONS } from '../../config/diagram-rules';
+import { LINK_CONFIGURATIONS, NODE_CONFIGURATIONS } from '../../config/diagram-rules';
 import styles from './Sidebar.module.css';
 
 export function Sidebar() {
@@ -18,45 +18,35 @@ export function Sidebar() {
         <p className={styles.subtitle}>Visual Modeler</p>
       </header>
 
-      {/* Node Components Section */}
+      {/* Node Components Section - Dynamic from configuration */}
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Primitives</h2>
         <div className={styles.nodeList}>
-          {/* Stock Node */}
-          <div
-            className={styles.nodeCard}
-            draggable
-            onDragStart={(e) => handleDragStart(e, 'Stock', { 
-              category: 'Stock', 
-              name: 'Stock' 
-            })}
-          >
-            <div className={styles.nodeIcon}>
-              <div className={styles.stockIcon} />
+          {NODE_CONFIGURATIONS.filter(config => config.manuallyCreatable).map((config) => (
+            <div
+              key={config.id}
+              className={styles.nodeCard}
+              draggable
+              onDragStart={(e) => handleDragStart(e, config.id, { 
+                category: config.id, 
+                name: config.style.defaultText || config.label
+              })}
+            >
+              <div className={styles.nodeIcon}>
+                <div 
+                  className={styles[`${config.id.toLowerCase()}Icon`]} 
+                  style={{
+                    backgroundColor: config.style.fill,
+                    borderColor: config.style.stroke
+                  }}
+                />
+              </div>
+              <div className={styles.nodeInfo}>
+                <p className={styles.nodeName}>{config.label}</p>
+                <p className={styles.nodeDescription}>{config.description || ''}</p>
+              </div>
             </div>
-            <div className={styles.nodeInfo}>
-              <p className={styles.nodeName}>Stock</p>
-              <p className={styles.nodeDescription}>Accumulator - stores quantities</p>
-            </div>
-          </div>
-          
-          {/* Variable Node */}
-          <div
-            className={styles.nodeCard}
-            draggable
-            onDragStart={(e) => handleDragStart(e, 'Variable', { 
-              category: 'Variable', 
-              name: 'Variable' 
-            })}
-          >
-            <div className={styles.nodeIcon}>
-              <div className={styles.variableIcon} />
-            </div>
-            <div className={styles.nodeInfo}>
-              <p className={styles.nodeName}>Variable</p>
-              <p className={styles.nodeDescription}>Formula or constant value</p>
-            </div>
-          </div>
+          ))}
         </div>
       </section>
 

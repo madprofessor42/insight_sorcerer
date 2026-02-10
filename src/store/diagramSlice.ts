@@ -14,6 +14,8 @@ interface DiagramState {
   skipsDiagramUpdate: boolean;
   // UI state
   selectedLinkType: LinkType;
+  // Selected node key (actual data comes from nodeDataArray)
+  selectedNodeKey: go.Key | null;
   // Selected edge key (actual data comes from linkDataArray)
   selectedEdgeKey: go.Key | null;
 }
@@ -24,6 +26,7 @@ const initialState: DiagramState = {
   modelData: {},
   skipsDiagramUpdate: false,
   selectedLinkType: DEFAULT_LINK_TYPE,
+  selectedNodeKey: null,
   selectedEdgeKey: null,
 };
 
@@ -95,6 +98,16 @@ export const diagramSlice = createSlice({
       state.selectedLinkType = action.payload;
     },
 
+    // Set selected node key (data comes from nodeDataArray)
+    setSelectedNodeKey: (state, action: PayloadAction<go.Key | null>) => {
+      state.selectedNodeKey = action.payload;
+    },
+
+    // Clear selected node
+    clearSelectedNode: (state) => {
+      state.selectedNodeKey = null;
+    },
+
     // Set selected edge key (data comes from linkDataArray)
     setSelectedEdgeKey: (state, action: PayloadAction<go.Key | null>) => {
       state.selectedEdgeKey = action.payload;
@@ -118,6 +131,8 @@ export const {
   setSkips,
   clearDiagram,
   setLinkType,
+  setSelectedNodeKey,
+  clearSelectedNode,
   setSelectedEdgeKey,
   clearSelectedEdge
 } = diagramSlice.actions;

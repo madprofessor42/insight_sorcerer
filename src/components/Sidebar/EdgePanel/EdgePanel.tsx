@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import * as go from 'gojs';
 import { useAppSelector } from '../../../store/hooks';
 import { useEdgeOperations, useEdgeValidation } from '../../../hooks/edge';
 import { normalizeLinkType, getLinkConfiguration } from '../../../config/diagram-rules';
@@ -24,10 +25,39 @@ export function EdgePanel() {
   // Local state for responsive UI
   const [bidirectionalActive, setBidirectionalActive] = useState(false);
   const [propertyValues, setPropertyValues] = useState<Record<string, string>>({});
+  const [previousEdgeKey, setPreviousEdgeKey] = useState<go.Key | null>(null);
 
-  // Update local UI state when selected edge changes
+  // When deselecting edge, replace empty values with defaults
   useEffect(() => {
-    if (selectedEdge) {
+    // Check if we just deselected an edge (had a key, now null)
+    if (previousEdgeKey !== null && selectedEdgeKey === null) {
+      // Find the previously selected edge in the array
+      const prevEdge = linkDataArray.find(link => link.key === previousEdgeKey);
+      if (prevEdge) {
+        const linkType = normalizeLinkType(prevEdge.category);
+        const config = getLinkConfiguration(linkType);
+        if (config) {
+          config.displayProperties.forEach(prop => {
+            const currentValue = prevEdge[prop.dataKey];
+            const defaultValue = prop.defaultValue ?? '';
+            
+            // If property is empty and has default, update GoJS model
+            if (!currentValue && defaultValue) {
+              updateEdgeProperty(prevEdge.key, prop.dataKey, defaultValue);
+            }
+          });
+        }
+      }
+    }
+    
+    // Update previous key for next comparison
+    setPreviousEdgeKey(selectedEdgeKey);
+  }, [selectedEdgeKey, previousEdgeKey, linkDataArray, updateEdgeProperty]);
+
+  // Initialize property values ONLY when selection changes (not when properties update)
+  // This prevents overwriting user input while they're typing
+  useEffect(() => {
+    if (selectedEdgeKey && selectedEdge) {
       setBidirectionalActive(selectedEdge.bidirectional === true);
       
       // Initialize property values from selectedEdge
@@ -36,12 +66,14 @@ export function EdgePanel() {
       if (config) {
         const values: Record<string, string> = {};
         config.displayProperties.forEach(prop => {
-          values[prop.dataKey] = (selectedEdge[prop.dataKey] as string) || prop.defaultValue || '';
+          const currentValue = selectedEdge[prop.dataKey];
+          values[prop.dataKey] = (currentValue ?? '') as string;
         });
         setPropertyValues(values);
       }
     }
-  }, [selectedEdge]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedEdgeKey]); // Only depend on KEY change, not on edge data updates
 
   if (!selectedEdge) {
     return null;

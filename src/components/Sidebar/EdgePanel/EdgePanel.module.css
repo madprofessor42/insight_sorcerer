@@ -1,53 +1,60 @@
+@import '../../../styles/variables.css';
+
+/* Dark theme for EdgePanel */
 .edgePanel {
-  border-top: 1px solid #34495e;
-  padding: 20px 16px;
-  background-color: rgba(52, 73, 94, 0.5);
+  border-top: var(--input-border-width) solid var(--dark-border-primary);
+  padding: var(--spacing-xl) var(--spacing-lg);
+  background-color: var(--dark-bg-panel);
 }
 
 .edgeInfo {
-  margin-bottom: 12px;
-  padding: 8px;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 4px;
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-sm);
+  background: var(--dark-bg-tertiary);
+  border-radius: var(--border-radius-md);
 }
 
 .edgeType {
-  font-size: 12px;
-  color: #95a5a6;
-  margin: 0 0 4px 0;
+  font-size: var(--font-size-sm);
+  color: var(--dark-text-secondary);
+  margin: 0 0 var(--spacing-xs) 0;
+  line-height: var(--line-height-normal);
 }
 
 .edgeId {
-  font-size: 11px;
-  color: #7f8c8d;
+  font-size: var(--font-size-xs);
+  color: var(--dark-text-tertiary);
   margin: 0;
   font-family: monospace;
+  line-height: var(--line-height-normal);
 }
 
 .edgeActions {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--spacing-sm);
 }
 
 .edgeActionButton {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  background: #34495e;
-  border: 1px solid #4a5f7f;
-  border-radius: 6px;
+  gap: var(--spacing-sm);
+  padding: 10px var(--spacing-md);
+  background: var(--dark-bg-secondary);
+  border: var(--input-border-width) solid var(--dark-border-secondary);
+  border-radius: var(--border-radius-lg);
   cursor: pointer;
-  transition: all 0.2s ease;
-  color: #ecf0f1;
-  font-size: 13px;
+  transition: all var(--transition-normal);
+  color: var(--dark-text-primary);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
   text-align: left;
 }
 
 .edgeActionButton:hover {
-  background: #3d5265;
-  border-color: #5a6f8f;
+  background: var(--dark-bg-hover);
+  border-color: var(--dark-border-hover);
   transform: translateY(-1px);
 }
 
@@ -56,30 +63,30 @@
 }
 
 .edgeActionButton.active {
-  background: #4A90E2;
-  border-color: #4A90E2;
+  background: var(--primary-color);
+  border-color: var(--primary-color);
 }
 
 .edgeActionButton.active:hover {
-  background: #3d7ac5;
-  border-color: #3d7ac5;
+  background: var(--primary-color-hover);
+  border-color: var(--primary-color-hover);
 }
 
 .edgeActionButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  background: #2a3a4a;
-  border-color: #3a4a5a;
+  background: var(--dark-bg-disabled);
+  border-color: var(--dark-border-disabled);
 }
 
 .edgeActionButton:disabled:hover {
-  background: #2a3a4a;
-  border-color: #3a4a5a;
+  background: var(--dark-bg-disabled);
+  border-color: var(--dark-border-disabled);
   transform: none;
 }
 
 .edgeActionIcon {
-  font-size: 16px;
+  font-size: var(--font-size-lg);
   flex-shrink: 0;
 }
 
@@ -88,21 +95,22 @@
 }
 
 .edgeProperties {
-  margin-top: 16px;
-  padding: 12px;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 4px;
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background: var(--dark-bg-tertiary);
+  border-radius: var(--border-radius-md);
 }
 
 .propertiesTitle {
-  font-size: 13px;
-  font-weight: 600;
-  color: #ecf0f1;
-  margin: 0 0 12px 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--dark-text-primary);
+  margin: 0 0 var(--spacing-md) 0;
+  line-height: var(--line-height-tight);
 }
 
 .propertyField {
-  margin-bottom: 12px;
+  margin-bottom: var(--spacing-md);
 }
 
 .propertyField:last-child {
@@ -111,26 +119,32 @@
 
 .propertyLabel {
   display: block;
-  font-size: 12px;
-  color: #95a5a6;
-  margin-bottom: 4px;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--dark-text-secondary);
+  margin-bottom: var(--spacing-xs);
+  line-height: var(--line-height-normal);
 }
 
 .propertyInput {
   width: 100%;
-  padding: 8px 10px;
-  background: #2c3e50;
-  border: 1px solid #34495e;
-  border-radius: 4px;
-  color: #ecf0f1;
-  font-size: 13px;
-  font-family: inherit;
-  transition: border-color 0.2s ease;
+  padding: var(--input-padding-vertical) var(--input-padding-horizontal);
+  background: var(--dark-bg-primary);
+  border: var(--input-border-width) solid var(--dark-border-primary);
+  border-radius: var(--border-radius-md);
+  color: var(--dark-text-primary);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  transition: border-color var(--transition-normal);
+}
+
+.propertyInput:hover {
+  border-color: var(--dark-border-secondary);
 }
 
 .propertyInput:focus {
   outline: none;
-  border-color: #4A90E2;
+  border-color: var(--primary-color);
 }
 
 .propertyInput:disabled {
@@ -139,6 +153,6 @@
 }
 
 .propertyInput::placeholder {
-  color: #7f8c8d;
+  color: var(--dark-text-tertiary);
 }
 

@@ -41,6 +41,33 @@ export function getDiagramFromDOM(selector: string = '.diagram-component'): Diag
 }
 
 /**
+ * Find a node in the diagram by its key
+ * @param diagram - The GoJS diagram instance
+ * @param model - The GoJS model instance
+ * @param nodeKey - The key of the node to find
+ * @returns Node data and node object, or null if not found
+ */
+export function findNodeByKey(
+  diagram: go.Diagram,
+  model: go.GraphLinksModel,
+  nodeKey: go.Key
+): { nodeData: go.ObjectData; node: go.Node } | null {
+  const nodeData = model.findNodeDataForKey(nodeKey);
+  if (!nodeData) {
+    console.warn(`⚠️ Node data not found for key: ${nodeKey}`);
+    return null;
+  }
+
+  const node = diagram.findNodeForKey(nodeKey);
+  if (!node) {
+    console.warn(`⚠️ Node object not found for key: ${nodeKey}`);
+    return null;
+  }
+
+  return { nodeData, node };
+}
+
+/**
  * Find a link in the diagram by its key
  * @param diagram - The GoJS diagram instance
  * @param model - The GoJS model instance
@@ -65,6 +92,30 @@ export function findLinkByKey(
   }
 
   return { linkData, link };
+}
+
+/**
+ * Execute an operation on a node with automatic diagram/model retrieval
+ * @param nodeKey - The key of the node to operate on
+ * @param operation - Function that performs the operation on the node
+ * @param selector - Optional CSS selector for the diagram div
+ * @returns true if operation succeeded, false otherwise
+ */
+export function withNode(
+  nodeKey: go.Key,
+  operation: (diagram: go.Diagram, model: go.GraphLinksModel, nodeData: go.ObjectData, node: go.Node) => void,
+  selector?: string
+): boolean {
+  const result = getDiagramFromDOM(selector);
+  if (!result) return false;
+
+  const { diagram, model } = result;
+  const nodeResult = findNodeByKey(diagram, model, nodeKey);
+  if (!nodeResult) return false;
+
+  const { nodeData, node } = nodeResult;
+  operation(diagram, model, nodeData, node);
+  return true;
 }
 
 /**

@@ -41,6 +41,24 @@ export interface NodeVisualStyle {
 }
 
 /**
+ * Configuration for a single property to display on a node
+ */
+export interface NodePropertyDisplay {
+  /** Property key in node data (e.g., 'name' for Name, 'initialValue' for Initial Value, 'note' for Note) */
+  dataKey: string;
+  /** Display label for the property */
+  label: string;
+  /** Whether this property should be editable inline */
+  editable?: boolean;
+  /** Default value if property is not set */
+  defaultValue?: string;
+  /** Show this property as tooltip on hover (instead of visible on node) */
+  showAsTooltip?: boolean;
+  /** Show this property as the main text label on the node */
+  showAsMainLabel?: boolean;
+}
+
+/**
  * Port configuration for node
  */
 export interface NodePortConfig {
@@ -77,6 +95,9 @@ export interface NodeConfiguration {
   
   /** Port configuration */
   port: NodePortConfig;
+  
+  /** Properties to display on node or in tooltip */
+  displayProperties: NodePropertyDisplay[];
   
   /** Whether this node can be manually created by user (false for Cloud) */
   manuallyCreatable: boolean;
@@ -118,6 +139,30 @@ export const NODE_CONFIGURATIONS: NodeConfiguration[] = [
       toLinkable: true
     },
     
+    displayProperties: [
+      {
+        dataKey: 'name',
+        label: 'Name',
+        editable: true,
+        defaultValue: 'Stock',
+        showAsMainLabel: true // Show as main text on node
+      },
+      {
+        dataKey: 'initialValue',
+        label: 'Initial Value',
+        editable: true,
+        defaultValue: '',
+        showAsTooltip: true
+      },
+      {
+        dataKey: 'note',
+        label: 'Note',
+        editable: true,
+        defaultValue: '',
+        showAsTooltip: true
+      }
+    ],
+    
     manuallyCreatable: true
   },
   {
@@ -147,6 +192,30 @@ export const NODE_CONFIGURATIONS: NodeConfiguration[] = [
       toLinkable: true
     },
     
+    displayProperties: [
+      {
+        dataKey: 'name',
+        label: 'Name',
+        editable: true,
+        defaultValue: 'Variable',
+        showAsMainLabel: true // Show as main text on node
+      },
+      {
+        dataKey: 'value',
+        label: 'Value',
+        editable: true,
+        defaultValue: '',
+        showAsTooltip: true
+      },
+      {
+        dataKey: 'note',
+        label: 'Note',
+        editable: true,
+        defaultValue: '',
+        showAsTooltip: true
+      }
+    ],
+    
     manuallyCreatable: true
   },
   {
@@ -172,6 +241,8 @@ export const NODE_CONFIGURATIONS: NodeConfiguration[] = [
       fromLinkable: false, // Cannot initiate links
       toLinkable: false // Cannot initiate links (but can be target/source when reversing)
     },
+    
+    displayProperties: [], // No editable properties for Cloud
     
     manuallyCreatable: false, // Cloud is only created automatically
     selectConnectedLinksOnClick: true // Select Cloud + its links when clicked

@@ -1,6 +1,7 @@
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { setLinkType } from '../../store/diagramSlice';
 import { usePaletteDragDrop } from '../../hooks/palette/usePaletteDragDrop';
+import { NodePanel } from './NodePanel/NodePanel';
 import { EdgePanel } from './EdgePanel';
 import { LINK_CONFIGURATIONS, NODE_CONFIGURATIONS } from '../../config/diagram-rules';
 import styles from './Sidebar.module.css';
@@ -70,6 +71,9 @@ export function Sidebar() {
           ))}
         </div>
       </section>
+
+      {/* Node Options Panel - shown when node is selected */}
+      <NodePanel />
 
       {/* Edge Options Panel - shown when edge is selected */}
       <EdgePanel />

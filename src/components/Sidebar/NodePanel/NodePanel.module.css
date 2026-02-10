@@ -1,0 +1,93 @@
+@import '../../../styles/variables.css';
+
+/* Dark theme for NodePanel */
+.nodePanel {
+  border-top: var(--input-border-width) solid var(--dark-border-primary);
+  padding: var(--spacing-xl) var(--spacing-lg);
+  background-color: var(--dark-bg-panel);
+}
+
+.nodeInfo {
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-sm);
+  background: var(--dark-bg-tertiary);
+  border-radius: var(--border-radius-md);
+}
+
+.nodeTitle {
+  margin: 0 0 var(--spacing-xs) 0;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--dark-text-primary);
+  line-height: var(--line-height-tight);
+}
+
+.nodeDescription {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--dark-text-secondary);
+  line-height: var(--line-height-normal);
+}
+
+.nodeProperties {
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background: var(--dark-bg-tertiary);
+  border-radius: var(--border-radius-md);
+}
+
+.propertiesTitle {
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--dark-text-primary);
+  line-height: var(--line-height-tight);
+}
+
+.propertyField {
+  margin-bottom: var(--spacing-md);
+}
+
+.propertyField:last-child {
+  margin-bottom: 0;
+}
+
+.propertyLabel {
+  display: block;
+  margin-bottom: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--dark-text-secondary);
+  line-height: var(--line-height-normal);
+}
+
+.propertyInput {
+  width: 100%;
+  padding: var(--input-padding-vertical) var(--input-padding-horizontal);
+  background: var(--dark-bg-primary);
+  border: var(--input-border-width) solid var(--dark-border-primary);
+  border-radius: var(--border-radius-md);
+  color: var(--dark-text-primary);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  transition: border-color var(--transition-normal);
+}
+
+.propertyInput:hover {
+  border-color: var(--dark-border-secondary);
+}
+
+.propertyInput:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.propertyInput:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.propertyInput::placeholder {
+  color: var(--dark-text-tertiary);
+}
+

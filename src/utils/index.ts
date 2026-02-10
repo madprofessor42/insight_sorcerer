@@ -22,7 +22,9 @@ export type { ValidationResult } from './link-validation';
 // Export diagram access utilities
 export {
   getDiagramFromDOM,
+  findNodeByKey,
   findLinkByKey,
+  withNode,
   withLink
 } from './diagram-access';
 export type { DiagramAccessResult } from './diagram-access';

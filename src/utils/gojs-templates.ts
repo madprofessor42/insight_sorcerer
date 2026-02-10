@@ -2,8 +2,53 @@ import * as go from 'gojs';
 import { 
   LINK_CONFIGURATIONS, 
   NODE_CONFIGURATIONS,
-  type LinkConfiguration
+  type LinkConfiguration,
+  type NodeConfiguration
 } from '../config/diagram-rules';
+
+/**
+ * Helper function to create tooltip Adornment for nodes
+ * Generates tooltip from displayProperties configuration where showAsTooltip is true
+ * @param config - Node configuration containing displayProperties
+ * @returns Tooltip Adornment or null if no tooltip properties defined
+ */
+function createNodeTooltip(config: NodeConfiguration): go.Adornment | null {
+  const $ = go.GraphObject.make;
+  
+  // Filter properties that should be shown as tooltips
+  const tooltipProperties = config.displayProperties.filter(prop => prop.showAsTooltip);
+  
+  // No tooltip if no properties configured
+  if (tooltipProperties.length === 0) {
+    return null;
+  }
+  
+  // Create tooltip with vertical layout for multiple properties
+  const tooltipContent: go.GraphObject[] = [];
+  
+  tooltipProperties.forEach(prop => {
+    tooltipContent.push(
+      $(go.TextBlock, 
+        { 
+          margin: 4,
+          font: '12px sans-serif'
+        },
+        // Show label and value, or just value if label is empty
+        new go.Binding('text', prop.dataKey, (value) => {
+          const displayValue = value || prop.defaultValue || '';
+          return prop.label ? `${prop.label}: ${displayValue}` : displayValue;
+        })
+      )
+    );
+  });
+  
+  return $(go.Adornment, 'Auto',
+    $(go.Shape, { fill: '#FFFFCC' }),
+    $(go.Panel, 'Vertical',
+      ...tooltipContent
+    )
+  );
+}
 
 /**
  * Helper function to create tooltip Adornment for links
@@ -86,7 +131,7 @@ export function createNodeTemplateMap(): go.Map<string, go.Node> {
 
   // Generate template for each configured node type
   NODE_CONFIGURATIONS.forEach(config => {
-    const { id, style, port, selectConnectedLinksOnClick } = config;
+    const { id, style, port, displayProperties, selectConnectedLinksOnClick } = config;
     
     // Build node template elements
     const nodeElements: go.GraphObject[] = [];
@@ -108,16 +153,19 @@ export function createNodeTemplateMap(): go.Map<string, go.Node> {
       })
     );
     
-    // Create text block
-    nodeElements.push(
-      $(go.TextBlock, {
-        margin: 8,
-        stroke: style.textColor,
-        font: style.font,
-        editable: style.textEditable,
-        text: style.defaultText || ''
-      }, new go.Binding('text', 'name').makeTwoWay())
-    );
+    // Create text block for main label (from displayProperties)
+    const mainLabelProperty = displayProperties.find(prop => prop.showAsMainLabel);
+    if (mainLabelProperty) {
+      nodeElements.push(
+        $(go.TextBlock, {
+          margin: 8,
+          stroke: style.textColor,
+          font: style.font,
+          editable: mainLabelProperty.editable || false,
+          text: mainLabelProperty.defaultValue || ''
+        }, new go.Binding('text', mainLabelProperty.dataKey).makeTwoWay())
+      );
+    }
     
     // Create center port if configured
     if (port.showCenterPort) {
@@ -184,6 +232,12 @@ export function createNodeTemplateMap(): go.Map<string, go.Node> {
         // Prevent default selection behavior
         e.handled = true;
       };
+    }
+    
+    // Create tooltip if there are tooltip properties
+    const tooltip = createNodeTooltip(config);
+    if (tooltip) {
+      nodeConfig.toolTip = tooltip;
     }
     
     // Create and add the node template
@@ -270,7 +324,7 @@ export function createLinkTemplateMap(): go.Map<string, go.Link> {
           // Show panel only when text is not empty
           new go.Binding('visible', prop.dataKey, (val) => {
             return val !== undefined && val !== null && val !== '';
-          }).makeTwoWay(),
+          }), // One-way binding only - don't write boolean back to data!
           // Background shape with border - uses link's color
           $(go.Shape, 'RoundedRectangle',
             {

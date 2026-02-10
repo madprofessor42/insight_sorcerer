@@ -6,6 +6,7 @@ import { initializeDiagram } from '../../utils/gojs-config';
 import { useDiagramEvents } from '../../hooks/diagram/useDiagramEvents';
 import { useLinkManagement } from '../../hooks/edge/useLinkManagement';
 import { useDiagramDragDrop } from '../../hooks/diagram/useDiagramDragDrop';
+import { useAppSelector } from '../../store/hooks';
 
 interface DiagramProps {
   selectedLinkType: LinkType;
@@ -15,6 +16,11 @@ interface DiagramProps {
 
 export function Diagram(props: DiagramProps) {
   const diagramRef = useRef<ReactDiagram>(null);
+  
+  // Get diagram data from Redux (GoJS best practice: pass data to ReactDiagram)
+  const { nodeDataArray, linkDataArray, modelData, skipsDiagramUpdate } = useAppSelector(
+    (state) => state.diagram
+  );
 
   // Setup diagram event listeners
   useDiagramEvents(diagramRef, props.onDiagramEvent);
@@ -37,10 +43,13 @@ export function Diagram(props: DiagramProps) {
       divClassName='diagram-component'
       initDiagram={initializeDiagram}
       onModelChange={handleModelChange}
-      // BEST PRACTICE: Pass empty arrays - GoJS manages its own state
-      // We don't update these after initialization
-      nodeDataArray={[]}
-      linkDataArray={[]}
+      // CRITICAL: Pass data from Redux (GoJS best practice for two-way sync)
+      nodeDataArray={nodeDataArray}
+      linkDataArray={linkDataArray}
+      modelData={modelData}
+      // CRITICAL: Skip diagram updates when changes come FROM GoJS
+      // This prevents circular updates
+      skipsDiagramUpdate={skipsDiagramUpdate}
     />
   );
 }

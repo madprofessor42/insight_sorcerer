@@ -5,15 +5,8 @@ export const store = configureStore({
   reducer: {
     diagram: diagramReducer,
   },
-  // Disable serializability check for GoJS objects
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      serializableCheck: {
-        // Ignore these paths in the state
-        ignoredActions: ['diagram/syncFromGoJS', 'diagram/addNode'],
-        ignoredPaths: ['diagram.nodeDataArray', 'diagram.linkDataArray', 'diagram.modelData'],
-      },
-    }),
+  // GoJS-specific objects are now cleaned before dispatch in useDiagramModelSync
+  // So we can keep default serializability checks enabled for safety
 });
 
 export type RootState = ReturnType<typeof store.getState>;

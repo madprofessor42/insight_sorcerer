@@ -14,10 +14,14 @@ export interface SelectedEdgeData {
 }
 
 interface DiagramState {
-  // Store diagram data for persistence/export (not for controlling GoJS!)
+  // GoJS model data - synced from diagram
   nodeDataArray: Array<go.ObjectData>;
   linkDataArray: Array<go.ObjectData>;
   modelData: go.ObjectData;
+  // CRITICAL: Flag to prevent circular updates between GoJS and Redux
+  // When true, ReactDiagram will skip updating the diagram (GoJS already has the changes)
+  skipsDiagramUpdate: boolean;
+  // UI state
   selectedLinkType: LinkType;
   // Selected edge for displaying in sidebar (serializable only)
   selectedEdge: SelectedEdgeData | null;
@@ -27,28 +31,64 @@ const initialState: DiagramState = {
   nodeDataArray: [],
   linkDataArray: [],
   modelData: {},
+  skipsDiagramUpdate: false,
   selectedLinkType: DEFAULT_LINK_TYPE,
   selectedEdge: null,
 };
+
+// Helper functions for immutable array updates
+function insertItem(array: Array<go.ObjectData>, data: go.ObjectData): Array<go.ObjectData> {
+  return [...array, data];
+}
+
+function modifyItem(array: Array<go.ObjectData>, index: number, data: go.ObjectData): Array<go.ObjectData> {
+  return array.map((item, idx) => idx === index ? data : item);
+}
+
+function removeItems(array: Array<go.ObjectData>, keys: Array<go.Key>): Array<go.ObjectData> {
+  return array.filter(item => !keys.includes(item.key));
+}
 
 export const diagramSlice = createSlice({
   name: 'diagram',
   initialState,
   reducers: {
-    // Sync all data from GoJS model (called from handleModelChange)
-    // BEST PRACTICE: GoJS model is the single source of truth
-    // Redux just mirrors it for persistence/export/display
-    // We DON'T pass this data back to GoJS!
-    syncFromGoJS: (state, action: PayloadAction<{
-      nodes: Array<go.ObjectData>;
-      links: Array<go.ObjectData>;
-      modelData?: go.ObjectData;
-    }>) => {
-      state.nodeDataArray = action.payload.nodes;
-      state.linkDataArray = action.payload.links;
-      if (action.payload.modelData) {
-        state.modelData = action.payload.modelData;
-      }
+    // Node operations - incremental updates
+    insertNode: (state, action: PayloadAction<go.ObjectData>) => {
+      state.nodeDataArray = insertItem(state.nodeDataArray, action.payload);
+    },
+    
+    modifyNode: (state, action: PayloadAction<{ index: number; data: go.ObjectData }>) => {
+      state.nodeDataArray = modifyItem(state.nodeDataArray, action.payload.index, action.payload.data);
+    },
+    
+    removeNodes: (state, action: PayloadAction<Array<go.Key>>) => {
+      state.nodeDataArray = removeItems(state.nodeDataArray, action.payload);
+    },
+
+    // Link operations - incremental updates
+    insertLink: (state, action: PayloadAction<go.ObjectData>) => {
+      state.linkDataArray = insertItem(state.linkDataArray, action.payload);
+    },
+    
+    modifyLink: (state, action: PayloadAction<{ index: number; data: go.ObjectData }>) => {
+      state.linkDataArray = modifyItem(state.linkDataArray, action.payload.index, action.payload.data);
+    },
+    
+    removeLinks: (state, action: PayloadAction<Array<go.Key>>) => {
+      state.linkDataArray = removeItems(state.linkDataArray, action.payload);
+    },
+
+    // Model data operations
+    modifyModel: (state, action: PayloadAction<go.ObjectData>) => {
+      state.modelData = action.payload;
+    },
+
+    // CRITICAL: Control circular update prevention
+    // Set to true when changes come FROM GoJS (so we don't send them back)
+    // Set to false when changes come FROM Redux (so GoJS gets updated)
+    setSkips: (state, action: PayloadAction<boolean>) => {
+      state.skipsDiagramUpdate = action.payload;
     },
 
     // Clear all diagram data
@@ -56,6 +96,7 @@ export const diagramSlice = createSlice({
       state.nodeDataArray = [];
       state.linkDataArray = [];
       state.modelData = {};
+      state.skipsDiagramUpdate = false;
     },
 
     // Set selected link type
@@ -76,7 +117,14 @@ export const diagramSlice = createSlice({
 });
 
 export const { 
-  syncFromGoJS, 
+  insertNode,
+  modifyNode,
+  removeNodes,
+  insertLink,
+  modifyLink,
+  removeLinks,
+  modifyModel,
+  setSkips,
   clearDiagram,
   setLinkType,
   setSelectedEdge,

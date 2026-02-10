@@ -307,7 +307,8 @@ export function createLinkTemplateMap(): go.Map<string, go.Link> {
           fromShortLength: style.fromShortLength,
           cursor: 'pointer', // Show pointer cursor on hover
         },
-        new go.Binding('points').makeTwoWay(), // Save all route points to model (critical for preserving shape!)
+        // Save link route points to model (GoJS automatically converts List2 → Array<number>)
+        new go.Binding('points').makeTwoWay(),
         new go.Binding('curviness').makeTwoWay(), // Save curviness to model
         new go.Binding('bidirectional').makeTwoWay(), // Save bidirectional state to model
         // Invisible thick shape for larger click area
@@ -367,7 +368,7 @@ export function createDefaultLinkTemplate(): go.Link {
       toShortLength: style.toShortLength,
       fromShortLength: style.fromShortLength,
     },
-    new go.Binding('points').makeTwoWay(),
+    new go.Binding('points').makeTwoWay(), // Save link route points
     new go.Binding('curviness').makeTwoWay(),
     new go.Binding('bidirectional').makeTwoWay(),
     // Invisible thick shape for larger click area

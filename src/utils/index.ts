@@ -29,3 +29,16 @@ export {
 } from './diagram-access';
 export type { DiagramAccessResult } from './diagram-access';
 
+// Export diagram data resolution utilities
+export {
+  resolveNodeInfo,
+  getLinkDisplayName,
+  getLinkType,
+  isLinkBidirectional,
+  getLinkDirectionSymbol,
+  getLinkColor,
+  getLinkLabel,
+  resolveLinkInfo
+} from './diagram-data';
+export type { NodeDisplayInfo, LinkDisplayInfo } from './diagram-data';
+

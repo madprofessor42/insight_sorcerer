@@ -1,18 +1,13 @@
-import * as go from 'gojs';
 import { useAppSelector } from '../../../store/hooks';
-import { normalizeLinkType } from '../../../config/diagram-rules';
+import { resolveLinkInfo } from '../../../utils/diagram-data';
 import styles from './DebugPanel.module.css';
-
-interface NodeInfo {
-  name: string;
-  type: string;
-  id: string;
-}
 
 /**
  * DebugPanel - displays all existing links in the diagram with detailed
  * information about source and target nodes (Name, Type, ID).
  * Visible only when no node or edge is selected.
+ * 
+ * All styling is config-driven via link color from LINK_CONFIGURATIONS.
  */
 export function DebugPanel() {
   const selectedNodeKey = useAppSelector((state) => state.diagram.selectedNodeKey);
@@ -24,24 +19,6 @@ export function DebugPanel() {
   if (selectedNodeKey !== null || selectedEdgeKey !== null) {
     return null;
   }
-
-  /**
-   * Resolve a node key to detailed info: Name, Type, ID
-   */
-  const getNodeInfo = (key: go.Key | null | undefined): NodeInfo => {
-    if (key === null || key === undefined) {
-      return { name: '—', type: '—', id: '—' };
-    }
-    const node = nodeDataArray.find(n => n.key === key);
-    if (node) {
-      return {
-        name: (node.name as string) || (node.text as string) || '(no name)',
-        type: (node.category as string) || 'Unknown',
-        id: String(node.key),
-      };
-    }
-    return { name: '(not found)', type: '—', id: String(key) };
-  };
 
   return (
     <section className={styles.debugPanel}>
@@ -58,26 +35,29 @@ export function DebugPanel() {
       ) : (
         <div className={styles.linkList}>
           {linkDataArray.map((link) => {
-            const linkType = normalizeLinkType(link.category);
-            const fromNode = getNodeInfo(link.from as go.Key | null);
-            const toNode = getNodeInfo(link.to as go.Key | null);
-            const linkName = (link.text as string) || '(unnamed)';
-            const isFlow = linkType === 'flow';
+            const info = resolveLinkInfo(link, nodeDataArray);
+
+            // Dynamic badge style from link config color
+            const categoryStyle = {
+              background: `${info.color}33`, // 20% opacity
+              color: info.color,
+              borderColor: `${info.color}4D`, // 30% opacity
+            };
 
             return (
               <div key={link.key} className={styles.linkItem}>
                 {/* Link header: type badge + name + key */}
                 <div className={styles.linkHeader}>
-                  <span className={`${styles.linkCategory} ${isFlow ? styles.categoryFlow : styles.categoryLink}`}>
-                    {linkType}
+                  <span className={styles.linkCategory} style={categoryStyle}>
+                    {info.label}
                   </span>
-                  <span className={styles.linkName} title={linkName}>
-                    {linkName}
+                  <span className={styles.linkName} title={info.name}>
+                    {info.name}
                   </span>
-                  {link.bidirectional && (
+                  {info.isBidirectional && (
                     <span className={styles.bidirectionalBadge}>⇄ bi</span>
                   )}
-                  <span className={styles.linkKey}>#{String(link.key)}</span>
+                  <span className={styles.linkKey}>#{info.id}</span>
                 </div>
 
                 {/* Connection detail: FROM → TO */}
@@ -87,22 +67,22 @@ export function DebugPanel() {
                     <div className={styles.nodeCardLabel}>FROM</div>
                     <div className={styles.nodeCardRow}>
                       <span className={styles.fieldLabel}>Name:</span>
-                      <span className={styles.fieldValue}>{fromNode.name}</span>
+                      <span className={styles.fieldValue}>{info.from.name}</span>
                     </div>
                     <div className={styles.nodeCardRow}>
                       <span className={styles.fieldLabel}>Type:</span>
-                      <span className={styles.fieldValue}>{fromNode.type}</span>
+                      <span className={styles.fieldValue}>{info.from.type}</span>
                     </div>
                     <div className={styles.nodeCardRow}>
                       <span className={styles.fieldLabel}>ID:</span>
-                      <span className={`${styles.fieldValue} ${styles.monoValue}`}>{fromNode.id}</span>
+                      <span className={`${styles.fieldValue} ${styles.monoValue}`}>{info.from.id}</span>
                     </div>
                   </div>
 
                   {/* Arrow */}
                   <div className={styles.arrowBlock}>
                     <span className={styles.arrowSymbol}>
-                      {link.bidirectional ? '⇄' : '→'}
+                      {info.directionSymbol}
                     </span>
                   </div>
 
@@ -111,15 +91,15 @@ export function DebugPanel() {
                     <div className={styles.nodeCardLabel}>TO</div>
                     <div className={styles.nodeCardRow}>
                       <span className={styles.fieldLabel}>Name:</span>
-                      <span className={styles.fieldValue}>{toNode.name}</span>
+                      <span className={styles.fieldValue}>{info.to.name}</span>
                     </div>
                     <div className={styles.nodeCardRow}>
                       <span className={styles.fieldLabel}>Type:</span>
-                      <span className={styles.fieldValue}>{toNode.type}</span>
+                      <span className={styles.fieldValue}>{info.to.type}</span>
                     </div>
                     <div className={styles.nodeCardRow}>
                       <span className={styles.fieldLabel}>ID:</span>
-                      <span className={`${styles.fieldValue} ${styles.monoValue}`}>{toNode.id}</span>
+                      <span className={`${styles.fieldValue} ${styles.monoValue}`}>{info.to.id}</span>
                     </div>
                   </div>
                 </div>

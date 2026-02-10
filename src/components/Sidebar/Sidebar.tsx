@@ -5,6 +5,7 @@ import { usePaletteDragDrop } from '../../hooks/palette/usePaletteDragDrop';
 import { NodePanel } from './NodePanel/NodePanel';
 import { EdgePanel } from './EdgePanel';
 import { DebugPanel } from './DebugPanel';
+import { DiagramStorage } from './DiagramStorage';
 import { LINK_CONFIGURATIONS, NODE_CONFIGURATIONS } from '../../config/diagram-rules';
 import styles from './Sidebar.module.css';
 
@@ -62,6 +63,9 @@ export function Sidebar() {
         <h1 className={styles.title}>System Dynamics</h1>
         <p className={styles.subtitle}>Visual Modeler</p>
       </header>
+
+      {/* Diagram Storage Section */}
+      <DiagramStorage />
 
       {/* Node Components Section - Dynamic from configuration */}
       <section className={styles.section}>

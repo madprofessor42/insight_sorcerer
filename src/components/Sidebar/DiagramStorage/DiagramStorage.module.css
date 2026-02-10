@@ -1,0 +1,293 @@
+@import '../../../styles/variables.css';
+
+/* Dark theme for DiagramStorage */
+.container {
+  padding: var(--spacing-xl) var(--spacing-lg);
+  border-top: var(--input-border-width) solid var(--dark-border-primary);
+  background-color: var(--dark-bg-panel);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-lg);
+}
+
+.title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--dark-text-primary);
+  margin: 0;
+  line-height: var(--line-height-tight);
+}
+
+.toggleButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  color: var(--dark-text-secondary);
+  font-size: var(--font-size-lg);
+  transition: color var(--transition-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toggleButton:hover {
+  color: var(--dark-text-primary);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.saveSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.input {
+  width: 100%;
+  padding: var(--input-padding-vertical) var(--input-padding-horizontal);
+  background: var(--dark-bg-primary);
+  border: var(--input-border-width) solid var(--dark-border-primary);
+  border-radius: var(--border-radius-md);
+  color: var(--dark-text-primary);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  transition: border-color var(--transition-normal);
+}
+
+.input:hover {
+  border-color: var(--dark-border-secondary);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.input::placeholder {
+  color: var(--dark-text-tertiary);
+}
+
+.button {
+  width: 100%;
+  padding: 10px var(--spacing-md);
+  border: var(--input-border-width) solid var(--dark-border-secondary);
+  border-radius: var(--border-radius-lg);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.saveButton {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: var(--text-on-primary);
+}
+
+.saveButton:hover:not(:disabled) {
+  background: var(--primary-color-hover);
+  border-color: var(--primary-color-hover);
+  transform: translateY(-1px);
+}
+
+.saveButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.saveButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--dark-bg-disabled);
+  border-color: var(--dark-border-disabled);
+  color: var(--dark-text-tertiary);
+}
+
+.saveButton:disabled:hover {
+  transform: none;
+}
+
+.divider {
+  height: var(--input-border-width);
+  background-color: var(--dark-border-primary);
+  margin: var(--spacing-md) 0;
+}
+
+.listHeader {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--dark-text-secondary);
+  margin: 0 0 var(--spacing-sm) 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  line-height: var(--line-height-normal);
+}
+
+.diagramList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  max-height: 300px;
+  overflow-y: auto;
+  padding: var(--spacing-xs) 0;
+}
+
+.diagramList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.diagramList::-webkit-scrollbar-track {
+  background: var(--dark-bg-tertiary);
+  border-radius: var(--border-radius-sm);
+}
+
+.diagramList::-webkit-scrollbar-thumb {
+  background: var(--dark-border-secondary);
+  border-radius: var(--border-radius-sm);
+}
+
+.diagramList::-webkit-scrollbar-thumb:hover {
+  background: var(--dark-border-hover);
+}
+
+.diagramItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md);
+  border: var(--input-border-width) solid var(--dark-border-secondary);
+  border-radius: var(--border-radius-lg);
+  background: var(--dark-bg-secondary);
+  transition: all var(--transition-normal);
+  cursor: pointer;
+}
+
+.diagramItem:hover {
+  background: var(--dark-bg-hover);
+  border-color: var(--dark-border-hover);
+  transform: translateY(-1px);
+}
+
+.diagramItem:active {
+  transform: translateY(0);
+}
+
+.diagramInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.diagramName {
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-sm);
+  color: var(--dark-text-primary);
+  margin-bottom: var(--spacing-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: var(--line-height-normal);
+}
+
+.diagramMeta {
+  font-size: var(--font-size-xs);
+  color: var(--dark-text-tertiary);
+  line-height: var(--line-height-normal);
+}
+
+.diagramActions {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-left: var(--spacing-sm);
+}
+
+.iconButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  color: var(--dark-text-secondary);
+  font-size: var(--font-size-lg);
+  transition: color var(--transition-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconButton:hover {
+  color: var(--primary-color);
+}
+
+.deleteButton:hover {
+  color: #e74c3c;
+}
+
+.message {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  line-height: var(--line-height-normal);
+}
+
+.error {
+  background-color: rgba(231, 76, 60, 0.2);
+  color: #e74c3c;
+  border: var(--input-border-width) solid #e74c3c;
+}
+
+.success {
+  background-color: rgba(80, 200, 120, 0.2);
+  color: var(--secondary-color);
+  border: var(--input-border-width) solid var(--secondary-color);
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-md);
+  padding: 0;
+  margin-left: var(--spacing-sm);
+  transition: opacity var(--transition-fast);
+}
+
+.closeButton:hover {
+  opacity: 0.7;
+}
+
+.emptyState {
+  padding: var(--spacing-xl);
+  text-align: center;
+  color: var(--dark-text-tertiary);
+  font-size: var(--font-size-sm);
+  font-style: italic;
+  line-height: var(--line-height-relaxed);
+}
+
+.loading {
+  padding: var(--spacing-xl);
+  text-align: center;
+  color: var(--dark-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+}
+

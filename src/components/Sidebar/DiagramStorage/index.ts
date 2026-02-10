@@ -1,0 +1,2 @@
+export { DiagramStorage } from './DiagramStorage';
+

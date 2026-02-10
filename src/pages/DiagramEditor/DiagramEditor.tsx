@@ -3,6 +3,7 @@ import * as go from 'gojs';
 import { Diagram, type DiagramHandle } from '../../components/Diagram';
 import { DiagramOverview } from '../../components/DiagramOverview';
 import { Sidebar } from '../../components/Sidebar';
+import { ToastProvider } from '../../components/Toast';
 import { useAppSelector } from '../../store/hooks';
 import { useDiagramModelSync } from '../../hooks/diagram/useDiagramModelSync';
 import { useDiagramSelection } from '../../hooks/diagram/useDiagramSelection';
@@ -30,23 +31,25 @@ export function DiagramEditor() {
   }, [observedDiagram]);
 
   return (
-    <div className="diagram-editor">
-      <Sidebar />
-      
-      <main className="diagram-panel">
-        <div className="diagram-container">
-          <Diagram
-            ref={diagramRef}
-            selectedLinkType={selectedLinkType}
-            onDiagramEvent={handleDiagramEvent}
-            onModelChange={handleModelChange}
-          />
-          
-          <div className="overview-container">
-            <DiagramOverview observedDiagram={observedDiagram} />
+    <ToastProvider>
+      <div className="diagram-editor">
+        <Sidebar />
+        
+        <main className="diagram-panel">
+          <div className="diagram-container">
+            <Diagram
+              ref={diagramRef}
+              selectedLinkType={selectedLinkType}
+              onDiagramEvent={handleDiagramEvent}
+              onModelChange={handleModelChange}
+            />
+            
+            <div className="overview-container">
+              <DiagramOverview observedDiagram={observedDiagram} />
+            </div>
           </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </ToastProvider>
   );
 }

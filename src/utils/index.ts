@@ -54,3 +54,14 @@ export type {
   ConnectionEndpointInfo,
   LinkDisplayInfo
 } from './diagram-data';
+
+// Export database utilities
+export {
+  saveDiagram,
+  loadDiagram,
+  getAllDiagramMetadata,
+  deleteDiagram,
+  generateDiagramId,
+  isIndexedDBAvailable
+} from './database';
+export type { DiagramData, DiagramMetadata } from './database';

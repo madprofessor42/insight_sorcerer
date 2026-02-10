@@ -93,6 +93,19 @@ export const diagramSlice = createSlice({
       state.skipsDiagramUpdate = false;
     },
 
+    // Load diagram from saved data (e.g., from IndexedDB)
+    loadDiagram: (state, action: PayloadAction<{
+      nodeDataArray: Array<go.ObjectData>;
+      linkDataArray: Array<go.ObjectData>;
+      modelData: go.ObjectData;
+    }>) => {
+      state.nodeDataArray = action.payload.nodeDataArray;
+      state.linkDataArray = action.payload.linkDataArray;
+      state.modelData = action.payload.modelData;
+      // Don't skip diagram update - we want GoJS to render the loaded data
+      state.skipsDiagramUpdate = false;
+    },
+
     // Set selected link type
     setLinkType: (state, action: PayloadAction<LinkType>) => {
       state.selectedLinkType = action.payload;
@@ -130,6 +143,7 @@ export const {
   modifyModel,
   setSkips,
   clearDiagram,
+  loadDiagram,
   setLinkType,
   setSelectedNodeKey,
   clearSelectedNode,

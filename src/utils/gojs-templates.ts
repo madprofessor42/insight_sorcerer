@@ -257,12 +257,13 @@ export function createNodeTemplateMap(): go.Map<string, go.Node> {
   nodeTemplateMap.add(LINK_LABEL_CATEGORY,
     $(go.Node, {
       selectable: false, // User cannot select label nodes directly
+      movable: false, // Cannot be dragged away from parent link
       avoidable: false, // Links should not avoid label nodes
       layerName: 'Foreground' // Place above links
     },
       $(go.Shape, 'Ellipse', {
-        width: 5,
-        height: 5,
+        width: 12,
+        height: 12,
         fill: 'black',
         stroke: null,
         portId: '', // Default port

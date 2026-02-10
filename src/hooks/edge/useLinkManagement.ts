@@ -93,20 +93,13 @@ export function useLinkManagement(
           return;
         }
         
-        // Skip canvas-end validation for LinkLabel nodes (they have their own rules)
-        const fromNodeType = fromNodeData.category === LINK_LABEL_CATEGORY 
-          ? LINK_LABEL_CATEGORY 
-          : fromNodeData.category;
-        
-        // Only validate canvas-end for non-label nodes
-        if (fromNodeType !== LINK_LABEL_CATEGORY) {
-          // Validate if this link can end on canvas
-          const canvasValidation = validateCanEndOnCanvas(linkType, fromNodeData.category);
-          if (!canvasValidation.isValid) {
-            console.warn(`⚠️ ${canvasValidation.reason} - removing link`);
-            model.removeLinkData(link.data);
-            return;
-          }
+        // Validate if this link can end on canvas
+        // validateCanEndOnCanvas handles ALL cases including LinkLabel rejection
+        const canvasValidation = validateCanEndOnCanvas(linkType, fromNodeData.category);
+        if (!canvasValidation.isValid) {
+          console.warn(`⚠️ ${canvasValidation.reason} - removing link`);
+          model.removeLinkData(link.data);
+          return;
         }
         
         // Get endpoint coordinates from diagram.lastInput (where user released mouse)

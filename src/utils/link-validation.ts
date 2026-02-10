@@ -388,6 +388,15 @@ export function validateCanEndOnCanvas(
   linkType: LinkType,
   fromNodeType: string
 ): ValidationResult {
+  // CRITICAL: LinkLabel nodes can NEVER end on canvas
+  // Edge-to-edge connections must always connect to a node or another edge
+  if (fromNodeType === LINK_LABEL_CATEGORY) {
+    return {
+      isValid: false,
+      reason: 'Связи от edge не могут заканчиваться на пустом месте'
+    };
+  }
+  
   // Check if this link type can end on canvas
   if (!canLinkEndOnCanvas(linkType)) {
     return { 
@@ -445,8 +454,15 @@ export function createLinkValidation(linkType: LinkType) {
         return false;
       }
       
+      // CRITICAL: Links from a LinkLabel can NEVER end on canvas
+      // Edge-to-edge connections must always have a concrete target
+      if (!toNode) {
+        console.warn(`⚠️ Links from edges cannot end on canvas`);
+        return false;
+      }
+      
       // If target is also a label node, check edge target validation
-      if (toNode && toNodeType === LINK_LABEL_CATEGORY) {
+      if (toNodeType === LINK_LABEL_CATEGORY) {
         if (!isValidEdgeTargetNode(linkType, toNode)) {
           const parentCat = getParentLinkCategory(toNode);
           console.warn(`⚠️ Links of type '${linkType}' cannot connect to edge type '${parentCat}'`);
@@ -466,32 +482,20 @@ export function createLinkValidation(linkType: LinkType) {
       }
       
       // Source is label, target is a regular node
-      if (toNode) {
-        if (!isValidLinkTarget(linkType, toNodeType)) {
-          console.warn(`⚠️ ${getLinkValidationErrorTo(linkType)}!`);
-          return false;
-        }
-        // Check for duplicate
-        if (fromNode.diagram) {
-          const model = fromNode.diagram.model as go.GraphLinksModel;
-          if (model instanceof go.GraphLinksModel) {
-            if (hasDuplicateLink(model, fromNode.data.key, toNode.data.key, linkType)) {
-              console.warn(`⚠️ Duplicate link already exists`);
-              return false;
-            }
+      if (!isValidLinkTarget(linkType, toNodeType)) {
+        console.warn(`⚠️ ${getLinkValidationErrorTo(linkType)}!`);
+        return false;
+      }
+      // Check for duplicate
+      if (fromNode.diagram) {
+        const model = fromNode.diagram.model as go.GraphLinksModel;
+        if (model instanceof go.GraphLinksModel) {
+          if (hasDuplicateLink(model, fromNode.data.key, toNode.data.key, linkType)) {
+            console.warn(`⚠️ Duplicate link already exists`);
+            return false;
           }
         }
-        return true;
       }
-      
-      // Source is label, target is canvas - check canEndOnCanvas
-      if (!toNode) {
-        if (!canLinkEndOnCanvas(linkType)) {
-          return false;
-        }
-        return true;
-      }
-      
       return true;
     }
     
@@ -586,7 +590,13 @@ export function createRelinkValidation() {
         return false;
       }
       
-      if (toNode && toNodeType === LINK_LABEL_CATEGORY) {
+      // CRITICAL: Links from a LinkLabel can NEVER end on canvas
+      if (!toNode) {
+        console.warn(`⚠️ Links from edges cannot end on canvas`);
+        return false;
+      }
+      
+      if (toNodeType === LINK_LABEL_CATEGORY) {
         if (!isValidEdgeTargetNode(linkType, toNode)) return false;
         if (fromNode.diagram) {
           const model = fromNode.diagram.model as go.GraphLinksModel;
@@ -595,16 +605,11 @@ export function createRelinkValidation() {
         return true;
       }
       
-      if (toNode) {
-        if (!isValidLinkTarget(linkType, toNodeType)) return false;
-        if (fromNode.diagram) {
-          const model = fromNode.diagram.model as go.GraphLinksModel;
-          if (hasDuplicateLink(model, fromNode.data.key, toNode.data.key, linkType, link.data.key)) return false;
-        }
-        return true;
+      if (!isValidLinkTarget(linkType, toNodeType)) return false;
+      if (fromNode.diagram) {
+        const model = fromNode.diagram.model as go.GraphLinksModel;
+        if (hasDuplicateLink(model, fromNode.data.key, toNode.data.key, linkType, link.data.key)) return false;
       }
-      
-      if (!toNode && !canLinkEndOnCanvas(linkType)) return false;
       return true;
     }
     

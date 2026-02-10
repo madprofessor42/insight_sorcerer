@@ -40,6 +40,17 @@ export {
   getLinkDirectionSymbol,
   getLinkColor,
   getLinkLabel,
-  resolveLinkInfo
+  resolveLinkInfo,
+  // Edge-to-edge resolution utilities
+  isLinkLabelNodeData,
+  findParentEdgeForLabelNode,
+  resolveEdgeInfo,
+  resolveConnectionEndpoint,
+  isEdgeEndpoint
 } from './diagram-data';
-export type { NodeDisplayInfo, LinkDisplayInfo } from './diagram-data';
+export type {
+  NodeDisplayInfo,
+  EdgeDisplayInfo,
+  ConnectionEndpointInfo,
+  LinkDisplayInfo
+} from './diagram-data';

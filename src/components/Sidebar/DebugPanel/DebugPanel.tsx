@@ -1,12 +1,27 @@
 import { useAppSelector } from '../../../store/hooks';
-import { resolveLinkInfo } from '../../../utils/diagram-data';
+import { resolveLinkInfo, isEdgeEndpoint } from '../../../utils/diagram-data';
+import type { ConnectionEndpointInfo } from '../../../utils/diagram-data';
 import styles from './DebugPanel.module.css';
 
 /**
+ * Helper to get the label for connection card header.
+ * Shows "FROM (Edge)" or "TO (Edge)" when endpoint is an edge.
+ */
+function getEndpointLabel(prefix: string, endpoint: ConnectionEndpointInfo): string {
+  if (isEdgeEndpoint(endpoint)) {
+    return `${prefix} (Edge)`;
+  }
+  return prefix;
+}
+
+/**
  * DebugPanel - displays all existing links in the diagram with detailed
- * information about source and target nodes (Name, Type, ID).
+ * information about source and target endpoints (nodes or edges).
  * Visible only when no node or edge is selected.
- * 
+ *
+ * When a link connects to an edge (via LinkLabel), it transparently
+ * shows the parent edge info instead of "LinkLabel".
+ *
  * All styling is config-driven via link color from LINK_CONFIGURATIONS.
  */
 export function DebugPanel() {
@@ -35,7 +50,8 @@ export function DebugPanel() {
       ) : (
         <div className={styles.linkList}>
           {linkDataArray.map((link) => {
-            const info = resolveLinkInfo(link, nodeDataArray);
+            // Pass linkDataArray for edge-to-edge resolution
+            const info = resolveLinkInfo(link, nodeDataArray, linkDataArray);
 
             // Dynamic badge style from link config color
             const categoryStyle = {
@@ -62,9 +78,11 @@ export function DebugPanel() {
 
                 {/* Connection detail: FROM → TO */}
                 <div className={styles.connectionBlock}>
-                  {/* FROM node */}
+                  {/* FROM endpoint (node or edge) */}
                   <div className={styles.nodeCard}>
-                    <div className={styles.nodeCardLabel}>FROM</div>
+                    <div className={styles.nodeCardLabel}>
+                      {getEndpointLabel('FROM', info.from)}
+                    </div>
                     <div className={styles.nodeCardRow}>
                       <span className={styles.fieldLabel}>Name:</span>
                       <span className={styles.fieldValue}>{info.from.name}</span>
@@ -86,9 +104,11 @@ export function DebugPanel() {
                     </span>
                   </div>
 
-                  {/* TO node */}
+                  {/* TO endpoint (node or edge) */}
                   <div className={styles.nodeCard}>
-                    <div className={styles.nodeCardLabel}>TO</div>
+                    <div className={styles.nodeCardLabel}>
+                      {getEndpointLabel('TO', info.to)}
+                    </div>
                     <div className={styles.nodeCardRow}>
                       <span className={styles.fieldLabel}>Name:</span>
                       <span className={styles.fieldValue}>{info.to.name}</span>

@@ -22,7 +22,7 @@ import {
  * 6. Automatically converts to bidirectional when reverse link is created
  *    (only for link types that support bidirectional mode)
  * 7. Automatically deletes Cloud nodes when their connected links are removed
- * 8. Automatically deletes orphan LinkLabel nodes when their parent links are removed
+ * 8. Cascade-deletes LinkLabel nodes and their connected links when parent link is removed
  */
 export function useLinkManagement(
   diagramRef: React.RefObject<ReactDiagram | null>,
@@ -184,8 +184,9 @@ export function useLinkManagement(
       // Collect Cloud nodes that might need to be auto-deleted
       const cloudNodesToCheck = new Set<go.Key>();
       
-      // Collect LinkLabel nodes that might need to be auto-deleted
-      const labelNodesToCheck = new Set<go.Key>();
+      // Collect LinkLabel node keys whose parent link was deleted
+      // These MUST be cascade-deleted along with any links connected to them
+      const labelNodeKeysToDelete = new Set<go.Key>();
 
       // First pass: identify what was deleted
       deletedParts.each((part) => {
@@ -212,11 +213,12 @@ export function useLinkManagement(
             cloudNodesToCheck.add(toKey);
           }
           
-          // Check for orphan LinkLabel nodes associated with this link
+          // Collect LinkLabel nodes associated with this deleted link
+          // These MUST be deleted (cascade) since their parent link is gone
           const labelKeys = link.data.labelKeys;
           if (Array.isArray(labelKeys)) {
             labelKeys.forEach((labelKey: go.Key) => {
-              labelNodesToCheck.add(labelKey);
+              labelNodeKeysToDelete.add(labelKey);
             });
           }
         }
@@ -225,21 +227,14 @@ export function useLinkManagement(
       // Second pass: auto-delete orphaned Cloud nodes
       cloudNodesToCheck.forEach((cloudKey) => {
         const cloudNode = diagram.findNodeForKey(cloudKey);
-        if (!cloudNode) {
-          // Node was already deleted (shouldn't happen, but safe to check)
-          return;
-        }
+        if (!cloudNode) return;
 
         // Count remaining links connected to this Cloud
         const connectedLinks = cloudNode.findLinksConnected();
         const linkCount = connectedLinks.count;
 
         if (linkCount === 0) {
-          // No links remain - delete the orphaned Cloud node
           console.log(`🌥️💨 Auto-deleting orphaned Cloud node '${cloudKey}' (no remaining links)`);
-          
-          // NOTE: SelectionDeleted is already called within a transaction,
-          // so we can modify model directly without starting a new transaction
           const nodeData = model.findNodeDataForKey(cloudKey);
           if (nodeData) {
             model.removeNodeData(nodeData);
@@ -250,22 +245,33 @@ export function useLinkManagement(
         }
       });
       
-      // Third pass: auto-delete orphaned LinkLabel nodes
-      // LinkLabel nodes should be deleted when their parent link is deleted
-      labelNodesToCheck.forEach((labelKey) => {
+      // Third pass: cascade-delete LinkLabel nodes and their connected links
+      // When a parent link is deleted, its label nodes MUST be removed.
+      // Any links connected to these label nodes (edge-to-edge links) must also be removed.
+      labelNodeKeysToDelete.forEach((labelKey) => {
         const labelNode = diagram.findNodeForKey(labelKey);
         if (!labelNode) return; // Already deleted
         
-        // If the label node is no longer associated with any link, delete it
+        console.log(`🏷️💨 Cascade-deleting LinkLabel node '${labelKey}' (parent link deleted)`);
+        
+        // First, remove all links connected to this label node
+        // (these are edge-to-edge links that used this label as a port)
         const connectedLinks = labelNode.findLinksConnected();
-        // A label node that still has a labeledLink is still valid
-        if (labelNode.labeledLink === null && connectedLinks.count === 0) {
-          console.log(`🏷️💨 Auto-deleting orphaned LinkLabel node '${labelKey}'`);
-          const nodeData = model.findNodeDataForKey(labelKey);
-          if (nodeData) {
-            model.removeNodeData(nodeData);
-            console.log(`✅ Orphaned LinkLabel node '${labelKey}' removed`);
-          }
+        const linksToRemove: go.ObjectData[] = [];
+        connectedLinks.each((connLink: go.Link) => {
+          linksToRemove.push(connLink.data);
+        });
+        
+        linksToRemove.forEach((linkData) => {
+          console.log(`  🔗💨 Removing connected edge-to-edge link '${linkData.key}'`);
+          model.removeLinkData(linkData);
+        });
+        
+        // Then remove the label node itself
+        const nodeData = model.findNodeDataForKey(labelKey);
+        if (nodeData) {
+          model.removeNodeData(nodeData);
+          console.log(`✅ LinkLabel node '${labelKey}' and ${linksToRemove.length} connected link(s) removed`);
         }
       });
     };

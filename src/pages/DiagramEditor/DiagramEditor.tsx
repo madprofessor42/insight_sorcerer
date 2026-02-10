@@ -7,6 +7,7 @@ import { ToastProvider } from '../../components/Toast';
 import { useAppSelector } from '../../store/hooks';
 import { useDiagramModelSync } from '../../hooks/diagram/useDiagramModelSync';
 import { useDiagramSelection } from '../../hooks/diagram/useDiagramSelection';
+import { useDiagramAutoSave } from '../../hooks/diagram/useDiagramAutoSave';
 import './DiagramEditor.css';
 
 export function DiagramEditor() {
@@ -16,6 +17,9 @@ export function DiagramEditor() {
   
   const diagramRef = useRef<DiagramHandle>(null);
   const [observedDiagram, setObservedDiagram] = useState<go.Diagram | null>(null);
+  
+  // Enable auto-save on every diagram change
+  useDiagramAutoSave(diagramRef);
 
   // Update observed diagram for Overview when diagram is ready
   useEffect(() => {

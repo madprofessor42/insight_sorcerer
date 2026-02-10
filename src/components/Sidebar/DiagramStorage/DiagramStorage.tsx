@@ -6,9 +6,10 @@
 
 import { useState, useEffect } from 'react';
 import { useDiagramPersistence } from '../../../hooks/diagram/useDiagramPersistence';
+import { loadAutoSavedDiagram, clearAutoSavedDiagram, finishRestoration } from '../../../hooks/diagram/useDiagramAutoSave';
 import { useToast } from '../../Toast';
 import { useAppDispatch } from '../../../store/hooks';
-import { clearDiagram } from '../../../store/diagramSlice';
+import { clearDiagram, loadDiagram as loadDiagramAction } from '../../../store/diagramSlice';
 import type { DiagramMetadata } from '../../../utils/database';
 import styles from './DiagramStorage.module.css';
 
@@ -28,11 +29,46 @@ export function DiagramStorage() {
   const [savedDiagrams, setSavedDiagrams] = useState<DiagramMetadata[]>([]);
   const [currentDiagramId, setCurrentDiagramId] = useState<string | null>(null);
   const [currentDiagramName, setCurrentDiagramName] = useState<string>('');
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // Load saved diagrams on mount
+  // Load saved diagrams on mount and restore auto-saved state
   useEffect(() => {
-    loadSavedDiagrams();
-  }, []);
+    const initializeDiagrams = async () => {
+      await loadSavedDiagrams();
+      
+      // Restore auto-saved diagram state on first load only
+      if (isInitialLoad) {
+        const autoSavedModel = loadAutoSavedDiagram();
+        if (autoSavedModel) {
+          try {
+            const modelObj = JSON.parse(autoSavedModel);
+            dispatch(
+              loadDiagramAction({
+                nodeDataArray: modelObj.nodeDataArray || [],
+                linkDataArray: modelObj.linkDataArray || [],
+                modelData: modelObj.modelData || {},
+              })
+            );
+            console.log('✅ Restored auto-saved diagram from localStorage');
+            
+            // Mark restoration as complete after React updates
+            finishRestoration();
+          } catch (err) {
+            console.error('Failed to restore auto-saved diagram:', err);
+            clearAutoSavedDiagram();
+            finishRestoration();
+          }
+        } else {
+          // No saved data, just mark as complete
+          finishRestoration();
+        }
+        
+        setIsInitialLoad(false);
+      }
+    };
+
+    initializeDiagrams();
+  }, [isInitialLoad, dispatch]);
 
   const loadSavedDiagrams = async () => {
     try {
@@ -43,7 +79,7 @@ export function DiagramStorage() {
     }
   };
 
-  // Сохранить текущую диаграмму (перезапись)
+  // Сохранить текущую диаграмму (перезапись в IndexedDB)
   const handleSave = async () => {
     if (!currentDiagramId || !currentDiagramName) {
       return;
@@ -51,7 +87,7 @@ export function DiagramStorage() {
 
     try {
       await saveDiagram(currentDiagramName, currentDiagramId);
-      toast.showSuccess(`Диаграмма "${currentDiagramName}" обновлена!`);
+      toast.showSuccess(`Диаграмма "${currentDiagramName}" сохранена!`);
       await loadSavedDiagrams();
     } catch (err) {
       console.error('Failed to save diagram:', err);
@@ -59,7 +95,7 @@ export function DiagramStorage() {
     }
   };
 
-  // Сохранить как новую диаграмму
+  // Сохранить как новую диаграмму в IndexedDB
   const handleSaveAs = async () => {
     if (!diagramName.trim()) {
       return;
@@ -114,10 +150,11 @@ export function DiagramStorage() {
 
   // Создать новую диаграмму (очистить canvas)
   const handleNew = () => {
-    if (confirm('Создать новую диаграмму? Несохранённые изменения будут потеряны.')) {
+    if (confirm('Создать новую диаграмму? Текущее состояние будет очищено.')) {
       dispatch(clearDiagram());
       setCurrentDiagramId(null);
       setCurrentDiagramName('');
+      clearAutoSavedDiagram();
       toast.showInfo('Создана новая диаграмма');
     }
   };

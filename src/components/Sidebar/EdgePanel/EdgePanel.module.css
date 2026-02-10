@@ -1,87 +1,106 @@
-@import '../../../styles/variables.css';
+/**
+ * EdgePanel styles
+ */
 
-/* Dark theme for EdgePanel */
 .edgePanel {
-  border-top: var(--input-border-width) solid var(--dark-border-primary);
-  padding: var(--spacing-xl) var(--spacing-lg);
-  background-color: var(--dark-bg-panel);
+  padding: var(--spacing-3);
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-default);
+}
+
+.title {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-3) 0;
+  padding-bottom: var(--spacing-2);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
 }
 
 .edgeInfo {
-  margin-bottom: var(--spacing-md);
-  padding: var(--spacing-sm);
-  background: var(--dark-bg-tertiary);
-  border-radius: var(--border-radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  padding: var(--spacing-2);
+  background: var(--color-background);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--border-subtle);
 }
 
 .edgeType {
   font-size: var(--font-size-sm);
-  color: var(--dark-text-secondary);
-  margin: 0 0 var(--spacing-xs) 0;
-  line-height: var(--line-height-normal);
+  color: var(--text-secondary);
+  margin: 0;
+  font-weight: 500;
 }
 
 .edgeId {
-  font-size: var(--font-size-xs);
-  color: var(--dark-text-tertiary);
+  font-size: 11px;
+  color: var(--text-placeholder);
   margin: 0;
   font-family: monospace;
-  line-height: var(--line-height-normal);
 }
 
 .edgeActions {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-2);
 }
 
 .edgeActionButton {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  padding: 10px var(--spacing-md);
-  background: var(--dark-bg-secondary);
-  border: var(--input-border-width) solid var(--dark-border-secondary);
-  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-2) var(--spacing-md);
+  background: var(--color-background);
+  border: 1px solid var(--border-default);
+  border-radius: var(--border-radius-sm);
   cursor: pointer;
-  transition: all var(--transition-normal);
-  color: var(--dark-text-primary);
+  transition: all 0.2s ease;
+  color: var(--text-primary);
   font-family: var(--font-family);
   font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-normal);
+  font-weight: 500;
   text-align: left;
 }
 
 .edgeActionButton:hover {
-  background: var(--dark-bg-hover);
-  border-color: var(--dark-border-hover);
-  transform: translateY(-1px);
+  background: var(--surface-hover);
+  border-color: var(--primary);
 }
 
 .edgeActionButton:active {
-  transform: translateY(0);
+  background: var(--surface-active);
+  transform: scale(0.98);
 }
 
 .edgeActionButton.active {
-  background: var(--primary-color);
-  border-color: var(--primary-color);
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
 }
 
 .edgeActionButton.active:hover {
-  background: var(--primary-color-hover);
-  border-color: var(--primary-color-hover);
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
 }
 
 .edgeActionButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  background: var(--dark-bg-disabled);
-  border-color: var(--dark-border-disabled);
+  background: var(--color-background);
+  border-color: var(--border-default);
 }
 
 .edgeActionButton:disabled:hover {
-  background: var(--dark-bg-disabled);
-  border-color: var(--dark-border-disabled);
+  background: var(--color-background);
+  border-color: var(--border-default);
   transform: none;
 }
 
@@ -94,57 +113,35 @@
   flex: 1;
 }
 
-.edgeProperties {
-  margin-top: var(--spacing-lg);
-  padding: var(--spacing-md);
-  background: var(--dark-bg-tertiary);
-  border-radius: var(--border-radius-md);
-}
-
-.propertiesTitle {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
-  color: var(--dark-text-primary);
-  margin: 0 0 var(--spacing-md) 0;
-  line-height: var(--line-height-tight);
-}
-
-.propertyField {
-  margin-bottom: var(--spacing-md);
-}
-
-.propertyField:last-child {
-  margin-bottom: 0;
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
 }
 
 .propertyLabel {
-  display: block;
   font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--dark-text-secondary);
-  margin-bottom: var(--spacing-xs);
-  line-height: var(--line-height-normal);
+  font-weight: 500;
+  color: var(--text-secondary);
 }
 
 .propertyInput {
-  width: 100%;
-  padding: var(--input-padding-vertical) var(--input-padding-horizontal);
-  background: var(--dark-bg-primary);
-  border: var(--input-border-width) solid var(--dark-border-primary);
-  border-radius: var(--border-radius-md);
-  color: var(--dark-text-primary);
-  font-family: var(--font-family);
+  padding: var(--spacing-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--border-radius-sm);
   font-size: var(--font-size-sm);
-  transition: border-color var(--transition-normal);
-}
-
-.propertyInput:hover {
-  border-color: var(--dark-border-secondary);
+  color: var(--text-primary);
+  background: var(--surface-input);
+  transition: border-color 0.2s ease;
 }
 
 .propertyInput:focus {
   outline: none;
-  border-color: var(--primary-color);
+  border-color: var(--primary);
+}
+
+.propertyInput::placeholder {
+  color: var(--text-placeholder);
 }
 
 .propertyInput:disabled {
@@ -152,7 +149,88 @@
   cursor: not-allowed;
 }
 
-.propertyInput::placeholder {
-  color: var(--dark-text-tertiary);
+.actions {
+  margin-top: var(--spacing-3);
+  padding-top: var(--spacing-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.deleteButton {
+  width: 100%;
+  padding: var(--spacing-2) var(--spacing-3);
+  background: var(--danger);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.deleteButton:hover {
+  background: var(--danger-hover);
+}
+
+.deleteButton:active {
+  background: var(--danger-active);
+}
+
+/* Direction Controls */
+.directionSection {
+  margin-top: var(--spacing-3);
+  padding-top: var(--spacing-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.sectionTitle {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-2) 0;
+}
+
+.directionControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+}
+
+.directionButton {
+  flex: 1;
+  min-width: 0;
+  padding: var(--spacing-2) var(--spacing-2);
+  background: var(--surface-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.directionButton:hover {
+  background: var(--surface-hover);
+  border-color: var(--primary);
+}
+
+.directionButton:active {
+  background: var(--surface-active);
+  transform: scale(0.98);
+}
+
+.directionButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--surface-secondary);
+  border-color: var(--border-default);
+}
+
+.directionButton:disabled:hover {
+  background: var(--surface-secondary);
+  border-color: var(--border-default);
+  transform: none;
 }
 

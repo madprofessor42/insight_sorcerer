@@ -174,11 +174,10 @@ export function DiagramStorage() {
 
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <h3 className={styles.title}>💾 Хранилище диаграмм</h3>
+      <div className={styles.header} onClick={() => setIsExpanded(!isExpanded)}>
+        <h3 className={styles.title}>Хранилище диаграмм</h3>
         <button
           className={styles.toggleButton}
-          onClick={() => setIsExpanded(!isExpanded)}
           title={isExpanded ? 'Свернуть' : 'Развернуть'}
         >
           {isExpanded ? '▼' : '▶'}
@@ -194,7 +193,7 @@ export function DiagramStorage() {
             disabled={status === 'saving'}
             title="Создать новую диаграмму"
           >
-            ➕ Новая диаграмма
+            + Новая диаграмма
           </button>
 
           <div className={styles.divider} />
@@ -217,13 +216,13 @@ export function DiagramStorage() {
                   disabled={status === 'saving'}
                   title="Перезаписать текущую диаграмму"
                 >
-                  {status === 'saving' ? 'Сохранение...' : '💾 Сохранить'}
+                  {status === 'saving' ? 'Сохранение...' : 'Сохранить'}
                 </button>
                 
                 <input
                   type="text"
                   className={styles.input}
-                  placeholder="Сохранить как..."
+                  placeholder="Новое название..."
                   value={diagramName}
                   onChange={(e) => setDiagramName(e.target.value)}
                   onKeyPress={(e) => {
@@ -240,7 +239,7 @@ export function DiagramStorage() {
                   disabled={!diagramName.trim() || status === 'saving'}
                   title="Сохранить как новую диаграмму"
                 >
-                  📝 Сохранить как
+                  Сохранить как
                 </button>
               </>
             ) : (
@@ -265,7 +264,7 @@ export function DiagramStorage() {
                   disabled={!diagramName.trim() || status === 'saving'}
                   title="Сохранить диаграмму"
                 >
-                  {status === 'saving' ? 'Сохранение...' : '💾 Сохранить'}
+                  {status === 'saving' ? 'Сохранение...' : 'Сохранить'}
                 </button>
               </>
             )}
@@ -310,7 +309,7 @@ export function DiagramStorage() {
                         onClick={(e) => handleDelete(diagram.id, e)}
                         title="Удалить"
                       >
-                        🗑️
+                        ✕
                       </button>
                     </div>
                   </div>

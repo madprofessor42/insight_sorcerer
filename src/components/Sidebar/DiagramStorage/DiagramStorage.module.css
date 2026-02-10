@@ -1,25 +1,28 @@
-@import '../../../styles/variables.css';
+/**
+ * DiagramStorage styles - Compact dark theme
+ */
 
-/* Dark theme for DiagramStorage */
 .container {
-  padding: var(--spacing-xl) var(--spacing-lg);
-  border-top: var(--input-border-width) solid var(--dark-border-primary);
-  background-color: var(--dark-bg-panel);
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-surface);
 }
 
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--spacing-lg);
+  cursor: pointer;
+  padding: var(--spacing-xs) 0;
 }
 
 .title {
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-semibold);
-  color: var(--dark-text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary);
   margin: 0;
-  line-height: var(--line-height-tight);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .toggleButton {
@@ -27,43 +30,45 @@
   border: none;
   cursor: pointer;
   padding: var(--spacing-xs);
-  color: var(--dark-text-secondary);
-  font-size: var(--font-size-lg);
-  transition: color var(--transition-normal);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  transition: color var(--transition-fast);
   display: flex;
   align-items: center;
   justify-content: center;
+  line-height: 1;
 }
 
 .toggleButton:hover {
-  color: var(--dark-text-primary);
+  color: var(--color-text-primary);
 }
 
 .content {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
 }
 
 .currentDiagram {
-  padding: var(--spacing-md);
-  background: var(--dark-bg-tertiary);
-  border-radius: var(--border-radius-md);
-  border: var(--input-border-width) solid var(--primary-color);
+  padding: var(--spacing-2);
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--color-primary);
 }
 
 .currentDiagramLabel {
-  font-size: var(--font-size-xs);
-  color: var(--dark-text-secondary);
-  margin-bottom: var(--spacing-xs);
+  font-size: 10px;
+  color: var(--color-text-secondary);
+  margin-bottom: 2px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .currentDiagramName {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
-  color: var(--primary-color);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -72,28 +77,29 @@
 .saveSection {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
 }
 
 .input {
   width: 100%;
-  padding: var(--input-padding-vertical) var(--input-padding-horizontal);
-  background: var(--dark-bg-primary);
-  border: var(--input-border-width) solid var(--dark-border-primary);
-  border-radius: var(--border-radius-md);
-  color: var(--dark-text-primary);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  color: var(--color-text-primary);
   font-family: var(--font-family);
-  font-size: var(--font-size-sm);
-  transition: border-color var(--transition-normal);
+  font-size: 13px;
+  transition: border-color var(--transition-fast);
+  line-height: 1.4;
 }
 
 .input:hover {
-  border-color: var(--dark-border-secondary);
+  border-color: var(--color-surface-hover);
 }
 
 .input:focus {
   outline: none;
-  border-color: var(--primary-color);
+  border-color: var(--color-primary);
 }
 
 .input:disabled {
@@ -102,30 +108,32 @@
 }
 
 .input::placeholder {
-  color: var(--dark-text-tertiary);
+  color: var(--color-text-placeholder);
+  font-size: 12px;
 }
 
 .button {
   width: 100%;
-  padding: 10px var(--spacing-md);
-  border: var(--input-border-width) solid var(--dark-border-secondary);
-  border-radius: var(--border-radius-lg);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  font-size: 12px;
+  font-weight: 500;
   font-family: var(--font-family);
   cursor: pointer;
-  transition: all var(--transition-normal);
+  transition: all var(--transition-fast);
+  line-height: 1.4;
 }
 
 .saveButton {
-  background: var(--primary-color);
-  border-color: var(--primary-color);
-  color: var(--text-on-primary);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
 }
 
 .saveButton:hover:not(:disabled) {
-  background: var(--primary-color-hover);
-  border-color: var(--primary-color-hover);
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
   transform: translateY(-1px);
 }
 
@@ -136,9 +144,9 @@
 .saveButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  background: var(--dark-bg-disabled);
-  border-color: var(--dark-border-disabled);
-  color: var(--dark-text-tertiary);
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--text-disabled);
 }
 
 .saveButton:disabled:hover {
@@ -146,14 +154,14 @@
 }
 
 .saveAsButton {
-  background: var(--secondary-color);
-  border-color: var(--secondary-color);
-  color: var(--text-on-primary);
+  background: var(--color-success);
+  border-color: var(--color-success);
+  color: white;
 }
 
 .saveAsButton:hover:not(:disabled) {
-  background: #2e9d60;
-  border-color: #2e9d60;
+  background: var(--color-success-hover);
+  border-color: var(--color-success-hover);
   transform: translateY(-1px);
 }
 
@@ -164,9 +172,9 @@
 .saveAsButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  background: var(--dark-bg-disabled);
-  border-color: var(--dark-border-disabled);
-  color: var(--dark-text-tertiary);
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--text-disabled);
 }
 
 .saveAsButton:disabled:hover {
@@ -175,15 +183,15 @@
 
 .newButton {
   background: transparent;
-  border-color: var(--dark-border-secondary);
-  color: var(--dark-text-primary);
-  font-weight: var(--font-weight-normal);
+  border-color: var(--color-border);
+  color: var(--color-text-primary);
+  font-weight: 400;
 }
 
 .newButton:hover:not(:disabled) {
-  background: var(--dark-bg-tertiary);
-  border-color: var(--primary-color);
-  color: var(--primary-color);
+  background: var(--color-surface-hover);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
   transform: translateY(-1px);
 }
 
@@ -199,68 +207,67 @@
 .newButton:disabled:hover {
   transform: none;
   background: transparent;
-  border-color: var(--dark-border-secondary);
-  color: var(--dark-text-primary);
+  border-color: var(--color-border);
+  color: var(--color-text-primary);
 }
 
 .divider {
-  height: var(--input-border-width);
-  background-color: var(--dark-border-primary);
-  margin: var(--spacing-md) 0;
+  height: 1px;
+  background-color: var(--color-border);
+  margin: var(--spacing-xs) 0;
 }
 
 .listHeader {
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-semibold);
-  color: var(--dark-text-secondary);
-  margin: 0 0 var(--spacing-sm) 0;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--spacing-xs) 0;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  line-height: var(--line-height-normal);
+  letter-spacing: 0.5px;
 }
 
 .diagramList {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
-  max-height: 300px;
+  gap: var(--spacing-xs);
+  max-height: 200px;
   overflow-y: auto;
-  padding: var(--spacing-xs) 0;
+  padding-top: 2px;
 }
 
 .diagramList::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 .diagramList::-webkit-scrollbar-track {
-  background: var(--dark-bg-tertiary);
-  border-radius: var(--border-radius-sm);
+  background: var(--color-background);
+  border-radius: 2px;
 }
 
 .diagramList::-webkit-scrollbar-thumb {
-  background: var(--dark-border-secondary);
-  border-radius: var(--border-radius-sm);
+  background: var(--color-border);
+  border-radius: 2px;
 }
 
 .diagramList::-webkit-scrollbar-thumb:hover {
-  background: var(--dark-border-hover);
+  background: var(--color-text-secondary);
 }
 
 .diagramItem {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--spacing-md);
-  border: var(--input-border-width) solid var(--dark-border-secondary);
-  border-radius: var(--border-radius-lg);
-  background: var(--dark-bg-secondary);
-  transition: all var(--transition-normal);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  background: var(--color-background);
+  transition: all var(--transition-fast);
   cursor: pointer;
 }
 
 .diagramItem:hover {
-  background: var(--dark-bg-hover);
-  border-color: var(--dark-border-hover);
+  background: var(--color-surface-hover);
+  border-color: var(--color-selection);
   transform: translateY(-1px);
 }
 
@@ -269,12 +276,12 @@
 }
 
 .diagramItemActive {
-  border-color: var(--primary-color) !important;
-  background: rgba(74, 144, 226, 0.15) !important;
+  border-color: var(--color-primary) !important;
+  background: var(--color-selection-light) !important;
 }
 
 .diagramItemActive .diagramName {
-  color: var(--primary-color);
+  color: var(--color-primary);
 }
 
 .diagramInfo {
@@ -283,102 +290,60 @@
 }
 
 .diagramName {
-  font-weight: var(--font-weight-medium);
-  font-size: var(--font-size-sm);
-  color: var(--dark-text-primary);
-  margin-bottom: var(--spacing-xs);
+  font-weight: 500;
+  font-size: 12px;
+  color: var(--color-text-primary);
+  margin-bottom: 2px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  line-height: var(--line-height-normal);
 }
 
 .diagramMeta {
-  font-size: var(--font-size-xs);
-  color: var(--dark-text-tertiary);
-  line-height: var(--line-height-normal);
+  font-size: 10px;
+  color: var(--color-text-placeholder);
+  line-height: 1.3;
 }
 
 .diagramActions {
   display: flex;
   gap: var(--spacing-xs);
-  margin-left: var(--spacing-sm);
+  margin-left: var(--spacing-xs);
 }
 
 .iconButton {
   background: none;
   border: none;
   cursor: pointer;
-  padding: var(--spacing-xs);
-  color: var(--dark-text-secondary);
-  font-size: var(--font-size-lg);
-  transition: color var(--transition-normal);
+  padding: 2px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  transition: color var(--transition-fast);
   display: flex;
   align-items: center;
   justify-content: center;
+  line-height: 1;
 }
 
 .iconButton:hover {
-  color: var(--primary-color);
+  color: var(--color-primary);
 }
 
 .deleteButton:hover {
-  color: #e74c3c;
-}
-
-.message {
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--border-radius-md);
-  font-size: var(--font-size-sm);
-  margin-bottom: var(--spacing-sm);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  line-height: var(--line-height-normal);
-}
-
-.error {
-  background-color: rgba(231, 76, 60, 0.2);
-  color: #e74c3c;
-  border: var(--input-border-width) solid #e74c3c;
-}
-
-.success {
-  background-color: rgba(80, 200, 120, 0.2);
-  color: var(--secondary-color);
-  border: var(--input-border-width) solid var(--secondary-color);
-}
-
-.closeButton {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: inherit;
-  font-weight: var(--font-weight-bold);
-  font-size: var(--font-size-md);
-  padding: 0;
-  margin-left: var(--spacing-sm);
-  transition: opacity var(--transition-fast);
-}
-
-.closeButton:hover {
-  opacity: 0.7;
+  color: var(--color-danger);
 }
 
 .emptyState {
-  padding: var(--spacing-xl);
+  padding: var(--spacing-md);
   text-align: center;
-  color: var(--dark-text-tertiary);
-  font-size: var(--font-size-sm);
+  color: var(--color-text-placeholder);
+  font-size: 11px;
   font-style: italic;
-  line-height: var(--line-height-relaxed);
 }
 
 .loading {
-  padding: var(--spacing-xl);
+  padding: var(--spacing-md);
   text-align: center;
-  color: var(--dark-text-secondary);
-  font-size: var(--font-size-sm);
-  line-height: var(--line-height-normal);
+  color: var(--color-text-secondary);
+  font-size: 11px;
 }
-

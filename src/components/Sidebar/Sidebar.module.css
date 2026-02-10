@@ -1,94 +1,127 @@
 .sidebar {
   position: relative;
   height: 100%;
-  background-color: #2c3e50;
-  border-right: 1px solid #34495e;
+  background-color: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: row;
+  flex-shrink: 0;
+}
+
+.sidebarContent {
+  flex: 1;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
   overflow-x: hidden;
-  flex-shrink: 0;
+  min-width: 0;
+}
+
+/* Custom scrollbar for sidebar */
+.sidebarContent::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebarContent::-webkit-scrollbar-track {
+  background: var(--color-surface);
+}
+
+.sidebarContent::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+.sidebarContent::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
 }
 
 .header {
-  padding: 20px;
-  border-bottom: 1px solid #34495e;
-  background: #2c3e50;
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
 }
 
 .title {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #ecf0f1;
-  letter-spacing: 0.3px;
+  color: var(--color-text-primary);
+  letter-spacing: 0.5px;
 }
 
 .subtitle {
-  margin: 4px 0 0;
+  margin: var(--spacing-xs) 0 0;
   font-size: 12px;
-  color: #95a5a6;
+  color: var(--color-text-secondary);
 }
 
 .section {
-  padding: 20px 16px;
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-surface);
 }
 
 .sectionTitle {
-  margin: 0 0 12px;
+  margin: 0 0 var(--spacing-sm);
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 1.2px;
-  color: #95a5a6;
+  letter-spacing: 1px;
+  color: var(--color-text-secondary);
 }
 
 /* Node Items Section */
 .nodeList {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--spacing-sm);
 }
 
 .nodeCard {
   cursor: move;
   cursor: grab;
   user-select: none;
-  background: #34495e;
-  border: 1px solid #4a5f7f;
-  border-radius: 8px;
-  padding: 12px;
-  transition: transform 0.2s, border-color 0.2s;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  transition: all var(--transition-fast);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--spacing-md);
 }
 
 .nodeCard:active {
   cursor: grabbing;
-  opacity: 0.8;
+  transform: scale(0.98);
 }
 
 .nodeCard:hover {
-  border-color: #5a6f8f;
-  transform: translateY(-2px);
+  background-color: var(--color-surface-hover);
+  border-color: var(--color-selection);
+  transform: translateX(2px);
 }
 
 .nodeIcon {
   flex-shrink: 0;
+  width: 40px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .stockIcon {
-  width: 48px;
-  height: 32px;
-  background: #4A90E2;
-  border-radius: 4px;
+  width: 36px;
+  height: 22px;
+  background: var(--color-node-stock);
+  border-radius: 3px;
 }
 
 .variableIcon {
-  width: 40px;
-  height: 40px;
-  background: #50C878;
+  width: 32px;
+  height: 20px;
+  background: var(--color-node-variable);
   border-radius: 50%;
 }
 
@@ -100,14 +133,14 @@
 .nodeName {
   font-size: 14px;
   font-weight: 500;
-  color: #ecf0f1;
-  margin: 0 0 4px;
+  color: var(--color-text-primary);
+  margin: 0;
 }
 
 .nodeDescription {
   font-size: 11px;
-  color: #95a5a6;
-  margin: 0;
+  color: var(--color-text-secondary);
+  margin: 2px 0 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -117,30 +150,31 @@
 .linkTypeButtons {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--spacing-sm);
 }
 
 .linkTypeButton {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 12px;
-  background: #34495e;
-  border: 2px solid #4a5f7f;
-  border-radius: 8px;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-fast);
   width: 100%;
 }
 
 .linkTypeButton:hover {
-  border-color: #5a6f8f;
-  transform: translateY(-2px);
+  background-color: var(--color-surface-hover);
+  border-color: var(--color-selection);
+  transform: translateX(2px);
 }
 
 .linkTypeButton.active {
-  border-color: #4A90E2;
-  background: rgba(74, 144, 226, 0.1);
+  background-color: var(--color-selection-light);
+  border-color: var(--color-selection);
 }
 
 .linkPreview {
@@ -153,14 +187,14 @@
 .linkLabel {
   font-size: 14px;
   font-weight: 500;
-  color: #ecf0f1;
+  color: var(--color-text-primary);
 }
 
 /* Flow style (толстая связь) */
 .flowStyle .flowLine {
   width: 50px;
   height: 6px;
-  background: #4A90E2;
+  background: var(--color-primary);
   position: absolute;
   left: 0;
   top: 50%;
@@ -175,7 +209,7 @@
   transform: translateY(-50%);
   width: 0;
   height: 0;
-  border-left: 10px solid #4A90E2;
+  border-left: 10px solid var(--color-primary);
   border-top: 6px solid transparent;
   border-bottom: 6px solid transparent;
 }
@@ -191,8 +225,8 @@
   height: 2px;
   background: repeating-linear-gradient(
     to right,
-    #888 0,
-    #888 4px,
+    var(--color-text-secondary) 0,
+    var(--color-text-secondary) 4px,
     transparent 4px,
     transparent 8px
   );
@@ -209,29 +243,28 @@
   transform: translateY(-50%);
   width: 0;
   height: 0;
-  border-left: 8px solid #888;
+  border-left: 8px solid var(--color-text-secondary);
   border-top: 5px solid transparent;
   border-bottom: 5px solid transparent;
 }
 
 /* Resize handle */
 .resizeHandle {
-  position: absolute;
-  top: 0;
-  right: 0;
+  position: relative;
   width: 5px;
   height: 100%;
   cursor: col-resize;
   background: transparent;
   z-index: 10;
-  transition: background-color 0.15s ease;
+  transition: background-color var(--transition-fast);
+  flex-shrink: 0;
 }
 
 .resizeHandle:hover {
-  background-color: rgba(74, 144, 226, 0.4);
+  background-color: rgba(59, 130, 246, 0.4);
 }
 
 .resizeHandleActive {
-  background-color: rgba(74, 144, 226, 0.6);
+  background-color: rgba(59, 130, 246, 0.6);
 }
 

@@ -1,93 +1,88 @@
-@import '../../../styles/variables.css';
+/**
+ * NodePanel styles
+ */
 
-/* Dark theme for NodePanel */
 .nodePanel {
-  border-top: var(--input-border-width) solid var(--dark-border-primary);
-  padding: var(--spacing-xl) var(--spacing-lg);
-  background-color: var(--dark-bg-panel);
+  padding: var(--spacing-3);
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-default);
+}
+
+.title {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-3) 0;
+  padding-bottom: var(--spacing-2);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
 }
 
 .nodeInfo {
-  margin-bottom: var(--spacing-md);
-  padding: var(--spacing-sm);
-  background: var(--dark-bg-tertiary);
-  border-radius: var(--border-radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  padding: var(--spacing-2);
+  background: var(--color-background);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--border-subtle);
 }
 
 .nodeType {
   font-size: var(--font-size-sm);
-  color: var(--dark-text-secondary);
-  margin: 0 0 var(--spacing-xs) 0;
-  line-height: var(--line-height-normal);
+  color: var(--text-secondary);
+  margin: 0;
+  font-weight: 500;
 }
 
 .nodeId {
-  font-size: var(--font-size-xs);
-  color: var(--dark-text-tertiary);
+  font-size: 11px;
+  color: var(--text-placeholder);
   margin: 0;
   font-family: monospace;
-  line-height: var(--line-height-normal);
 }
 
 .nodeDescription {
-  margin: var(--spacing-xs) 0 0;
-  font-size: var(--font-size-xs);
-  color: var(--dark-text-tertiary);
+  font-size: 11px;
+  color: var(--text-placeholder);
   font-style: italic;
-  line-height: var(--line-height-normal);
+  margin: 0;
 }
 
-.nodeProperties {
-  margin-top: var(--spacing-lg);
-  padding: var(--spacing-md);
-  background: var(--dark-bg-tertiary);
-  border-radius: var(--border-radius-md);
-}
-
-.propertiesTitle {
-  margin: 0 0 var(--spacing-md) 0;
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
-  color: var(--dark-text-primary);
-  line-height: var(--line-height-tight);
-}
-
-.propertyField {
-  margin-bottom: var(--spacing-md);
-}
-
-.propertyField:last-child {
-  margin-bottom: 0;
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
 }
 
 .propertyLabel {
-  display: block;
-  margin-bottom: var(--spacing-xs);
   font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--dark-text-secondary);
-  line-height: var(--line-height-normal);
+  font-weight: 500;
+  color: var(--text-secondary);
 }
 
 .propertyInput {
-  width: 100%;
-  padding: var(--input-padding-vertical) var(--input-padding-horizontal);
-  background: var(--dark-bg-primary);
-  border: var(--input-border-width) solid var(--dark-border-primary);
-  border-radius: var(--border-radius-md);
-  color: var(--dark-text-primary);
-  font-family: var(--font-family);
+  padding: var(--spacing-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--border-radius-sm);
   font-size: var(--font-size-sm);
-  transition: border-color var(--transition-normal);
-}
-
-.propertyInput:hover {
-  border-color: var(--dark-border-secondary);
+  color: var(--text-primary);
+  background: var(--surface-input);
+  transition: border-color 0.2s ease;
 }
 
 .propertyInput:focus {
   outline: none;
-  border-color: var(--primary-color);
+  border-color: var(--primary);
+}
+
+.propertyInput::placeholder {
+  color: var(--text-placeholder);
 }
 
 .propertyInput:disabled {
@@ -95,7 +90,30 @@
   cursor: not-allowed;
 }
 
-.propertyInput::placeholder {
-  color: var(--dark-text-tertiary);
+.actions {
+  margin-top: var(--spacing-3);
+  padding-top: var(--spacing-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.deleteButton {
+  width: 100%;
+  padding: var(--spacing-2) var(--spacing-3);
+  background: var(--danger);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.deleteButton:hover {
+  background: var(--danger-hover);
+}
+
+.deleteButton:active {
+  background: var(--danger-active);
 }
 

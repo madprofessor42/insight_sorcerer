@@ -1,123 +1,160 @@
-@import '../../../styles/variables.css';
+/**
+ * DebugPanel styles
+ */
 
-/* Dark theme for DebugPanel */
 .debugPanel {
-  border-top: var(--input-border-width) solid var(--dark-border-primary);
-  padding: var(--spacing-xl) var(--spacing-lg);
-  background-color: var(--dark-bg-panel);
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-surface);
 }
 
 .debugHeader {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-md);
-}
-
-.debugIcon {
-  font-size: var(--font-size-lg);
-  flex-shrink: 0;
+  justify-content: space-between;
+  cursor: pointer;
+  padding: var(--spacing-xs) 0;
 }
 
 .debugTitle {
+  font-size: 12px;
+  font-weight: 600;
   margin: 0;
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
   text-transform: uppercase;
-  letter-spacing: 1.2px;
-  color: var(--dark-text-secondary);
-  line-height: var(--line-height-tight);
+  letter-spacing: 0.5px;
 }
 
 .badge {
-  margin-left: auto;
-  padding: 2px var(--spacing-sm);
-  background: var(--dark-bg-secondary);
-  border: var(--input-border-width) solid var(--dark-border-secondary);
+  padding: 2px var(--spacing-xs);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
   border-radius: var(--border-radius-xl);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
-  color: var(--dark-text-secondary);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
   font-family: monospace;
+  line-height: 1;
+  margin-left: auto;
+  margin-right: var(--spacing-xs);
+}
+
+.toggleButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  transition: color var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.toggleButton:hover {
+  color: var(--color-text-primary);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+}
+
+.listHeader {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--spacing-xs) 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .emptyState {
+  font-size: 11px;
+  color: var(--color-text-placeholder);
+  font-style: italic;
+  margin: 0;
   padding: var(--spacing-md);
   text-align: center;
-  font-size: var(--font-size-sm);
-  color: var(--dark-text-tertiary);
-  font-style: italic;
-  line-height: var(--line-height-normal);
 }
 
 /* === Link list === */
 .linkList {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
-  max-height: 400px;
+  gap: var(--spacing-sm);
+  max-height: 500px;
   overflow-y: auto;
+  padding-top: 2px;
 }
 
-/* Custom scrollbar for dark theme */
 .linkList::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 .linkList::-webkit-scrollbar-track {
-  background: var(--dark-bg-tertiary);
-  border-radius: var(--border-radius-sm);
+  background: var(--color-background);
+  border-radius: 2px;
 }
 
 .linkList::-webkit-scrollbar-thumb {
-  background: var(--dark-border-secondary);
-  border-radius: var(--border-radius-sm);
+  background: var(--color-border);
+  border-radius: 2px;
 }
 
 .linkList::-webkit-scrollbar-thumb:hover {
-  background: var(--dark-border-hover);
+  background: var(--color-text-secondary);
 }
 
 /* === Single link item === */
 .linkItem {
-  padding: var(--spacing-sm);
-  background: var(--dark-bg-tertiary);
-  border: var(--input-border-width) solid transparent;
-  border-radius: var(--border-radius-lg);
-  transition: all var(--transition-normal);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  font-size: 13px;
+  transition: all var(--transition-fast);
+  cursor: pointer;
 }
 
 .linkItem:hover {
-  border-color: var(--dark-border-secondary);
-  background: var(--dark-bg-secondary);
+  background: var(--color-surface-hover);
+  border-color: var(--color-selection);
+  transform: translateY(-1px);
+}
+
+.linkItem:active {
+  transform: translateY(0);
 }
 
 /* === Link header row === */
 .linkHeader {
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
-  margin-bottom: var(--spacing-sm);
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
   flex-wrap: wrap;
 }
 
 .linkCategory {
   display: inline-block;
-  padding: 1px var(--spacing-xs);
-  border: 1px solid transparent;
+  padding: 3px var(--spacing-sm);
+  border: 1px solid;
   border-radius: var(--border-radius-sm);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-semibold);
+  font-size: 12px;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  line-height: var(--line-height-normal);
   flex-shrink: 0;
 }
 
-
 .linkName {
-  font-size: var(--font-size-xs);
-  color: var(--dark-text-secondary);
+  font-size: 13px;
+  color: var(--color-text-secondary);
   font-style: italic;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -127,53 +164,50 @@
 }
 
 .bidirectionalBadge {
-  font-size: var(--font-size-xs);
-  color: var(--primary-color);
-  font-weight: var(--font-weight-medium);
+  font-size: 12px;
+  color: var(--color-primary);
+  font-weight: 500;
   flex-shrink: 0;
 }
 
 .linkKey {
-  font-size: var(--font-size-xs);
-  color: var(--dark-text-tertiary);
+  font-size: 12px;
+  color: var(--color-text-placeholder);
   font-family: monospace;
   flex-shrink: 0;
   margin-left: auto;
 }
 
-/* === Connection block: FROM → TO === */
+/* === Connection === */
 .connectionBlock {
   display: flex;
   align-items: stretch;
-  gap: var(--spacing-xs);
+  gap: var(--spacing-sm);
 }
 
-/* === Node info card (FROM / TO) === */
 .nodeCard {
   flex: 1;
   min-width: 0;
-  padding: var(--spacing-xs) var(--spacing-sm);
-  background: var(--dark-bg-primary);
-  border: var(--input-border-width) solid var(--dark-border-primary);
-  border-radius: var(--border-radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
 }
 
 .nodeCardLabel {
-  font-size: 9px;
-  font-weight: var(--font-weight-bold);
+  font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
-  color: var(--dark-text-tertiary);
+  color: var(--color-text-placeholder);
   margin-bottom: var(--spacing-xs);
-  line-height: var(--line-height-tight);
 }
 
 .nodeCardRow {
   display: flex;
   align-items: baseline;
   gap: var(--spacing-xs);
-  margin-bottom: 2px;
-  line-height: var(--line-height-normal);
+  margin-bottom: 3px;
 }
 
 .nodeCardRow:last-child {
@@ -181,16 +215,16 @@
 }
 
 .fieldLabel {
-  font-size: 10px;
-  font-weight: var(--font-weight-medium);
-  color: var(--dark-text-tertiary);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-placeholder);
   flex-shrink: 0;
-  min-width: 32px;
+  min-width: 40px;
 }
 
 .fieldValue {
-  font-size: 10px;
-  color: var(--dark-text-primary);
+  font-size: 12px;
+  color: var(--color-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -199,19 +233,18 @@
 
 .monoValue {
   font-family: monospace;
-  color: var(--dark-text-secondary);
+  color: var(--color-text-secondary);
 }
 
-/* === Arrow between FROM and TO === */
 .arrowBlock {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 20px;
+  width: 24px;
 }
 
 .arrowSymbol {
-  font-size: var(--font-size-md);
-  color: var(--dark-text-tertiary);
+  font-size: 18px;
+  color: var(--color-text-secondary);
 }

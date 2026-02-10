@@ -98,71 +98,74 @@ export function EdgePanel() {
 
   return (
     <section className={styles.edgePanel}>
-      {/* Edge Info */}
-      <div className={styles.edgeInfo}>
-        <p className={styles.edgeType}>
-          Тип: {linkType}
-        </p>
-        {selectedEdge.key && (
-          <p className={styles.edgeId}>
-            ID: {selectedEdge.key}
+      <h2 className={styles.title}>Связь</h2>
+      
+      <div className={styles.content}>
+        {/* Edge Info */}
+        <div className={styles.edgeInfo}>
+          <p className={styles.edgeType}>
+            Тип: {linkType}
           </p>
-        )}
-      </div>
-
-      {/* Edge Properties Form */}
-      {config && config.displayProperties.length > 0 && (
-        <div className={styles.edgeProperties}>
-          <h3 className={styles.propertiesTitle}>Свойства</h3>
-          {config.displayProperties.map(prop => (
-            <div key={prop.dataKey} className={styles.propertyField}>
-              <label className={styles.propertyLabel} htmlFor={`prop-${prop.dataKey}`}>
-                {prop.label}
-              </label>
-              <input
-                id={`prop-${prop.dataKey}`}
-                type="text"
-                className={styles.propertyInput}
-                value={propertyValues[prop.dataKey] || ''}
-                onChange={(e) => handlePropertyChange(prop.dataKey, e.target.value)}
-                disabled={!prop.editable}
-                placeholder={prop.defaultValue || `Введите ${prop.label.toLowerCase()}...`}
-              />
-            </div>
-          ))}
+          {selectedEdge.key && (
+            <p className={styles.edgeId}>
+              ID: {selectedEdge.key}
+            </p>
+          )}
         </div>
-      )}
 
-      {/* Edge Actions */}
-      <div className={styles.edgeActions}>
-        <button
-          className={styles.edgeActionButton}
-          onClick={() => resetCurve(selectedEdge)}
-          title="Сбросить изгиб связи"
-        >
-          <span className={styles.edgeActionIcon}>🔄</span>
-          <span className={styles.edgeActionLabel}>Сбросить изгиб</span>
-        </button>
+        {/* Edge Properties Form */}
+        {config && config.displayProperties.length > 0 && (
+          <>
+            {config.displayProperties.map(prop => (
+              <div key={prop.dataKey} className={styles.fieldGroup}>
+                <label className={styles.propertyLabel} htmlFor={`prop-${prop.dataKey}`}>
+                  {prop.label}
+                </label>
+                <input
+                  id={`prop-${prop.dataKey}`}
+                  type="text"
+                  className={styles.propertyInput}
+                  value={propertyValues[prop.dataKey] || ''}
+                  onChange={(e) => handlePropertyChange(prop.dataKey, e.target.value)}
+                  disabled={!prop.editable}
+                  placeholder={prop.defaultValue || `Введите ${prop.label.toLowerCase()}...`}
+                />
+              </div>
+            ))}
+          </>
+        )}
 
-        <button
-          className={styles.edgeActionButton}
-          onClick={() => reverseDirection(selectedEdge)}
-          disabled={!canReverse}
-          title={reverseReason}
-        >
-          <span className={styles.edgeActionIcon}>↔️</span>
-          <span className={styles.edgeActionLabel}>Развернуть</span>
-        </button>
+        {/* Edge Actions */}
+        <div className={styles.edgeActions}>
+          <button
+            className={styles.edgeActionButton}
+            onClick={() => resetCurve(selectedEdge)}
+            title="Сбросить изгиб связи"
+          >
+            <span className={styles.edgeActionIcon}>🔄</span>
+            <span className={styles.edgeActionLabel}>Сбросить изгиб</span>
+          </button>
 
-        <button
-          className={`${styles.edgeActionButton} ${bidirectionalActive ? styles.active : ''}`}
-          onClick={handleToggleBidirectional}
-          disabled={!canBeBidirectional}
-          title={bidirectionalReason}
-        >
-          <span className={styles.edgeActionIcon}>⇄</span>
-          <span className={styles.edgeActionLabel}>Двунаправленная</span>
-        </button>
+          <button
+            className={styles.edgeActionButton}
+            onClick={() => reverseDirection(selectedEdge)}
+            disabled={!canReverse}
+            title={reverseReason}
+          >
+            <span className={styles.edgeActionIcon}>↔️</span>
+            <span className={styles.edgeActionLabel}>Развернуть</span>
+          </button>
+
+          <button
+            className={`${styles.edgeActionButton} ${bidirectionalActive ? styles.active : ''}`}
+            onClick={handleToggleBidirectional}
+            disabled={!canBeBidirectional}
+            title={bidirectionalReason}
+          >
+            <span className={styles.edgeActionIcon}>⇄</span>
+            <span className={styles.edgeActionLabel}>Двунаправленная</span>
+          </button>
+        </div>
       </div>
     </section>
   );

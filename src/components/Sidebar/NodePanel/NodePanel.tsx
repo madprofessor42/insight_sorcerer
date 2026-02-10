@@ -81,28 +81,29 @@ export function NodePanel() {
 
   return (
     <section className={styles.nodePanel}>
-      {/* Node Info */}
-      <div className={styles.nodeInfo}>
-        <p className={styles.nodeType}>
-          Тип: {nodeType}
-        </p>
-        {selectedNode.key !== undefined && (
-          <p className={styles.nodeId}>
-            ID: {selectedNode.key}
+      <h2 className={styles.title}>Элемент</h2>
+      
+      <div className={styles.content}>
+        {/* Node Info */}
+        <div className={styles.nodeInfo}>
+          <p className={styles.nodeType}>
+            Тип: {nodeType}
           </p>
-        )}
-        {config.description && (
-          <p className={styles.nodeDescription}>
-            {config.description}
-          </p>
-        )}
-      </div>
+          {selectedNode.key !== undefined && (
+            <p className={styles.nodeId}>
+              ID: {selectedNode.key}
+            </p>
+          )}
+          {config.description && (
+            <p className={styles.nodeDescription}>
+              {config.description}
+            </p>
+          )}
+        </div>
 
-      {/* Node Properties Form */}
-      <div className={styles.nodeProperties}>
-        <h3 className={styles.propertiesTitle}>Свойства</h3>
+        {/* Node Properties Form */}
         {config.displayProperties.map(prop => (
-          <div key={prop.dataKey} className={styles.propertyField}>
+          <div key={prop.dataKey} className={styles.fieldGroup}>
             <label className={styles.propertyLabel} htmlFor={`prop-${prop.dataKey}`}>
               {prop.label}
             </label>

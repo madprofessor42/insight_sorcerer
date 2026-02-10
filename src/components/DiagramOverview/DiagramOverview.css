@@ -1,11 +1,13 @@
+@import '../../styles/variables.css';
+
 .overview-component {
   width: 250px;
   height: 180px;
   background: #ffffff;
-  border-radius: 8px;
-  border: 1px solid #4a5f7f;
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--color-border);
   overflow: hidden;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-lg);
 }
 
 /* Hide GoJS license watermark in overview */

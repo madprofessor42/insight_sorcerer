@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useAppSelector } from '../../../store/hooks';
 import { resolveLinkInfo, isEdgeEndpoint } from '../../../utils/diagram-data';
 import type { ConnectionEndpointInfo } from '../../../utils/diagram-data';
@@ -29,6 +30,7 @@ export function DebugPanel() {
   const selectedEdgeKey = useAppSelector((state) => state.diagram.selectedEdgeKey);
   const linkDataArray = useAppSelector((state) => state.diagram.linkDataArray);
   const nodeDataArray = useAppSelector((state) => state.diagram.nodeDataArray);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // Only show when nothing is selected
   if (selectedNodeKey !== null || selectedEdgeKey !== null) {
@@ -38,17 +40,26 @@ export function DebugPanel() {
   return (
     <section className={styles.debugPanel}>
       {/* Header */}
-      <div className={styles.debugHeader}>
-        <span className={styles.debugIcon}>🔗</span>
-        <h2 className={styles.debugTitle}>Debug: Links</h2>
+      <div className={styles.debugHeader} onClick={() => setIsExpanded(!isExpanded)}>
+        <h2 className={styles.debugTitle}>Debug Links</h2>
         <span className={styles.badge}>{linkDataArray.length}</span>
+        <button
+          className={styles.toggleButton}
+          title={isExpanded ? 'Свернуть' : 'Развернуть'}
+        >
+          {isExpanded ? '▼' : '▶'}
+        </button>
       </div>
 
       {/* Links list */}
-      {linkDataArray.length === 0 ? (
-        <p className={styles.emptyState}>No links created yet</p>
-      ) : (
-        <div className={styles.linkList}>
+      {isExpanded && (
+        <div className={styles.content}>
+          {linkDataArray.length === 0 ? (
+            <p className={styles.emptyState}>Нет связей</p>
+          ) : (
+            <>
+              <h4 className={styles.listHeader}>Список связей</h4>
+              <div className={styles.linkList}>
           {linkDataArray.map((link) => {
             // Pass linkDataArray for edge-to-edge resolution
             const info = resolveLinkInfo(link, nodeDataArray, linkDataArray);
@@ -126,6 +137,9 @@ export function DebugPanel() {
               </div>
             );
           })}
+              </div>
+            </>
+          )}
         </div>
       )}
     </section>

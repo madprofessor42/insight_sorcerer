@@ -11,7 +11,7 @@ import styles from './Sidebar.module.css';
 
 const MIN_WIDTH = 220;
 const MAX_WIDTH = 500;
-const DEFAULT_WIDTH = 260;
+const DEFAULT_WIDTH = 385;
 
 export function Sidebar() {
   const dispatch = useAppDispatch();

@@ -83,8 +83,19 @@ export function NodePanel() {
     <section className={styles.nodePanel}>
       {/* Node Info */}
       <div className={styles.nodeInfo}>
-        <h2 className={styles.nodeTitle}>{config.label}</h2>
-        <p className={styles.nodeDescription}>{config.description}</p>
+        <p className={styles.nodeType}>
+          Тип: {nodeType}
+        </p>
+        {selectedNode.key !== undefined && (
+          <p className={styles.nodeId}>
+            ID: {selectedNode.key}
+          </p>
+        )}
+        {config.description && (
+          <p className={styles.nodeDescription}>
+            {config.description}
+          </p>
+        )}
       </div>
 
       {/* Node Properties Form */}

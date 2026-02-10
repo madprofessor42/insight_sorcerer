@@ -14,18 +14,26 @@
   border-radius: var(--border-radius-md);
 }
 
-.nodeTitle {
+.nodeType {
+  font-size: var(--font-size-sm);
+  color: var(--dark-text-secondary);
   margin: 0 0 var(--spacing-xs) 0;
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-semibold);
-  color: var(--dark-text-primary);
-  line-height: var(--line-height-tight);
+  line-height: var(--line-height-normal);
+}
+
+.nodeId {
+  font-size: var(--font-size-xs);
+  color: var(--dark-text-tertiary);
+  margin: 0;
+  font-family: monospace;
+  line-height: var(--line-height-normal);
 }
 
 .nodeDescription {
-  margin: 0;
-  font-size: var(--font-size-sm);
-  color: var(--dark-text-secondary);
+  margin: var(--spacing-xs) 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--dark-text-tertiary);
+  font-style: italic;
   line-height: var(--line-height-normal);
 }
 

@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import * as go from 'gojs';
 import type { ReactDiagram } from 'gojs-react';
 import type { LinkType } from '../../config/diagram-rules';
-import { normalizeLinkType } from '../../config/diagram-rules';
+import { normalizeLinkType, LINK_LABEL_CATEGORY, linkTypeNeedsLabelNode } from '../../config/diagram-rules';
 import { 
   hasDuplicateLink, 
   findReverseLink, 
@@ -15,11 +15,14 @@ import {
 /**
  * Centralized hook for all link management:
  * 1. Sets up GoJS validation for linking/relinking tools
- * 2. Handles LinkDrawn event to set link category
- * 3. Prevents duplicate links of the same type
- * 4. Automatically converts to bidirectional when reverse link is created
+ * 2. Sets archetypeLinkData with category for proper link creation
+ * 3. Sets archetypeLabelNodeData for edge-to-edge label nodes
+ * 4. Handles LinkDrawn event to set link category
+ * 5. Prevents duplicate links of the same type
+ * 6. Automatically converts to bidirectional when reverse link is created
  *    (only for link types that support bidirectional mode)
- * 5. Automatically deletes Cloud nodes when their connected links are removed
+ * 7. Automatically deletes Cloud nodes when their connected links are removed
+ * 8. Automatically deletes orphan LinkLabel nodes when their parent links are removed
  */
 export function useLinkManagement(
   diagramRef: React.RefObject<ReactDiagram | null>,
@@ -31,7 +34,7 @@ export function useLinkManagement(
     if (!(diagram instanceof go.Diagram)) return;
 
     // ========================================================================
-    // SETUP: Configure GoJS tools validation
+    // SETUP: Configure GoJS tools validation and archetype data
     // ========================================================================
     
     // Update linkingTool validation
@@ -39,6 +42,20 @@ export function useLinkManagement(
 
     // Update relinkingTool validation
     diagram.toolManager.relinkingTool.linkValidation = createRelinkValidation();
+
+    // CRITICAL: Set archetypeLinkData with the selected link type's category
+    // This is needed so CustomLinkingTool.insertLink() can read the category
+    // and decide whether to create a label node for edge-to-edge connections
+    diagram.toolManager.linkingTool.archetypeLinkData = { category: selectedLinkType };
+
+    // Set archetypeLabelNodeData based on whether this link type needs label nodes
+    // A link needs a label node when OTHER link types reference it in
+    // their allowedFromEdges or allowedToEdges (e.g., 'flow' is referenced by 'link')
+    if (linkTypeNeedsLabelNode(selectedLinkType)) {
+      diagram.toolManager.linkingTool.archetypeLabelNodeData = { category: LINK_LABEL_CATEGORY };
+    } else {
+      diagram.toolManager.linkingTool.archetypeLabelNodeData = null;
+    }
 
     // ========================================================================
     // EVENT HANDLER: LinkDrawn
@@ -52,6 +69,7 @@ export function useLinkManagement(
       if (!(model instanceof go.GraphLinksModel)) return;
 
       // Step 1: Set link category (type) and initialize properties
+      // Note: category may already be set from archetypeLinkData, but ensure it's correct
       diagram.model.setDataProperty(link.data, 'category', selectedLinkType);
       
       // Initialize bidirectional property if not set (prevents binding errors)
@@ -75,12 +93,20 @@ export function useLinkManagement(
           return;
         }
         
-        // Validate if this link can end on canvas
-        const canvasValidation = validateCanEndOnCanvas(linkType, fromNodeData.category);
-        if (!canvasValidation.isValid) {
-          console.warn(`⚠️ ${canvasValidation.reason} - removing link`);
-          model.removeLinkData(link.data);
-          return;
+        // Skip canvas-end validation for LinkLabel nodes (they have their own rules)
+        const fromNodeType = fromNodeData.category === LINK_LABEL_CATEGORY 
+          ? LINK_LABEL_CATEGORY 
+          : fromNodeData.category;
+        
+        // Only validate canvas-end for non-label nodes
+        if (fromNodeType !== LINK_LABEL_CATEGORY) {
+          // Validate if this link can end on canvas
+          const canvasValidation = validateCanEndOnCanvas(linkType, fromNodeData.category);
+          if (!canvasValidation.isValid) {
+            console.warn(`⚠️ ${canvasValidation.reason} - removing link`);
+            model.removeLinkData(link.data);
+            return;
+          }
         }
         
         // Get endpoint coordinates from diagram.lastInput (where user released mouse)
@@ -164,6 +190,9 @@ export function useLinkManagement(
       
       // Collect Cloud nodes that might need to be auto-deleted
       const cloudNodesToCheck = new Set<go.Key>();
+      
+      // Collect LinkLabel nodes that might need to be auto-deleted
+      const labelNodesToCheck = new Set<go.Key>();
 
       // First pass: identify what was deleted
       deletedParts.each((part) => {
@@ -188,6 +217,14 @@ export function useLinkManagement(
           const toNodeData = model.findNodeDataForKey(toKey);
           if (toNodeData && toNodeData.category === 'Cloud' && !explicitlyDeletedCloudKeys.has(toKey)) {
             cloudNodesToCheck.add(toKey);
+          }
+          
+          // Check for orphan LinkLabel nodes associated with this link
+          const labelKeys = link.data.labelKeys;
+          if (Array.isArray(labelKeys)) {
+            labelKeys.forEach((labelKey: go.Key) => {
+              labelNodesToCheck.add(labelKey);
+            });
           }
         }
       });
@@ -219,6 +256,25 @@ export function useLinkManagement(
           console.log(`ℹ️  Cloud node '${cloudKey}' kept (${linkCount} link(s) remaining)`);
         }
       });
+      
+      // Third pass: auto-delete orphaned LinkLabel nodes
+      // LinkLabel nodes should be deleted when their parent link is deleted
+      labelNodesToCheck.forEach((labelKey) => {
+        const labelNode = diagram.findNodeForKey(labelKey);
+        if (!labelNode) return; // Already deleted
+        
+        // If the label node is no longer associated with any link, delete it
+        const connectedLinks = labelNode.findLinksConnected();
+        // A label node that still has a labeledLink is still valid
+        if (labelNode.labeledLink === null && connectedLinks.count === 0) {
+          console.log(`🏷️💨 Auto-deleting orphaned LinkLabel node '${labelKey}'`);
+          const nodeData = model.findNodeDataForKey(labelKey);
+          if (nodeData) {
+            model.removeNodeData(nodeData);
+            console.log(`✅ Orphaned LinkLabel node '${labelKey}' removed`);
+          }
+        }
+      });
     };
 
     // ========================================================================
@@ -240,4 +296,3 @@ export function useLinkManagement(
     };
   }, [diagramRef, selectedLinkType]);
 }
-

@@ -15,7 +15,9 @@ export {
   validateBidirectional,
   validateCanEndOnCanvas,
   createLinkValidation,
-  createRelinkValidation
+  createRelinkValidation,
+  isLinkLabelNode,
+  getParentLinkCategory
 } from './link-validation';
 export type { ValidationResult } from './link-validation';
 
@@ -41,4 +43,3 @@ export {
   resolveLinkInfo
 } from './diagram-data';
 export type { NodeDisplayInfo, LinkDisplayInfo } from './diagram-data';
-

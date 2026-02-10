@@ -8,7 +8,10 @@ import type { LinkType, NodeType } from '../config/diagram-rules';
 import { 
   getLinkConfiguration,
   normalizeLinkType,
-  DEFAULT_LINK_TYPE
+  DEFAULT_LINK_TYPE,
+  LINK_LABEL_CATEGORY,
+  isValidEdgeSource,
+  isValidEdgeTarget
 } from '../config/diagram-rules';
 
 // ============================================================================
@@ -140,6 +143,59 @@ function canLinkEndOnCanvas(linkType: LinkType): boolean {
 }
 
 // ============================================================================
+// EDGE-TO-EDGE HELPERS
+// ============================================================================
+
+/**
+ * Check if a node is a LinkLabel node (used for edge-to-edge connections)
+ */
+export function isLinkLabelNode(node: go.Node | null): boolean {
+  if (!node) return false;
+  return node.data?.category === LINK_LABEL_CATEGORY;
+}
+
+/**
+ * Get the parent link category for a LinkLabel node.
+ * A LinkLabel node is a label on a link; we find which link it belongs to.
+ * @returns The category of the parent link, or null if not found
+ */
+export function getParentLinkCategory(node: go.Node): string | null {
+  if (!node || node.data?.category !== LINK_LABEL_CATEGORY) return null;
+  
+  // A label node's labeledLink property points to the link it belongs to
+  const parentLink = node.labeledLink;
+  if (parentLink) {
+    return normalizeLinkType(parentLink.data?.category);
+  }
+  
+  return null;
+}
+
+/**
+ * Validate if a link can originate FROM a label node (edge-to-edge source)
+ * @param linkType - The type of link being drawn
+ * @param labelNode - The label node being used as source
+ * @returns true if valid, false otherwise
+ */
+function isValidEdgeSourceNode(linkType: LinkType, labelNode: go.Node): boolean {
+  const parentCategory = getParentLinkCategory(labelNode);
+  if (!parentCategory) return false;
+  return isValidEdgeSource(linkType, parentCategory);
+}
+
+/**
+ * Validate if a link can connect TO a label node (edge-to-edge target)
+ * @param linkType - The type of link being drawn
+ * @param labelNode - The label node being used as target
+ * @returns true if valid, false otherwise
+ */
+function isValidEdgeTargetNode(linkType: LinkType, labelNode: go.Node): boolean {
+  const parentCategory = getParentLinkCategory(labelNode);
+  if (!parentCategory) return false;
+  return isValidEdgeTarget(linkType, parentCategory);
+}
+
+// ============================================================================
 // VALIDATION RESULT TYPE
 // ============================================================================
 
@@ -242,8 +298,17 @@ export function validateReverse(
     return { isValid: false, reason: 'Разворот создаст дубликат связи' };
   }
   
+  // Handle LinkLabel nodes (edge-to-edge connections)
+  const fromIsLabel = fromNodeData.category === LINK_LABEL_CATEGORY;
+  const toIsLabel = toNodeData.category === LINK_LABEL_CATEGORY;
+  
+  // After reverse: toNode becomes source, fromNode becomes target
   // Validate that toNode can be a source (after reverse)
-  if (!isValidLinkSource(normalizedLinkType, toNodeData.category)) {
+  if (toIsLabel) {
+    // toNode is a label node - check edge source validation
+    // We can't do full validation without the diagram, so allow it
+    // (the linking tool will validate at draw time)
+  } else if (!isValidLinkSource(normalizedLinkType, toNodeData.category)) {
     return { 
       isValid: false, 
       reason: getLinkValidationErrorFrom(normalizedLinkType)
@@ -251,7 +316,9 @@ export function validateReverse(
   }
   
   // Validate that fromNode can be a target (after reverse)
-  if (!isValidLinkTarget(normalizedLinkType, fromNodeData.category)) {
+  if (fromIsLabel) {
+    // fromNode is a label node - check edge target validation
+  } else if (!isValidLinkTarget(normalizedLinkType, fromNodeData.category)) {
     return { 
       isValid: false, 
       reason: getLinkValidationErrorTo(normalizedLinkType)
@@ -291,6 +358,12 @@ export function validateBidirectional(
   
   if (!fromNodeData || !toNodeData) {
     return { isValid: false, reason: 'Узлы не найдены' };
+  }
+  
+  // Skip physical bidirectional check for LinkLabel nodes
+  // (edge-to-edge links have different validation)
+  if (fromNodeData.category === LINK_LABEL_CATEGORY || toNodeData.category === LINK_LABEL_CATEGORY) {
+    return { isValid: true, reason: 'Переключить двунаправленность' };
   }
   
   // Check if these specific nodes can physically support bidirectional link
@@ -349,6 +422,7 @@ export function validateCanEndOnCanvas(
 /**
  * Create link validation function for linking tool
  * Uses configuration from diagram-rules.ts - no hardcoded logic!
+ * Supports edge-to-edge connections via LinkLabel nodes.
  */
 export function createLinkValidation(linkType: LinkType) {
   return (
@@ -363,7 +437,65 @@ export function createLinkValidation(linkType: LinkType) {
     const fromNodeType = fromNode.data.category;
     const toNodeType = toNode?.data.category;
     
-    // Validate source node
+    // ---- Handle LinkLabel source (edge-to-edge: link starts from an edge) ----
+    if (fromNodeType === LINK_LABEL_CATEGORY) {
+      if (!isValidEdgeSourceNode(linkType, fromNode)) {
+        const parentCat = getParentLinkCategory(fromNode);
+        console.warn(`⚠️ Links of type '${linkType}' cannot originate from edge type '${parentCat}'`);
+        return false;
+      }
+      
+      // If target is also a label node, check edge target validation
+      if (toNode && toNodeType === LINK_LABEL_CATEGORY) {
+        if (!isValidEdgeTargetNode(linkType, toNode)) {
+          const parentCat = getParentLinkCategory(toNode);
+          console.warn(`⚠️ Links of type '${linkType}' cannot connect to edge type '${parentCat}'`);
+          return false;
+        }
+        // Check for duplicate
+        if (fromNode.diagram) {
+          const model = fromNode.diagram.model as go.GraphLinksModel;
+          if (model instanceof go.GraphLinksModel) {
+            if (hasDuplicateLink(model, fromNode.data.key, toNode.data.key, linkType)) {
+              console.warn(`⚠️ Duplicate link of type '${linkType}' already exists between these label nodes`);
+              return false;
+            }
+          }
+        }
+        return true;
+      }
+      
+      // Source is label, target is a regular node
+      if (toNode) {
+        if (!isValidLinkTarget(linkType, toNodeType)) {
+          console.warn(`⚠️ ${getLinkValidationErrorTo(linkType)}!`);
+          return false;
+        }
+        // Check for duplicate
+        if (fromNode.diagram) {
+          const model = fromNode.diagram.model as go.GraphLinksModel;
+          if (model instanceof go.GraphLinksModel) {
+            if (hasDuplicateLink(model, fromNode.data.key, toNode.data.key, linkType)) {
+              console.warn(`⚠️ Duplicate link already exists`);
+              return false;
+            }
+          }
+        }
+        return true;
+      }
+      
+      // Source is label, target is canvas - check canEndOnCanvas
+      if (!toNode) {
+        if (!canLinkEndOnCanvas(linkType)) {
+          return false;
+        }
+        return true;
+      }
+      
+      return true;
+    }
+    
+    // ---- Standard source node validation ----
     if (!isValidLinkSource(linkType, fromNodeType)) {
       console.warn(`⚠️  ${getLinkValidationErrorFrom(linkType)}!`);
       return false;
@@ -388,7 +520,27 @@ export function createLinkValidation(linkType: LinkType) {
       return true;
     }
     
-    // Validate target node (if target is known)
+    // ---- Handle LinkLabel target (edge-to-edge: link ends at an edge) ----
+    if (toNodeType === LINK_LABEL_CATEGORY) {
+      if (!isValidEdgeTargetNode(linkType, toNode)) {
+        const parentCat = getParentLinkCategory(toNode);
+        console.warn(`⚠️ Links of type '${linkType}' cannot connect to edge type '${parentCat}'`);
+        return false;
+      }
+      // Check for duplicate
+      if (fromNode.diagram) {
+        const model = fromNode.diagram.model as go.GraphLinksModel;
+        if (model instanceof go.GraphLinksModel) {
+          if (hasDuplicateLink(model, fromNode.data.key, toNode.data.key, linkType)) {
+            console.warn(`⚠️ Duplicate link already exists`);
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+    
+    // ---- Standard target node validation ----
     if (!isValidLinkTarget(linkType, toNodeType)) {
       console.warn(`⚠️  ${getLinkValidationErrorTo(linkType)}!`);
       return false;
@@ -412,6 +564,7 @@ export function createLinkValidation(linkType: LinkType) {
 /**
  * Create link validation function for relinking tool
  * Uses configuration from diagram-rules.ts - no hardcoded logic!
+ * Supports edge-to-edge connections via LinkLabel nodes.
  */
 export function createRelinkValidation() {
   return (
@@ -427,7 +580,35 @@ export function createRelinkValidation() {
     const fromNodeType = fromNode.data.category;
     const toNodeType = toNode?.data.category;
     
-    // Validate source node
+    // ---- Handle LinkLabel source (edge-to-edge) ----
+    if (fromNodeType === LINK_LABEL_CATEGORY) {
+      if (!isValidEdgeSourceNode(linkType, fromNode)) {
+        return false;
+      }
+      
+      if (toNode && toNodeType === LINK_LABEL_CATEGORY) {
+        if (!isValidEdgeTargetNode(linkType, toNode)) return false;
+        if (fromNode.diagram) {
+          const model = fromNode.diagram.model as go.GraphLinksModel;
+          if (hasDuplicateLink(model, fromNode.data.key, toNode.data.key, linkType, link.data.key)) return false;
+        }
+        return true;
+      }
+      
+      if (toNode) {
+        if (!isValidLinkTarget(linkType, toNodeType)) return false;
+        if (fromNode.diagram) {
+          const model = fromNode.diagram.model as go.GraphLinksModel;
+          if (hasDuplicateLink(model, fromNode.data.key, toNode.data.key, linkType, link.data.key)) return false;
+        }
+        return true;
+      }
+      
+      if (!toNode && !canLinkEndOnCanvas(linkType)) return false;
+      return true;
+    }
+    
+    // ---- Standard source validation ----
     if (!isValidLinkSource(linkType, fromNodeType)) {
       console.warn(`⚠️  ${getLinkValidationErrorFrom(linkType)}!`);
       return false;
@@ -452,7 +633,19 @@ export function createRelinkValidation() {
       return true;
     }
     
-    // Validate target node (if target is known)
+    // ---- Handle LinkLabel target (edge-to-edge) ----
+    if (toNodeType === LINK_LABEL_CATEGORY) {
+      if (!isValidEdgeTargetNode(linkType, toNode)) {
+        return false;
+      }
+      if (fromNode.diagram) {
+        const model = fromNode.diagram.model as go.GraphLinksModel;
+        if (hasDuplicateLink(model, fromNode.data.key, toNode.data.key, linkType, link.data.key)) return false;
+      }
+      return true;
+    }
+    
+    // ---- Standard target validation ----
     if (!isValidLinkTarget(linkType, toNodeType)) {
       console.warn(`⚠️  ${getLinkValidationErrorTo(linkType)}!`);
       return false;
@@ -472,4 +665,3 @@ export function createRelinkValidation() {
     return true;
   };
 }
-

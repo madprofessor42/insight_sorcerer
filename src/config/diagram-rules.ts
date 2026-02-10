@@ -340,6 +340,20 @@ export interface LinkConfiguration {
   allowedFromNodes: NodeType[];
   /** Allowed target node types (empty array means all types allowed) */
   allowedToNodes: NodeType[];
+  /**
+   * Allowed source EDGE types for edge-to-edge connections.
+   * Lists which edge (link) categories this link can originate FROM via label nodes.
+   * Empty array means this link type CANNOT originate from any edge.
+   * Example: ['flow'] means this link can start from a flow edge's label node.
+   */
+  allowedFromEdges: string[];
+  /**
+   * Allowed target EDGE types for edge-to-edge connections.
+   * Lists which edge (link) categories this link can connect TO via label nodes.
+   * Empty array means this link type CANNOT connect to any edge.
+   * Example: ['flow'] means this link can end at a flow edge's label node.
+   */
+  allowedToEdges: string[];
   /** Can this link type be bidirectional (single link with two arrows) */
   canBeBidirectional: boolean;
   /** Can this link type end on canvas (toNode: null) - automatically creates Cloud node at endpoint */
@@ -390,6 +404,8 @@ export const LINK_CONFIGURATIONS: LinkConfiguration[] = [
     
     allowedFromNodes: [], // Can connect from any node type
     allowedToNodes: [], // Can connect to any node type
+    allowedFromEdges: ['flow'], // Link can originate FROM a flow edge (via label node)
+    allowedToEdges: ['flow'], // Link can connect TO a flow edge (via label node)
     canBeBidirectional: true, // Link can be bidirectional - single link with two arrows
     canEndOnCanvas: false // Regular links must connect to nodes
   },
@@ -438,6 +454,8 @@ export const LINK_CONFIGURATIONS: LinkConfiguration[] = [
     
     allowedFromNodes: ['Stock', 'Cloud'], // Can connect from Stock or Cloud (Cloud can be source when reversing link)
     allowedToNodes: ['Stock', 'Cloud'], // Can connect TO Stock or Cloud (Cloud is auto-created when drawing to canvas)
+    allowedFromEdges: [], // Flow CANNOT originate from any edge
+    allowedToEdges: [], // Flow CANNOT connect to any edge
     canBeBidirectional: false, // Flow cannot be bidirectional - creates 2 separate links
     canEndOnCanvas: true // Flow can end on canvas (toNode: null) - auto-creates Cloud node at endpoint
   }
@@ -453,6 +471,12 @@ export type LinkType = typeof LINK_CONFIGURATIONS[number]['id'];
  * Default link type when category is not specified
  */
 export const DEFAULT_LINK_TYPE: LinkType = 'link';
+
+/**
+ * Category used for label nodes that sit on links to enable edge-to-edge connections.
+ * These are invisible GoJS nodes that act as ports on links.
+ */
+export const LINK_LABEL_CATEGORY = 'LinkLabel';
 
 /**
  * Get configuration for a specific link type
@@ -474,4 +498,62 @@ export function getAllLinkTypes(): LinkType[] {
  */
 export function normalizeLinkType(category: string | undefined): LinkType {
   return (category || DEFAULT_LINK_TYPE) as LinkType;
+}
+
+/**
+ * Check if a link type supports connections FROM edges (has allowedFromEdges)
+ */
+export function canLinkFromEdge(linkType: LinkType): boolean {
+  const config = getLinkConfiguration(linkType);
+  if (!config) return false;
+  return config.allowedFromEdges.length > 0;
+}
+
+/**
+ * Check if a link type supports connections TO edges (has allowedToEdges)
+ */
+export function canLinkToEdge(linkType: LinkType): boolean {
+  const config = getLinkConfiguration(linkType);
+  if (!config) return false;
+  return config.allowedToEdges.length > 0;
+}
+
+/**
+ * Check if a given link type can originate FROM a specific edge type
+ */
+export function isValidEdgeSource(linkType: LinkType, edgeCategory: string): boolean {
+  const config = getLinkConfiguration(linkType);
+  if (!config) return false;
+  return config.allowedFromEdges.includes(edgeCategory);
+}
+
+/**
+ * Check if a given link type can connect TO a specific edge type
+ */
+export function isValidEdgeTarget(linkType: LinkType, edgeCategory: string): boolean {
+  const config = getLinkConfiguration(linkType);
+  if (!config) return false;
+  return config.allowedToEdges.includes(edgeCategory);
+}
+
+/**
+ * Check if any link configuration supports edge-to-edge connections.
+ * Used to determine whether to set up label nodes and linkLabelKeysProperty.
+ */
+export function hasAnyEdgeToEdgeSupport(): boolean {
+  return LINK_CONFIGURATIONS.some(
+    config => config.allowedFromEdges.length > 0 || config.allowedToEdges.length > 0
+  );
+}
+
+/**
+ * Check if a specific link type needs a label node on it.
+ * A link needs a label node if ANY other link type references it
+ * in their allowedFromEdges or allowedToEdges.
+ * E.g., if 'link' has allowedFromEdges: ['flow'], then 'flow' needs a label node.
+ */
+export function linkTypeNeedsLabelNode(linkTypeId: string): boolean {
+  return LINK_CONFIGURATIONS.some(
+    config => config.allowedFromEdges.includes(linkTypeId) || config.allowedToEdges.includes(linkTypeId)
+  );
 }

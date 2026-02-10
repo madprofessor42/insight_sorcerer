@@ -13,6 +13,11 @@ import * as go from 'gojs';
 /**
  * Custom LinkingTool that redirects links from center port to outer port.
  * 
+ * Note: archetypeLinkData (with category) and archetypeLabelNodeData 
+ * are set by useLinkManagement hook when selectedLinkType changes.
+ * This ensures the linking tool knows which type of link to create
+ * and whether to add a label node for edge-to-edge connections.
+ * 
  * @category Tool Extension
  */
 export class CustomLinkingTool extends go.LinkingTool {
@@ -50,9 +55,9 @@ export class CustomLinkingTool extends go.LinkingTool {
 
     // Create link with actual ports (outer shapes)
     // toNode and toPort can be null for links to canvas
+    // archetypeLinkData.category and archetypeLabelNodeData are set by useLinkManagement
     const result = super.insertLink(fromnode, actualFromPort, tonode, actualToPort);
     console.log(`🔗 Link created: ${result ? 'SUCCESS' : 'FAILED'}, toNode: ${tonode ? tonode.data.category : 'null (canvas)'}`);
     return result;
   }
 }
-

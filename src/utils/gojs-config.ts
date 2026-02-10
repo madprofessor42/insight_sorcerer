@@ -23,6 +23,9 @@ export function initializeDiagram(): go.Diagram {
       linkKeyProperty: 'key',
       nodeCategoryProperty: 'category',
       linkCategoryProperty: 'category',
+      // Enable label nodes on links for edge-to-edge connections
+      // This property tells GoJS which field in link data stores the array of label node keys
+      linkLabelKeysProperty: 'labelKeys',
       // Let GoJS handle automatic key generation using its built-in mechanism
       // Keys will be generated automatically when nodes/links are added without a key property
       // GoJS will ensure uniqueness within the model
@@ -36,4 +39,3 @@ export function initializeDiagram(): go.Diagram {
 
   return diagram;
 }
-

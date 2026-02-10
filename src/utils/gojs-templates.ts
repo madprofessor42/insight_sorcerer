@@ -2,6 +2,7 @@ import * as go from 'gojs';
 import { 
   LINK_CONFIGURATIONS, 
   NODE_CONFIGURATIONS,
+  LINK_LABEL_CATEGORY,
   type LinkConfiguration,
   type NodeConfiguration
 } from '../config/diagram-rules';
@@ -120,6 +121,7 @@ function defineCloudShape() {
 
 // Initialize cloud shape definition
 defineCloudShape();
+
 
 /**
  * Create node template map dynamically from configuration
@@ -249,6 +251,27 @@ export function createNodeTemplateMap(): go.Map<string, go.Node> {
       )
     );
   });
+
+  // Add LinkLabel node template for edge-to-edge connections
+  // These are small invisible nodes that sit on links and serve as connection points
+  nodeTemplateMap.add(LINK_LABEL_CATEGORY,
+    $(go.Node, {
+      selectable: false, // User cannot select label nodes directly
+      avoidable: false, // Links should not avoid label nodes
+      layerName: 'Foreground' // Place above links
+    },
+      $(go.Shape, 'Ellipse', {
+        width: 5,
+        height: 5,
+        fill: 'black',
+        stroke: null,
+        portId: '', // Default port
+        fromLinkable: true,
+        toLinkable: true,
+        cursor: 'pointer'
+      })
+    )
+  );
 
   return nodeTemplateMap;
 }

@@ -4,15 +4,6 @@ import * as go from 'gojs';
 import type { LinkType } from '../config/diagram-rules';
 import { DEFAULT_LINK_TYPE } from '../config/diagram-rules';
 
-// Serializable edge data for Redux (no GoJS objects like List2)
-export interface SelectedEdgeData {
-  key: go.Key;
-  from: go.Key;
-  to: go.Key;
-  category?: string;
-  bidirectional?: boolean;
-}
-
 interface DiagramState {
   // GoJS model data - synced from diagram
   nodeDataArray: Array<go.ObjectData>;
@@ -23,8 +14,8 @@ interface DiagramState {
   skipsDiagramUpdate: boolean;
   // UI state
   selectedLinkType: LinkType;
-  // Selected edge for displaying in sidebar (serializable only)
-  selectedEdge: SelectedEdgeData | null;
+  // Selected edge key (actual data comes from linkDataArray)
+  selectedEdgeKey: go.Key | null;
 }
 
 const initialState: DiagramState = {
@@ -33,7 +24,7 @@ const initialState: DiagramState = {
   modelData: {},
   skipsDiagramUpdate: false,
   selectedLinkType: DEFAULT_LINK_TYPE,
-  selectedEdge: null,
+  selectedEdgeKey: null,
 };
 
 // Helper functions for immutable array updates
@@ -104,14 +95,14 @@ export const diagramSlice = createSlice({
       state.selectedLinkType = action.payload;
     },
 
-    // Set selected edge (only serializable data)
-    setSelectedEdge: (state, action: PayloadAction<SelectedEdgeData | null>) => {
-      state.selectedEdge = action.payload;
+    // Set selected edge key (data comes from linkDataArray)
+    setSelectedEdgeKey: (state, action: PayloadAction<go.Key | null>) => {
+      state.selectedEdgeKey = action.payload;
     },
 
     // Clear selected edge
     clearSelectedEdge: (state) => {
-      state.selectedEdge = null;
+      state.selectedEdgeKey = null;
     },
   },
 });
@@ -127,7 +118,7 @@ export const {
   setSkips,
   clearDiagram,
   setLinkType,
-  setSelectedEdge,
+  setSelectedEdgeKey,
   clearSelectedEdge
 } = diagramSlice.actions;
 

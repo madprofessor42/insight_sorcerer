@@ -1,25 +1,45 @@
 import { useState, useEffect } from 'react';
 import { useAppSelector } from '../../../store/hooks';
-import { useEdgeOperations } from '../../../hooks/edge/useEdgeOperations';
-import { useEdgeValidation } from '../../../hooks/edge/useEdgeValidation';
-import { normalizeLinkType } from '../../../config/diagram-rules';
+import { useEdgeOperations, useEdgeValidation } from '../../../hooks/edge';
+import { normalizeLinkType, getLinkConfiguration } from '../../../config/diagram-rules';
 import styles from './EdgePanel.module.css';
 
 export function EdgePanel() {
-  const selectedEdge = useAppSelector((state) => state.diagram.selectedEdge);
-  const { resetCurve, reverseDirection, toggleBidirectional } = useEdgeOperations();
+  // Get selected edge key and find actual data in linkDataArray
+  // This way selectedEdge is ALWAYS in sync with GoJS state
+  const selectedEdgeKey = useAppSelector((state) => state.diagram.selectedEdgeKey);
+  const linkDataArray = useAppSelector((state) => state.diagram.linkDataArray);
+  const selectedEdge = selectedEdgeKey 
+    ? linkDataArray.find(link => link.key === selectedEdgeKey) 
+    : null;
+  
+  const { resetCurve, reverseDirection, toggleBidirectional, updateEdgeProperty } = useEdgeOperations();
   const { 
     canReverse, 
     reverseReason, 
     canBeBidirectional, 
     bidirectionalReason 
   } = useEdgeValidation(selectedEdge);
+  
+  // Local state for responsive UI
   const [bidirectionalActive, setBidirectionalActive] = useState(false);
+  const [propertyValues, setPropertyValues] = useState<Record<string, string>>({});
 
-  // Update bidirectional state when selected edge changes
+  // Update local UI state when selected edge changes
   useEffect(() => {
     if (selectedEdge) {
       setBidirectionalActive(selectedEdge.bidirectional === true);
+      
+      // Initialize property values from selectedEdge
+      const linkType = normalizeLinkType(selectedEdge.category);
+      const config = getLinkConfiguration(linkType);
+      if (config) {
+        const values: Record<string, string> = {};
+        config.displayProperties.forEach(prop => {
+          values[prop.dataKey] = (selectedEdge[prop.dataKey] as string) || prop.defaultValue || '';
+        });
+        setPropertyValues(values);
+      }
     }
   }, [selectedEdge]);
 
@@ -28,10 +48,20 @@ export function EdgePanel() {
   }
 
   const linkType = normalizeLinkType(selectedEdge.category);
+  const config = getLinkConfiguration(linkType);
 
   const handleToggleBidirectional = () => {
     toggleBidirectional(selectedEdge);
     setBidirectionalActive(!bidirectionalActive);
+  };
+
+  const handlePropertyChange = (dataKey: string, value: string) => {
+    // Update local state immediately for responsive UI
+    setPropertyValues(prev => ({ ...prev, [dataKey]: value }));
+    
+    // Update GoJS model using centralized operation
+    // This follows best practices: GoJS → onModelChange → Redux sync
+    updateEdgeProperty(selectedEdge.key, dataKey, value);
   };
 
   return (
@@ -47,6 +77,29 @@ export function EdgePanel() {
           </p>
         )}
       </div>
+
+      {/* Edge Properties Form */}
+      {config && config.displayProperties.length > 0 && (
+        <div className={styles.edgeProperties}>
+          <h3 className={styles.propertiesTitle}>Свойства</h3>
+          {config.displayProperties.map(prop => (
+            <div key={prop.dataKey} className={styles.propertyField}>
+              <label className={styles.propertyLabel} htmlFor={`prop-${prop.dataKey}`}>
+                {prop.label}
+              </label>
+              <input
+                id={`prop-${prop.dataKey}`}
+                type="text"
+                className={styles.propertyInput}
+                value={propertyValues[prop.dataKey] || ''}
+                onChange={(e) => handlePropertyChange(prop.dataKey, e.target.value)}
+                disabled={!prop.editable}
+                placeholder={prop.defaultValue || `Введите ${prop.label.toLowerCase()}...`}
+              />
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Edge Actions */}
       <div className={styles.edgeActions}>

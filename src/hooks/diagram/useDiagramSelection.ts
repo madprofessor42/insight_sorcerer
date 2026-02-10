@@ -1,7 +1,7 @@
 import * as go from 'gojs';
 import { useCallback } from 'react';
 import { useAppDispatch } from '../../store/hooks';
-import { setSelectedEdge, clearSelectedEdge } from '../../store/diagramSlice';
+import { setSelectedEdgeKey, clearSelectedEdge, setSkips } from '../../store/diagramSlice';
 
 /**
  * Hook to handle diagram selection events
@@ -21,19 +21,17 @@ export function useDiagramSelection() {
         const selectedLink = selection.filter((part) => part instanceof go.Link).first();
         
         if (selectedLink instanceof go.Link) {
-          // Link is selected - store only serializable data in Redux
-          const serializableData = {
-            key: selectedLink.data.key,
-            from: selectedLink.data.from,
-            to: selectedLink.data.to,
-            category: selectedLink.data.category,
-            bidirectional: selectedLink.data.bidirectional === true,
-          };
-          dispatch(setSelectedEdge(serializableData));
+          // Store only the key - actual data comes from linkDataArray
+          dispatch(setSelectedEdgeKey(selectedLink.data.key));
         } else {
-          // No link selected - clear Redux state
+          // No link selected - clear
           dispatch(clearSelectedEdge());
         }
+        
+        // Set skipsDiagramUpdate flag (consistency with useDiagramModelSync)
+        // Even though selectedEdgeKey is not passed to ReactDiagram,
+        // we follow the pattern: any Redux update from GoJS should set skipsDiagramUpdate
+        dispatch(setSkips(true));
         break;
       }
       default:

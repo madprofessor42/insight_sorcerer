@@ -1,5 +1,49 @@
 import * as go from 'gojs';
-import { LINK_CONFIGURATIONS } from '../config/diagram-rules';
+import { LINK_CONFIGURATIONS, type LinkConfiguration } from '../config/diagram-rules';
+
+/**
+ * Helper function to create tooltip Adornment for links
+ * Generates tooltip from displayProperties configuration where showAsTooltip is true
+ * @param config - Link configuration containing displayProperties
+ * @returns Tooltip Adornment or null if no tooltip properties defined
+ */
+function createLinkTooltip(config: LinkConfiguration): go.Adornment | null {
+  const $ = go.GraphObject.make;
+  
+  // Filter properties that should be shown as tooltips
+  const tooltipProperties = config.displayProperties.filter(prop => prop.showAsTooltip);
+  
+  // No tooltip if no properties configured
+  if (tooltipProperties.length === 0) {
+    return null;
+  }
+  
+  // Create tooltip with vertical layout for multiple properties
+  const tooltipContent: go.GraphObject[] = [];
+  
+  tooltipProperties.forEach(prop => {
+    tooltipContent.push(
+      $(go.TextBlock, 
+        { 
+          margin: 4,
+          font: '12px sans-serif'
+        },
+        // Show label and value, or just value if label is empty
+        new go.Binding('text', prop.dataKey, (value) => {
+          const displayValue = value || prop.defaultValue || '';
+          return prop.label ? `${prop.label}: ${displayValue}` : displayValue;
+        })
+      )
+    );
+  });
+  
+  return $(go.Adornment, 'Auto',
+    $(go.Shape, { fill: '#FFFFCC' }),
+    $(go.Panel, 'Vertical',
+      ...tooltipContent
+    )
+  );
+}
 
 /**
  * Define custom cloud shape for Cloud nodes
@@ -293,46 +337,120 @@ export function createLinkTemplateMap(): go.Map<string, go.Link> {
 
   // Generate template for each configured link type
   LINK_CONFIGURATIONS.forEach(config => {
-    const { id, style } = config;
+    const { id, style, displayProperties } = config;
+    
+    // Build link template elements array
+    const linkElements: go.GraphObject[] = [];
+    
+    // Add invisible thick shape for larger click area
+    linkElements.push(
+      $(go.Shape, { isPanelMain: true, stroke: 'transparent', strokeWidth: style.clickAreaWidth })
+    );
+    
+    // Add visible shape
+    linkElements.push(
+      $(go.Shape, { isPanelMain: true, strokeWidth: style.strokeWidth, stroke: style.stroke })
+    );
+    
+    // Add from arrow (shown only when bidirectional)
+    linkElements.push(
+      $(go.Shape, { 
+        fromArrow: 'BackwardTriangle', 
+        stroke: style.stroke, 
+        fill: style.stroke, 
+        scale: style.arrowScale,
+        strokeWidth: 0, // No outline, just fill
+        visible: false 
+      },
+        new go.Binding('visible', 'bidirectional', (b) => b === true))
+    );
+    
+    // Add to arrow (always shown)
+    linkElements.push(
+      $(go.Shape, { 
+        toArrow: 'Standard', 
+        stroke: style.stroke, 
+        fill: style.stroke,
+        scale: style.arrowScale,
+        strokeWidth: 0 // No outline, just fill
+      })
+    );
+    
+    // Add TextBlock labels for properties that are NOT tooltips
+    const labelProperties = displayProperties.filter(prop => !prop.showAsTooltip);
+    labelProperties.forEach(prop => {
+      // Create a panel with background shape and text for better visibility
+      const panelConfig: any = {
+        segmentOrientation: go.Link.OrientUpright, // Keep panel readable
+        // Use middle of the link if not specified
+        segmentIndex: prop.segmentIndex !== undefined ? prop.segmentIndex : NaN, // NaN = middle
+        segmentFraction: prop.segmentFraction !== undefined ? prop.segmentFraction : 0.5,
+        visible: false // Hidden by default, shown only when text is not empty
+      };
+      
+      // Add positioning offset if specified
+      if (prop.segmentOffset) {
+        panelConfig.segmentOffset = new go.Point(prop.segmentOffset.x, prop.segmentOffset.y);
+      }
+      
+      linkElements.push(
+        $(go.Panel, 'Auto', panelConfig,
+          // Show panel only when text is not empty
+          new go.Binding('visible', prop.dataKey, (val) => {
+            return val !== undefined && val !== null && val !== '';
+          }).makeTwoWay(),
+          // Background shape with border - uses link's color
+          $(go.Shape, 'RoundedRectangle',
+            {
+              fill: 'rgba(255, 255, 255, 0.95)', // Almost opaque white
+              stroke: style.stroke, // Use link's color for border
+              strokeWidth: 1.5,
+              parameter1: 3 // Corner radius
+            }
+          ),
+          // Text with improved styling - uses link's color
+          $(go.TextBlock,
+            {
+              margin: new go.Margin(4, 6, 4, 6), // top, right, bottom, left padding
+              font: 'bold 12px sans-serif', // Bold and larger font
+              stroke: style.stroke, // Use link's color for text
+              editable: prop.editable || false,
+              textAlign: 'center'
+            },
+            new go.Binding('text', prop.dataKey).makeTwoWay()
+          )
+        )
+      );
+    });
+    
+    // Create tooltip if there are tooltip properties
+    const tooltip = createLinkTooltip(config);
+    
+    // Create the link template
+    const linkConfig: any = { 
+      routing: go.Link.Normal, 
+      curve: go.Link.Bezier,
+      curviness: 0, // Default to straight line (not NaN which auto-calculates)
+      reshapable: true, // Allow user to reshape by dragging handles
+      adjusting: go.Link.Scale, // Scale intermediate points when nodes move (better than End)
+      toShortLength: style.toShortLength,
+      fromShortLength: style.fromShortLength,
+      cursor: 'pointer' // Show pointer cursor on hover
+    };
+    
+    // Add tooltip if exists
+    if (tooltip) {
+      linkConfig.toolTip = tooltip;
+    }
     
     linkTemplateMap.add(id,
       $(go.Link,
-        { 
-          routing: go.Link.Normal, 
-          curve: go.Link.Bezier,
-          curviness: 0, // Default to straight line (not NaN which auto-calculates)
-          reshapable: true, // Allow user to reshape by dragging handles
-          adjusting: go.Link.Scale, // Scale intermediate points when nodes move (better than End)
-          toShortLength: style.toShortLength,
-          fromShortLength: style.fromShortLength,
-          cursor: 'pointer', // Show pointer cursor on hover
-        },
+        linkConfig,
         // Save link route points to model (GoJS automatically converts List2 → Array<number>)
         new go.Binding('points').makeTwoWay(),
         new go.Binding('curviness').makeTwoWay(), // Save curviness to model
         new go.Binding('bidirectional').makeTwoWay(), // Save bidirectional state to model
-        // Invisible thick shape for larger click area
-        $(go.Shape, { isPanelMain: true, stroke: 'transparent', strokeWidth: style.clickAreaWidth }),
-        // Visible shape
-        $(go.Shape, { isPanelMain: true, strokeWidth: style.strokeWidth, stroke: style.stroke }),
-        // From arrow (shown only when bidirectional)
-        $(go.Shape, { 
-          fromArrow: 'BackwardTriangle', 
-          stroke: style.stroke, 
-          fill: style.stroke, 
-          scale: style.arrowScale,
-          strokeWidth: 0, // No outline, just fill
-          visible: false 
-        },
-          new go.Binding('visible', 'bidirectional', (b) => b === true)),
-        // To arrow (always shown)
-        $(go.Shape, { 
-          toArrow: 'Standard', 
-          stroke: style.stroke, 
-          fill: style.stroke,
-          scale: style.arrowScale,
-          strokeWidth: 0 // No outline, just fill
-        })
+        ...linkElements
       )
     );
   });
@@ -346,7 +464,7 @@ export function createLinkTemplateMap(): go.Map<string, go.Link> {
 export function createDefaultLinkTemplate(): go.Link {
   const $ = go.GraphObject.make;
   
-  // Get default configuration
+  // Get default configuration (should be 'link')
   const defaultConfig = LINK_CONFIGURATIONS.find(c => c.id === 'link');
   const style = defaultConfig?.style || {
     stroke: '#666',
@@ -357,25 +475,23 @@ export function createDefaultLinkTemplate(): go.Link {
     fromShortLength: 4
   };
   
-  return $(go.Link,
-    { 
-      routing: go.Link.Normal, 
-      curve: go.Link.Bezier,
-      curviness: 0,
-      reshapable: true,
-      adjusting: go.Link.Scale,
-      cursor: 'pointer',
-      toShortLength: style.toShortLength,
-      fromShortLength: style.fromShortLength,
-    },
-    new go.Binding('points').makeTwoWay(), // Save link route points
-    new go.Binding('curviness').makeTwoWay(),
-    new go.Binding('bidirectional').makeTwoWay(),
-    // Invisible thick shape for larger click area
-    $(go.Shape, { isPanelMain: true, stroke: 'transparent', strokeWidth: style.clickAreaWidth }),
-    // Visible shape
-    $(go.Shape, { isPanelMain: true, strokeWidth: style.strokeWidth, stroke: style.stroke }),
-    // From arrow (shown only when bidirectional)
+  const displayProperties = defaultConfig?.displayProperties || [];
+  
+  // Build link template elements array
+  const linkElements: go.GraphObject[] = [];
+  
+  // Add invisible thick shape for larger click area
+  linkElements.push(
+    $(go.Shape, { isPanelMain: true, stroke: 'transparent', strokeWidth: style.clickAreaWidth })
+  );
+  
+  // Add visible shape
+  linkElements.push(
+    $(go.Shape, { isPanelMain: true, strokeWidth: style.strokeWidth, stroke: style.stroke })
+  );
+  
+  // Add from arrow (shown only when bidirectional)
+  linkElements.push(
     $(go.Shape, { 
       fromArrow: 'BackwardTriangle', 
       stroke: style.stroke, 
@@ -384,8 +500,11 @@ export function createDefaultLinkTemplate(): go.Link {
       strokeWidth: 0,
       visible: false 
     },
-      new go.Binding('visible', 'bidirectional', (b) => b === true)),
-    // To arrow (always shown)
+      new go.Binding('visible', 'bidirectional', (b) => b === true))
+  );
+  
+  // Add to arrow (always shown)
+  linkElements.push(
     $(go.Shape, { 
       toArrow: 'Standard', 
       stroke: style.stroke, 
@@ -393,6 +512,81 @@ export function createDefaultLinkTemplate(): go.Link {
       scale: style.arrowScale,
       strokeWidth: 0
     })
+  );
+  
+  // Add TextBlock labels for properties that are NOT tooltips
+  const labelProperties = displayProperties.filter(prop => !prop.showAsTooltip);
+  labelProperties.forEach(prop => {
+    // Create a panel with background shape and text for better visibility
+    const panelConfig: any = {
+      segmentOrientation: go.Link.OrientUpright, // Keep panel readable
+      // Use middle of the link if not specified
+      segmentIndex: prop.segmentIndex !== undefined ? prop.segmentIndex : NaN, // NaN = middle
+      segmentFraction: prop.segmentFraction !== undefined ? prop.segmentFraction : 0.5,
+      visible: false // Hidden by default, shown only when text is not empty
+    };
+    
+    // Add positioning offset if specified
+    if (prop.segmentOffset) {
+      panelConfig.segmentOffset = new go.Point(prop.segmentOffset.x, prop.segmentOffset.y);
+    }
+    
+    linkElements.push(
+      $(go.Panel, 'Auto', panelConfig,
+        // Show panel only when text is not empty
+        new go.Binding('visible', prop.dataKey, (val) => {
+          return val !== undefined && val !== null && val !== '';
+        }).makeTwoWay(),
+        // Background shape with border - uses link's color
+        $(go.Shape, 'RoundedRectangle',
+          {
+            fill: 'rgba(255, 255, 255, 0.95)', // Almost opaque white
+            stroke: style.stroke, // Use link's color for border
+            strokeWidth: 1.5,
+            parameter1: 3 // Corner radius
+          }
+        ),
+        // Text with improved styling - uses link's color
+        $(go.TextBlock,
+          {
+            margin: new go.Margin(4, 6, 4, 6), // top, right, bottom, left padding
+            font: 'bold 12px sans-serif', // Bold and larger font
+            stroke: style.stroke, // Use link's color for text
+            editable: prop.editable || false,
+            textAlign: 'center'
+          },
+          new go.Binding('text', prop.dataKey).makeTwoWay()
+        )
+      )
+    );
+  });
+  
+  // Create tooltip if default config has tooltip properties
+  const tooltip = defaultConfig ? createLinkTooltip(defaultConfig) : null;
+  
+  // Create the link config
+  const linkConfig: any = { 
+    routing: go.Link.Normal, 
+    curve: go.Link.Bezier,
+    curviness: 0,
+    reshapable: true,
+    adjusting: go.Link.Scale,
+    cursor: 'pointer',
+    toShortLength: style.toShortLength,
+    fromShortLength: style.fromShortLength
+  };
+  
+  // Add tooltip if exists
+  if (tooltip) {
+    linkConfig.toolTip = tooltip;
+  }
+  
+  return $(go.Link,
+    linkConfig,
+    new go.Binding('points').makeTwoWay(), // Save link route points
+    new go.Binding('curviness').makeTwoWay(),
+    new go.Binding('bidirectional').makeTwoWay(),
+    ...linkElements
   );
 }
 

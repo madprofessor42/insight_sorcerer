@@ -40,6 +40,28 @@ export interface LinkUIMetadata {
 }
 
 /**
+ * Configuration for a single property to display on a link
+ */
+export interface LinkPropertyDisplay {
+  /** Property key in link data (e.g., 'text' for Name, 'flowRate' for Flow Rate, 'note' for Note) */
+  dataKey: string;
+  /** Display label for the property */
+  label: string;
+  /** Whether this property should be editable inline */
+  editable?: boolean;
+  /** Default value if property is not set */
+  defaultValue?: string;
+  /** Show this property as tooltip on hover (instead of label on link) */
+  showAsTooltip?: boolean;
+  /** Segment offset for positioning the label on the link (only for non-tooltip properties) */
+  segmentOffset?: { x: number; y: number };
+  /** Segment index (which segment of the link to place the label on, 0 = middle) */
+  segmentIndex?: number;
+  /** Segment fraction (0.0 to 1.0, where along the segment to place the label) */
+  segmentFraction?: number;
+}
+
+/**
  * Complete link configuration
  * Single source of truth for ALL link type settings
  */
@@ -52,6 +74,10 @@ export interface LinkConfiguration {
   
   // Visual Styles
   style: LinkVisualStyle;
+  
+  // Display Configuration
+  /** Properties to display as labels on link or in tooltip */
+  displayProperties: LinkPropertyDisplay[];
   
   // Validation Rules
   /** Allowed source node types (empty array means all types allowed) */
@@ -89,6 +115,23 @@ export const LINK_CONFIGURATIONS: LinkConfiguration[] = [
       fromShortLength: 4
     },
     
+    displayProperties: [
+      {
+        dataKey: 'text',
+        label: 'Name',
+        editable: true,
+        defaultValue: '',
+        segmentOffset: { x: 0, y: -10 }
+      },
+      {
+        dataKey: 'note',
+        label: 'Note',
+        editable: true,
+        defaultValue: '',
+        showAsTooltip: true
+      }
+    ],
+    
     allowedFromNodes: [], // Can connect from any node type
     allowedToNodes: [], // Can connect to any node type
     canBeBidirectional: true, // Link can be bidirectional - single link with two arrows
@@ -111,6 +154,31 @@ export const LINK_CONFIGURATIONS: LinkConfiguration[] = [
       toShortLength: 8,
       fromShortLength: 8
     },
+    
+    displayProperties: [
+      {
+        dataKey: 'text',
+        label: 'Name',
+        editable: true,
+        defaultValue: '',
+        segmentOffset: { x: 0, y: -10 }
+        // segmentIndex and segmentFraction are omitted - will use middle of entire link (NaN)
+      },
+      {
+        dataKey: 'flowRate',
+        label: 'Flow Rate',
+        editable: true,
+        defaultValue: '',
+        showAsTooltip: true // Show in tooltip instead of on edge
+      },
+      {
+        dataKey: 'note',
+        label: 'Note',
+        editable: true,
+        defaultValue: '',
+        showAsTooltip: true
+      }
+    ],
     
     allowedFromNodes: ['Stock', 'Cloud'], // Can connect from Stock or Cloud (Cloud can be source when reversing link)
     allowedToNodes: ['Stock', 'Cloud'], // Can connect TO Stock or Cloud (Cloud is auto-created when drawing to canvas)

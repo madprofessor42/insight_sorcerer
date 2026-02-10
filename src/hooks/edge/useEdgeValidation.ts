@@ -1,15 +1,15 @@
 import { useMemo } from 'react';
-import type { SelectedEdgeData } from '../../store/diagramSlice';
+import * as go from 'gojs';
 import { validateReverse, validateBidirectional } from '../../utils/link-validation';
 import { getDiagramFromDOM } from '../../utils/diagram-access';
 
 /**
  * Hook to validate edge operations
  * Returns validation results with human-readable reasons for UI display
- * @param selectedEdge - The currently selected edge
+ * @param selectedEdge - The currently selected edge data from linkDataArray
  * @returns Validation results for various edge operations
  */
-export function useEdgeValidation(selectedEdge: SelectedEdgeData | null) {
+export function useEdgeValidation(selectedEdge: go.ObjectData | null | undefined) {
   const reverseValidation = useMemo(() => {
     if (!selectedEdge) return { canReverse: false, reason: '' };
 

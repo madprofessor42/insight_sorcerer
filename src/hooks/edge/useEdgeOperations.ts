@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
 import * as go from 'gojs';
-import type { SelectedEdgeData } from '../../store/diagramSlice';
 import { withLink } from '../../utils/diagram-access';
 import { validateBidirectional, validateReverse } from '../../utils/link-validation';
 
@@ -14,7 +13,7 @@ export function useEdgeOperations() {
    * Note: No validation needed - this is a pure UI operation that doesn't
    * change the graph structure, only the visual representation of the link
    */
-  const resetCurve = useCallback((edgeData: SelectedEdgeData) => {
+  const resetCurve = useCallback((edgeData: go.ObjectData) => {
     withLink(edgeData.key, (diagram, _model, _linkData, link) => {
       diagram.startTransaction('reset curve');
       
@@ -40,7 +39,7 @@ export function useEdgeOperations() {
     });
   }, []);
 
-  const reverseDirection = useCallback((edgeData: SelectedEdgeData) => {
+  const reverseDirection = useCallback((edgeData: go.ObjectData) => {
     withLink(edgeData.key, (diagram, model, _linkData, link) => {
       // Validate if this link can be reversed
       const validation = validateReverse(
@@ -74,7 +73,7 @@ export function useEdgeOperations() {
     });
   }, []);
 
-  const toggleBidirectional = useCallback((edgeData: SelectedEdgeData) => {
+  const toggleBidirectional = useCallback((edgeData: go.ObjectData) => {
     withLink(edgeData.key, (diagram, model, _linkData, link) => {
       // Validate if this specific link can be bidirectional
       const validation = validateBidirectional(model, link.data.from, link.data.to, link.data.category);
@@ -94,10 +93,26 @@ export function useEdgeOperations() {
     });
   }, []);
 
+  /**
+   * Update a property on an edge
+   * Follows GoJS best practices: change GoJS model → onModelChange syncs to Redux
+   */
+  const updateEdgeProperty = useCallback((edgeKey: go.Key, propertyKey: string, value: any) => {
+    withLink(edgeKey, (diagram, model, linkData) => {
+      diagram.startTransaction('update link property');
+      model.setDataProperty(linkData, propertyKey, value);
+      diagram.commitTransaction('update link property');
+      // GoJS will automatically call onModelChange
+      // → useDiagramModelSync will sync to Redux
+      // → EdgePanel will get updated selectedEdge from Redux
+    });
+  }, []);
+
   return {
     resetCurve,
     reverseDirection,
     toggleBidirectional,
+    updateEdgeProperty,
   };
 }
 

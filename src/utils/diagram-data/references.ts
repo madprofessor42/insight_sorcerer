@@ -130,78 +130,62 @@ export function getAvailableReferences(
   const references: AvailableReference[] = [];
   const addedKeys = new Set<go.Key>();
 
-  // Include incoming links (link type, not flow type)
-  // For bidirectional links, show connections in both directions
-  if (config.includeIncomingLinks) {
+  // Include incoming connections (both nodes and edges)
+  // Config specifies which LINK TYPES to include (not node/edge types)
+  // E.g., incoming: ['link'] means "all incoming via 'link' type connections"
+  if (config.incoming) {
     linkDataArray.forEach((link) => {
       const linkType = getLinkType(link);
-      if (linkType !== 'link') return; // Only include 'link' type
+      // Check if this link type is in the config
+      if (!config.incoming!.includes(linkType)) return;
       
-      processLinkWithBidirectional(
-        link,
-        currentNodeKey,
-        'incoming',
-        nodeDataArray,
-        (node) => tryAddNodeReference(node, references, addedKeys)
-      );
-    });
-  }
-
-  // Include outgoing links (link type, not flow type)
-  // For bidirectional links, show connections in both directions
-  if (config.includeOutgoingLinks) {
-    linkDataArray.forEach((link) => {
-      const linkType = getLinkType(link);
-      if (linkType !== 'link') return; // Only include 'link' type
-      
-      processLinkWithBidirectional(
-        link,
-        currentNodeKey,
-        'outgoing',
-        nodeDataArray,
-        (node) => tryAddNodeReference(node, references, addedKeys)
-      );
-    });
-  }
-
-  // Include incoming flows (flows connected TO this node via LinkLabel)
-  // For bidirectional links to flows, show flows in both directions
-  if (config.includeIncomingFlows) {
-    linkDataArray.forEach((link) => {
       processLinkWithBidirectional(
         link,
         currentNodeKey,
         'incoming',
         nodeDataArray,
         (node) => {
+          // Check if it's a LinkLabel node - if so, get parent edge
           if (isLinkLabelNodeData(node)) {
-            // This is a LinkLabel - get the parent flow edge
             const parentEdge = findParentEdgeForLabelNode(node.key, linkDataArray);
-            if (parentEdge && getLinkType(parentEdge) === 'flow') {
-              tryAddEdgeReference(parentEdge, 'flow', references, addedKeys);
+            if (parentEdge) {
+              const edgeType = getLinkType(parentEdge);
+              tryAddEdgeReference(parentEdge, edgeType, references, addedKeys);
             }
+          } else {
+            // Regular node
+            tryAddNodeReference(node, references, addedKeys);
           }
         }
       );
     });
   }
 
-  // Include outgoing flows (flows connected FROM this node via LinkLabel)
-  // For bidirectional links to flows, show flows in both directions
-  if (config.includeOutgoingFlows) {
+  // Include outgoing connections (both nodes and edges)
+  // Config specifies which LINK TYPES to include (not node/edge types)
+  // E.g., outgoing: ['link'] means "all outgoing via 'link' type connections"
+  if (config.outgoing) {
     linkDataArray.forEach((link) => {
+      const linkType = getLinkType(link);
+      // Check if this link type is in the config
+      if (!config.outgoing!.includes(linkType)) return;
+      
       processLinkWithBidirectional(
         link,
         currentNodeKey,
         'outgoing',
         nodeDataArray,
         (node) => {
+          // Check if it's a LinkLabel node - if so, get parent edge
           if (isLinkLabelNodeData(node)) {
-            // This is a LinkLabel - get the parent flow edge
             const parentEdge = findParentEdgeForLabelNode(node.key, linkDataArray);
-            if (parentEdge && getLinkType(parentEdge) === 'flow') {
-              tryAddEdgeReference(parentEdge, 'flow', references, addedKeys);
+            if (parentEdge) {
+              const edgeType = getLinkType(parentEdge);
+              tryAddEdgeReference(parentEdge, edgeType, references, addedKeys);
             }
+          } else {
+            // Regular node
+            tryAddNodeReference(node, references, addedKeys);
           }
         }
       );
@@ -248,14 +232,18 @@ export function getAvailableReferencesForEdge(
     }
   }
 
-  // Include nodes/edges connected TO this edge (source edge connections)
+  // Include nodes/edges connected TO this edge (via edge's LinkLabel)
   // E.g., Variable -> Link -> Flow (Variable is connected TO Flow)
   // For bidirectional links, show in both directions
-  if (config.includeSourceEdge) {
+  if (config.incomingToEdge) {
     const labelKeys = currentEdge.labelKeys;
     if (Array.isArray(labelKeys)) {
       labelKeys.forEach((labelKey) => {
         linkDataArray.forEach((link) => {
+          const linkType = getLinkType(link);
+          // Check if this link type is in the config
+          if (!config.incomingToEdge!.includes(linkType)) return;
+          
           processLinkWithBidirectional(
             link,
             labelKey,
@@ -268,14 +256,18 @@ export function getAvailableReferencesForEdge(
     }
   }
 
-  // Include nodes/edges that this edge connects TO (target edge connections)
+  // Include nodes/edges that this edge connects TO (via edge's LinkLabel)
   // E.g., Flow -> Link -> Variable (Flow connects TO Variable)
   // For bidirectional links, show in both directions
-  if (config.includeTargetEdge) {
+  if (config.outgoingFromEdge) {
     const labelKeys = currentEdge.labelKeys;
     if (Array.isArray(labelKeys)) {
       labelKeys.forEach((labelKey) => {
         linkDataArray.forEach((link) => {
+          const linkType = getLinkType(link);
+          // Check if this link type is in the config
+          if (!config.outgoingFromEdge!.includes(linkType)) return;
+          
           processLinkWithBidirectional(
             link,
             labelKey,

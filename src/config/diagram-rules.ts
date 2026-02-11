@@ -7,28 +7,44 @@ export type NodeType = 'Stock' | 'Variable' | 'Cloud';
  * Reference configuration for formula fields
  * Defines what references should be shown in formula input bubbles
  * 
- * This provides explicit control over what types of connections are shown.
+ * Fully configurable - specify which LINK types to use for connections.
+ * No hardcoded types - everything is driven by configuration.
+ * 
+ * The arrays specify which LINK TYPES to include (not node/edge types).
+ * E.g., incoming: ['link'] means "show all incoming connections made via 'link' type"
+ * 
+ * The code automatically resolves:
+ * - If connection leads to regular node -> shows that node
+ * - If connection leads to edge (via LinkLabel) -> shows that edge
  */
 export interface ReferenceConfig {
   // === For Nodes (Stock, Variable) ===
-  /** Include regular link connections (link type) coming TO this node */
-  includeIncomingLinks?: boolean;
-  /** Include regular link connections (link type) going FROM this node */
-  includeOutgoingLinks?: boolean;
-  /** Include flows (flow type edges) connected TO this node */
-  includeIncomingFlows?: boolean;
-  /** Include flows (flow type edges) connected FROM this node */
-  includeOutgoingFlows?: boolean;
+  /** 
+   * Incoming connections via specified link types
+   * E.g., ['link'] = show all incoming via 'link' type (nodes or edges)
+   */
+  incoming?: LinkType[];
+  /** 
+   * Outgoing connections via specified link types
+   * E.g., ['link', 'flow'] = show all outgoing via 'link' or 'flow' types
+   */
+  outgoing?: LinkType[];
   
   // === For Edges (Flow, Link) ===
   /** Include the source node of this edge (from node) */
   includeSourceNode?: boolean;
   /** Include the target node of this edge (to node) */
   includeTargetNode?: boolean;
-  /** Include nodes/edges connected TO this edge (e.g., Variable -> Link -> Flow) */
-  includeSourceEdge?: boolean;
-  /** Include nodes/edges that this edge connects TO (e.g., Flow -> Link -> Variable) */
-  includeTargetEdge?: boolean;
+  /** 
+   * Nodes/edges connected TO this edge (via edge's LinkLabel)
+   * Array of link types to include
+   */
+  incomingToEdge?: LinkType[];
+  /** 
+   * Nodes/edges that this edge connects TO (via edge's LinkLabel)
+   * Array of link types to include
+   */
+  outgoingFromEdge?: LinkType[];
 }
 
 /**
@@ -614,22 +630,21 @@ export function linkTypeNeedsLabelNode(linkTypeId: string): boolean {
  * Each configuration explicitly declares what types of connections to show.
  */
 export const REFERENCE_CONFIGURATIONS: Record<string, ReferenceConfig> = {
-  // Stock.initialValue - show only incoming LINKS (not flows)
+  // Stock.initialValue - show incoming connections via 'link' type
   'Stock.initialValue': {
-    includeIncomingLinks: true,
+    incoming: ['link'], // All incoming via 'link' type (nodes or edges)
   },
   
-  // Variable.value - show incoming links AND incoming flows (via LinkLabel)
+  // Variable.value - show incoming connections via 'link' type
   'Variable.value': {
-    includeIncomingLinks: true,
-    includeIncomingFlows: true,
+    incoming: ['link'], // All incoming via 'link' type (nodes or edges)
   },
   
-  // Flow.flowRate - show source stock, target stock, and variables connected to flow via links
+  // Flow.flowRate - show source stock, target stock, and variables connected via 'link'
   'flow.flowRate': {
-    includeSourceNode: true,   // Show the Stock flow comes from
-    includeTargetNode: true,   // Show the Stock flow goes to
-    includeSourceEdge: true,   // Show Variables connected TO flow (Variable -> Link -> Flow)
+    includeSourceNode: true,      // Show the Stock flow comes from
+    includeTargetNode: true,       // Show the Stock flow goes to
+    incomingToEdge: ['link'],      // Show nodes connected TO flow via 'link' (Variable -> Link -> Flow)
   },
 };
 

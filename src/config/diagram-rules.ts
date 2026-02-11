@@ -34,6 +34,24 @@ export interface ReferenceConfig {
    */
   outgoing?: LinkType[];
   
+  /**
+   * Include the incoming connecting edges themselves (not just the elements they connect from)
+   * Array of edge types to include as references
+   * E.g., Variable -> link -> Stock
+   * - Without: shows only Variable
+   * - With ['link']: shows Variable AND the incoming link itself
+   */
+  includeIncomingConnectingEdges?: LinkType[];
+  
+  /**
+   * Include the outgoing connecting edges themselves (not just the elements they connect to)
+   * Array of edge types to include as references
+   * E.g., Stock -> link -> Variable
+   * - Without: shows only Variable
+   * - With ['link']: shows Variable AND the outgoing link itself
+   */
+  includeOutgoingConnectingEdges?: LinkType[];
+  
   // === Additional flags for Edges only ===
   /** Include the source node of this edge (from node) */
   includeSourceNode?: boolean;
@@ -622,23 +640,35 @@ export function linkTypeNeedsLabelNode(linkTypeId: string): boolean {
  * 
  * This centralizes all reference logic in one place for easy configuration.
  * Each configuration explicitly declares what types of connections to show.
+ * 
+ * Key concepts:
+ * - `incoming: ['link']` - show nodes/edges connected TO this element via 'link' type
+ * - `outgoing: ['flow']` - show nodes/edges this element connects TO via 'flow' type
+ * - `includeIncomingConnectingEdges: ['flow']` - ALSO show the 'flow' edges themselves (independent of incoming)
+ * - `includeOutgoingConnectingEdges: ['link']` - ALSO show the 'link' edges themselves (independent of outgoing)
+ * 
+ * Note: includeIncoming/OutgoingConnectingEdges works INDEPENDENTLY from incoming/outgoing.
+ * Example:
+ *   incoming: ['link'],
+ *   includeIncomingConnectingEdges: ['flow']
+ * Result: Shows nodes connected via 'link' + shows 'flow' edges themselves (even though 'flow' not in incoming)
  */
 export const REFERENCE_CONFIGURATIONS: Record<string, ReferenceConfig> = {
-  // Stock.initialValue - show incoming connections via 'link' type
+  // Stock.initialValue - show incoming connections via 'link' type, and 'flow' edges
   'Stock.initialValue': {
-    incoming: ['link'], // All incoming via 'link' type (nodes or edges)
+    incoming: ['link'],                             // Show nodes/edges connected via 'link'
   },
   
   // Variable.value - show incoming connections via 'link' type
   'Variable.value': {
-    incoming: ['link'], // All incoming via 'link' type (nodes or edges)
+    incoming: ['link'],                             // Show nodes/edges connected via 'link'
   },
   
   // Flow.flowRate - show source stock, target stock, and variables connected via 'link'
   'flow.flowRate': {
-    includeSourceNode: true,    // Show the Stock flow comes from
-    includeTargetNode: true,    // Show the Stock flow goes to
-    incoming: ['link'],         // Show nodes connected TO flow via 'link' (Variable -> Link -> Flow)
+    includeSourceNode: true,                        // Show the Stock flow comes from
+    includeTargetNode: true,                        // Show the Stock flow goes to
+    incoming: ['link'],                             // Show nodes connected TO flow via 'link' (Variable -> Link -> Flow)
   },
 };
 

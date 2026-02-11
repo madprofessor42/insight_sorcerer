@@ -1,0 +1,2 @@
+export { DiagramToolbar } from './DiagramToolbar';
+

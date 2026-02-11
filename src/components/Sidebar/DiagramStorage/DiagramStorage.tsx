@@ -27,8 +27,14 @@ export function DiagramStorage() {
 
   const [diagramName, setDiagramName] = useState('');
   const [savedDiagrams, setSavedDiagrams] = useState<DiagramMetadata[]>([]);
-  const [currentDiagramId, setCurrentDiagramId] = useState<string | null>(null);
-  const [currentDiagramName, setCurrentDiagramName] = useState<string>('');
+  const [currentDiagramId, setCurrentDiagramId] = useState<string | null>(() => {
+    // Restore current diagram ID from localStorage
+    return localStorage.getItem('currentDiagramId') || null;
+  });
+  const [currentDiagramName, setCurrentDiagramName] = useState<string>(() => {
+    // Restore current diagram name from localStorage
+    return localStorage.getItem('currentDiagramName') || '';
+  });
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Load saved diagrams on mount and restore auto-saved state
@@ -79,6 +85,26 @@ export function DiagramStorage() {
     }
   };
 
+  // Helper to update current diagram ID with localStorage sync
+  const updateCurrentDiagramId = (id: string | null) => {
+    setCurrentDiagramId(id);
+    if (id) {
+      localStorage.setItem('currentDiagramId', id);
+    } else {
+      localStorage.removeItem('currentDiagramId');
+    }
+  };
+
+  // Helper to update current diagram name with localStorage sync
+  const updateCurrentDiagramName = (name: string) => {
+    setCurrentDiagramName(name);
+    if (name) {
+      localStorage.setItem('currentDiagramName', name);
+    } else {
+      localStorage.removeItem('currentDiagramName');
+    }
+  };
+
   // Сохранить текущую диаграмму (перезапись в IndexedDB)
   const handleSave = async () => {
     if (!currentDiagramId || !currentDiagramName) {
@@ -103,8 +129,8 @@ export function DiagramStorage() {
 
     try {
       const newId = await saveDiagram(diagramName.trim());
-      setCurrentDiagramId(newId);
-      setCurrentDiagramName(diagramName.trim());
+      updateCurrentDiagramId(newId);
+      updateCurrentDiagramName(diagramName.trim());
       toast.showSuccess(`Диаграмма "${diagramName.trim()}" создана!`);
       setDiagramName('');
       await loadSavedDiagrams();
@@ -117,8 +143,8 @@ export function DiagramStorage() {
   const handleLoad = async (id: string, name: string) => {
     try {
       await loadDiagram(id);
-      setCurrentDiagramId(id);
-      setCurrentDiagramName(name);
+      updateCurrentDiagramId(id);
+      updateCurrentDiagramName(name);
       toast.showSuccess(`Диаграмма "${name}" загружена!`);
     } catch (err) {
       console.error('Failed to load diagram:', err);
@@ -137,8 +163,8 @@ export function DiagramStorage() {
       await deleteDiagram(id);
       // Если удаляем текущую диаграмму, сбрасываем состояние
       if (id === currentDiagramId) {
-        setCurrentDiagramId(null);
-        setCurrentDiagramName('');
+        updateCurrentDiagramId(null);
+        updateCurrentDiagramName('');
       }
       toast.showSuccess('Диаграмма удалена');
       await loadSavedDiagrams();
@@ -152,8 +178,8 @@ export function DiagramStorage() {
   const handleNew = () => {
     if (confirm('Создать новую диаграмму? Текущее состояние будет очищено.')) {
       dispatch(clearDiagram());
-      setCurrentDiagramId(null);
-      setCurrentDiagramName('');
+      updateCurrentDiagramId(null);
+      updateCurrentDiagramName('');
       clearAutoSavedDiagram();
       toast.showInfo('Создана новая диаграмма');
     }

@@ -11,6 +11,9 @@
 		},
 		{
 			"path": "../GoJS"
+		},
+		{
+			"path": "../system_dynamics"
 		}
 	],
 	"settings": {}

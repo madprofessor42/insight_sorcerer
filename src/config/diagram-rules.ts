@@ -14,37 +14,31 @@ export type NodeType = 'Stock' | 'Variable' | 'Cloud';
  * E.g., incoming: ['link'] means "show all incoming connections made via 'link' type"
  * 
  * The code automatically resolves:
- * - If connection leads to regular node -> shows that node
- * - If connection leads to edge (via LinkLabel) -> shows that edge
+ * - For nodes: connections to/from this node
+ * - For edges: connections to/from this edge's LinkLabel
+ * 
+ * Whether connection leads to node or edge is resolved automatically.
  */
 export interface ReferenceConfig {
-  // === For Nodes (Stock, Variable) ===
   /** 
    * Incoming connections via specified link types
-   * E.g., ['link'] = show all incoming via 'link' type (nodes or edges)
+   * For nodes: connections TO this node
+   * For edges: connections TO this edge's LinkLabel
    */
   incoming?: LinkType[];
+  
   /** 
    * Outgoing connections via specified link types
-   * E.g., ['link', 'flow'] = show all outgoing via 'link' or 'flow' types
+   * For nodes: connections FROM this node
+   * For edges: connections FROM this edge's LinkLabel
    */
   outgoing?: LinkType[];
   
-  // === For Edges (Flow, Link) ===
+  // === Additional flags for Edges only ===
   /** Include the source node of this edge (from node) */
   includeSourceNode?: boolean;
   /** Include the target node of this edge (to node) */
   includeTargetNode?: boolean;
-  /** 
-   * Nodes/edges connected TO this edge (via edge's LinkLabel)
-   * Array of link types to include
-   */
-  incomingToEdge?: LinkType[];
-  /** 
-   * Nodes/edges that this edge connects TO (via edge's LinkLabel)
-   * Array of link types to include
-   */
-  outgoingFromEdge?: LinkType[];
 }
 
 /**
@@ -642,9 +636,9 @@ export const REFERENCE_CONFIGURATIONS: Record<string, ReferenceConfig> = {
   
   // Flow.flowRate - show source stock, target stock, and variables connected via 'link'
   'flow.flowRate': {
-    includeSourceNode: true,      // Show the Stock flow comes from
-    includeTargetNode: true,       // Show the Stock flow goes to
-    incomingToEdge: ['link'],      // Show nodes connected TO flow via 'link' (Variable -> Link -> Flow)
+    includeSourceNode: true,    // Show the Stock flow comes from
+    includeTargetNode: true,    // Show the Stock flow goes to
+    incoming: ['link'],         // Show nodes connected TO flow via 'link' (Variable -> Link -> Flow)
   },
 };
 

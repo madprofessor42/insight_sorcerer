@@ -232,17 +232,17 @@ export function getAvailableReferencesForEdge(
     }
   }
 
-  // Include nodes/edges connected TO this edge (via edge's LinkLabel)
+  // Include incoming connections to this edge (via edge's LinkLabel)
   // E.g., Variable -> Link -> Flow (Variable is connected TO Flow)
   // For bidirectional links, show in both directions
-  if (config.incomingToEdge) {
+  if (config.incoming) {
     const labelKeys = currentEdge.labelKeys;
     if (Array.isArray(labelKeys)) {
       labelKeys.forEach((labelKey) => {
         linkDataArray.forEach((link) => {
           const linkType = getLinkType(link);
           // Check if this link type is in the config
-          if (!config.incomingToEdge!.includes(linkType)) return;
+          if (!config.incoming!.includes(linkType)) return;
           
           processLinkWithBidirectional(
             link,
@@ -256,17 +256,17 @@ export function getAvailableReferencesForEdge(
     }
   }
 
-  // Include nodes/edges that this edge connects TO (via edge's LinkLabel)
+  // Include outgoing connections from this edge (via edge's LinkLabel)
   // E.g., Flow -> Link -> Variable (Flow connects TO Variable)
   // For bidirectional links, show in both directions
-  if (config.outgoingFromEdge) {
+  if (config.outgoing) {
     const labelKeys = currentEdge.labelKeys;
     if (Array.isArray(labelKeys)) {
       labelKeys.forEach((labelKey) => {
         linkDataArray.forEach((link) => {
           const linkType = getLinkType(link);
           // Check if this link type is in the config
-          if (!config.outgoingFromEdge!.includes(linkType)) return;
+          if (!config.outgoing!.includes(linkType)) return;
           
           processLinkWithBidirectional(
             link,

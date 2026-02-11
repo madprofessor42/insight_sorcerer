@@ -63,3 +63,12 @@ export {
   resolveLinkEndpoint,
   type SimulationConversionError,
 } from './simulation';
+
+// ============================================================================
+// REFERENCES - Formula input reference utilities
+// ============================================================================
+export {
+  getAvailableReferences,
+  getAllAvailableReferences,
+  getAvailableReferencesForEdge,
+} from './references';

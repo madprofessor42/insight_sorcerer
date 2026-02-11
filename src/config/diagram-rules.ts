@@ -4,6 +4,34 @@
 export type NodeType = 'Stock' | 'Variable' | 'Cloud';
 
 /**
+ * Reference configuration for formula fields
+ * Defines what references should be shown in formula input bubbles
+ * 
+ * This provides explicit control over what types of connections are shown.
+ */
+export interface ReferenceConfig {
+  // === For Nodes (Stock, Variable) ===
+  /** Include regular link connections (link type) coming TO this node */
+  includeIncomingLinks?: boolean;
+  /** Include regular link connections (link type) going FROM this node */
+  includeOutgoingLinks?: boolean;
+  /** Include flows (flow type edges) connected TO this node */
+  includeIncomingFlows?: boolean;
+  /** Include flows (flow type edges) connected FROM this node */
+  includeOutgoingFlows?: boolean;
+  
+  // === For Edges (Flow, Link) ===
+  /** Include the source node of this edge (from node) */
+  includeSourceNode?: boolean;
+  /** Include the target node of this edge (to node) */
+  includeTargetNode?: boolean;
+  /** Include nodes/edges connected TO this edge (e.g., Variable -> Link -> Flow) */
+  includeSourceEdge?: boolean;
+  /** Include nodes/edges that this edge connects TO (e.g., Flow -> Link -> Variable) */
+  includeTargetEdge?: boolean;
+}
+
+/**
  * Node types that can be created manually by user
  * Cloud nodes are created automatically only when linking to canvas
  */
@@ -56,6 +84,8 @@ export interface NodePropertyDisplay {
   showAsTooltip?: boolean;
   /** Show this property as the main text label on the node */
   showAsMainLabel?: boolean;
+  /** Input type for the editor */
+  editorType?: 'text' | 'formula';
 }
 
 /**
@@ -145,21 +175,24 @@ export const NODE_CONFIGURATIONS: NodeConfiguration[] = [
         label: 'Name',
         editable: true,
         defaultValue: 'Stock',
-        showAsMainLabel: true // Show as main text on node
+        showAsMainLabel: true, // Show as main text on node
+        editorType: 'text'
       },
       {
         dataKey: 'initialValue',
         label: 'Initial Value',
         editable: true,
         defaultValue: '',
-        showAsTooltip: true
+        showAsTooltip: true,
+        editorType: 'formula'
       },
       {
         dataKey: 'note',
         label: 'Note',
         editable: true,
         defaultValue: '',
-        showAsTooltip: true
+        showAsTooltip: true,
+        editorType: 'text'
       }
     ],
     
@@ -198,21 +231,24 @@ export const NODE_CONFIGURATIONS: NodeConfiguration[] = [
         label: 'Name',
         editable: true,
         defaultValue: 'Variable',
-        showAsMainLabel: true // Show as main text on node
+        showAsMainLabel: true, // Show as main text on node
+        editorType: 'text'
       },
       {
         dataKey: 'value',
         label: 'Value',
         editable: true,
         defaultValue: '',
-        showAsTooltip: true
+        showAsTooltip: true,
+        editorType: 'formula'
       },
       {
         dataKey: 'note',
         label: 'Note',
         editable: true,
         defaultValue: '',
-        showAsTooltip: true
+        showAsTooltip: true,
+        editorType: 'text'
       }
     ],
     
@@ -315,6 +351,8 @@ export interface LinkPropertyDisplay {
   segmentIndex?: number;
   /** Segment fraction (0.0 to 1.0, where along the segment to place the label) */
   segmentFraction?: number;
+  /** Input type for the editor */
+  editorType?: 'text' | 'formula';
 }
 
 /**
@@ -391,14 +429,16 @@ export const LINK_CONFIGURATIONS: LinkConfiguration[] = [
         label: 'Name',
         editable: true,
         defaultValue: 'Link',
-        segmentOffset: { x: 0, y: -10 }
+        segmentOffset: { x: 0, y: -10 },
+        editorType: 'text'
       },
       {
         dataKey: 'note',
         label: 'Note',
         editable: true,
         defaultValue: '',
-        showAsTooltip: true
+        showAsTooltip: true,
+        editorType: 'text'
       }
     ],
     
@@ -433,7 +473,8 @@ export const LINK_CONFIGURATIONS: LinkConfiguration[] = [
         label: 'Name',
         editable: true,
         defaultValue: 'Flow',
-        segmentOffset: { x: 0, y: -10 }
+        segmentOffset: { x: 0, y: -10 },
+        editorType: 'text'
         // segmentIndex and segmentFraction are omitted - will use middle of entire link (NaN)
       },
       {
@@ -441,14 +482,16 @@ export const LINK_CONFIGURATIONS: LinkConfiguration[] = [
         label: 'Flow Rate',
         editable: true,
         defaultValue: '',
-        showAsTooltip: true // Show in tooltip instead of on edge
+        showAsTooltip: true, // Show in tooltip instead of on edge
+        editorType: 'formula'
       },
       {
         dataKey: 'note',
         label: 'Note',
         editable: true,
         defaultValue: '',
-        showAsTooltip: true
+        showAsTooltip: true,
+        editorType: 'text'
       }
     ],
     
@@ -556,4 +599,50 @@ export function linkTypeNeedsLabelNode(linkTypeId: string): boolean {
   return LINK_CONFIGURATIONS.some(
     config => config.allowedFromEdges.includes(linkTypeId) || config.allowedToEdges.includes(linkTypeId)
   );
+}
+
+// ============================================================================
+// REFERENCE CONFIGURATIONS
+// Centralized configuration for formula input references (bubbles)
+// ============================================================================
+
+/**
+ * Reference configurations for formula fields.
+ * Key format: 'NodeType.propertyName' or 'LinkType.propertyName'
+ * 
+ * This centralizes all reference logic in one place for easy configuration.
+ * Each configuration explicitly declares what types of connections to show.
+ */
+export const REFERENCE_CONFIGURATIONS: Record<string, ReferenceConfig> = {
+  // Stock.initialValue - show only incoming LINKS (not flows)
+  'Stock.initialValue': {
+    includeIncomingLinks: true,
+  },
+  
+  // Variable.value - show incoming links AND incoming flows (via LinkLabel)
+  'Variable.value': {
+    includeIncomingLinks: true,
+    includeIncomingFlows: true,
+  },
+  
+  // Flow.flowRate - show source stock, target stock, and variables connected to flow via links
+  'flow.flowRate': {
+    includeSourceNode: true,   // Show the Stock flow comes from
+    includeTargetNode: true,   // Show the Stock flow goes to
+    includeSourceEdge: true,   // Show Variables connected TO flow (Variable -> Link -> Flow)
+  },
+};
+
+/**
+ * Get reference configuration for a specific node property
+ */
+export function getNodeReferenceConfig(nodeType: NodeType, propertyKey: string): ReferenceConfig | undefined {
+  return REFERENCE_CONFIGURATIONS[`${nodeType}.${propertyKey}`];
+}
+
+/**
+ * Get reference configuration for a specific link property
+ */
+export function getLinkReferenceConfig(linkType: LinkType, propertyKey: string): ReferenceConfig | undefined {
+  return REFERENCE_CONFIGURATIONS[`${linkType}.${propertyKey}`];
 }

@@ -1,14 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import * as go from 'gojs';
 import { useAppSelector } from '../../../store/hooks';
 import { useEdgeOperations, useEdgeValidation } from '../../../hooks/edge';
-import { normalizeLinkType, getLinkConfiguration } from '../../../config/diagram-rules';
+import { normalizeLinkType, getLinkConfiguration, getLinkReferenceConfig } from '../../../config/diagram-rules';
+import { FormulaInput } from '../../ui';
+import { getAvailableReferencesForEdge } from '../../../utils/diagram-data';
 import styles from './EdgePanel.module.css';
 
 export function EdgePanel() {
   // Get selected edge key and find actual data in linkDataArray
   // This way selectedEdge is ALWAYS in sync with GoJS state
   const selectedEdgeKey = useAppSelector((state) => state.diagram.selectedEdgeKey);
+  const nodeDataArray = useAppSelector((state) => state.diagram.nodeDataArray);
   const linkDataArray = useAppSelector((state) => state.diagram.linkDataArray);
   const selectedEdge = selectedEdgeKey 
     ? linkDataArray.find(link => link.key === selectedEdgeKey) 
@@ -26,6 +29,29 @@ export function EdgePanel() {
   const [bidirectionalActive, setBidirectionalActive] = useState(false);
   const [propertyValues, setPropertyValues] = useState<Record<string, string>>({});
   const [previousEdgeKey, setPreviousEdgeKey] = useState<go.Key | null>(null);
+
+  // Get available references for formula inputs
+  const availableReferences = useMemo(() => {
+    if (!selectedEdge) return [];
+    const linkType = normalizeLinkType(selectedEdge.category);
+    
+    // Get reference config for this edge type
+    // For now, use the first formula property (typically flowRate for flow)
+    const config = getLinkConfiguration(linkType);
+    const formulaProp = config?.displayProperties.find(prop => prop.editorType === 'formula');
+    
+    if (!formulaProp) return [];
+    
+    const refConfig = getLinkReferenceConfig(linkType, formulaProp.dataKey);
+    if (!refConfig) return [];
+    
+    return getAvailableReferencesForEdge(
+      selectedEdge,
+      nodeDataArray,
+      linkDataArray,
+      refConfig
+    );
+  }, [selectedEdge, nodeDataArray, linkDataArray]);
 
   // When deselecting edge, replace empty values with defaults
   useEffect(() => {
@@ -116,22 +142,41 @@ export function EdgePanel() {
         {/* Edge Properties Form */}
         {config && config.displayProperties.length > 0 && (
           <>
-            {config.displayProperties.map(prop => (
-              <div key={prop.dataKey} className={styles.fieldGroup}>
-                <label className={styles.propertyLabel} htmlFor={`prop-${prop.dataKey}`}>
-                  {prop.label}
-                </label>
-                <input
-                  id={`prop-${prop.dataKey}`}
-                  type="text"
-                  className={styles.propertyInput}
-                  value={propertyValues[prop.dataKey] || ''}
-                  onChange={(e) => handlePropertyChange(prop.dataKey, e.target.value)}
-                  disabled={!prop.editable}
-                  placeholder={prop.defaultValue || `Введите ${prop.label.toLowerCase()}...`}
-                />
-              </div>
-            ))}
+            {config.displayProperties.map(prop => {
+              // Use FormulaInput for formula type fields
+              if (prop.editorType === 'formula') {
+                return (
+                  <div key={prop.dataKey} className={styles.fieldGroup}>
+                    <FormulaInput
+                      id={`prop-${prop.dataKey}`}
+                      label={prop.label}
+                      value={propertyValues[prop.dataKey] || ''}
+                      onChange={(value) => handlePropertyChange(prop.dataKey, String(value || ''))}
+                      availableReferences={availableReferences}
+                      placeholder={prop.defaultValue || `Введите ${prop.label.toLowerCase()}...`}
+                    />
+                  </div>
+                );
+              }
+              
+              // Use regular input for text fields
+              return (
+                <div key={prop.dataKey} className={styles.fieldGroup}>
+                  <label className={styles.propertyLabel} htmlFor={`prop-${prop.dataKey}`}>
+                    {prop.label}
+                  </label>
+                  <input
+                    id={`prop-${prop.dataKey}`}
+                    type="text"
+                    className={styles.propertyInput}
+                    value={propertyValues[prop.dataKey] || ''}
+                    onChange={(e) => handlePropertyChange(prop.dataKey, e.target.value)}
+                    disabled={!prop.editable}
+                    placeholder={prop.defaultValue || `Введите ${prop.label.toLowerCase()}...`}
+                  />
+                </div>
+              );
+            })}
           </>
         )}
 

@@ -1,14 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import * as go from 'gojs';
 import { useAppSelector } from '../../../store/hooks';
-import { getNodeConfiguration } from '../../../config/diagram-rules';
+import { getNodeConfiguration, getNodeReferenceConfig } from '../../../config/diagram-rules';
 import { useNodeOperations } from '../../../hooks/node/useNodeOperations';
 import type { NodeType } from '../../../config/diagram-rules';
+import { FormulaInput } from '../../ui';
+import { getAvailableReferences } from '../../../utils/diagram-data';
 import styles from './NodePanel.module.css';
 
 export function NodePanel() {
   const selectedNodeKey = useAppSelector((state) => state.diagram.selectedNodeKey);
   const nodeDataArray = useAppSelector((state) => state.diagram.nodeDataArray);
+  const linkDataArray = useAppSelector((state) => state.diagram.linkDataArray);
   const selectedNode = selectedNodeKey
     ? nodeDataArray.find(node => node.key === selectedNodeKey)
     : null;
@@ -16,6 +19,34 @@ export function NodePanel() {
   const { updateNodeProperty } = useNodeOperations();
   const [propertyValues, setPropertyValues] = useState<Record<string, string>>({});
   const [previousNodeKey, setPreviousNodeKey] = useState<go.Key | null>(null);
+
+  // Get available references for formula inputs
+  // Create a map of dataKey -> references for each property
+  const availableReferencesMap = useMemo(() => {
+    if (!selectedNodeKey || !selectedNode) return {};
+    
+    const nodeType = selectedNode.category as NodeType;
+    const config = getNodeConfiguration(nodeType);
+    if (!config) return {};
+    
+    const referencesMap: Record<string, ReturnType<typeof getAvailableReferences>> = {};
+    
+    config.displayProperties.forEach(prop => {
+      if (prop.editorType === 'formula') {
+        const refConfig = getNodeReferenceConfig(nodeType, prop.dataKey);
+        if (refConfig) {
+          referencesMap[prop.dataKey] = getAvailableReferences(
+            selectedNodeKey,
+            nodeDataArray,
+            linkDataArray,
+            refConfig
+          );
+        }
+      }
+    });
+    
+    return referencesMap;
+  }, [selectedNodeKey, selectedNode, nodeDataArray, linkDataArray]);
 
   // When deselecting node, replace empty values with defaults
   useEffect(() => {
@@ -102,22 +133,41 @@ export function NodePanel() {
         </div>
 
         {/* Node Properties Form */}
-        {config.displayProperties.map(prop => (
-          <div key={prop.dataKey} className={styles.fieldGroup}>
-            <label className={styles.propertyLabel} htmlFor={`prop-${prop.dataKey}`}>
-              {prop.label}
-            </label>
-            <input
-              id={`prop-${prop.dataKey}`}
-              type="text"
-              className={styles.propertyInput}
-              value={propertyValues[prop.dataKey] || ''}
-              onChange={(e) => handlePropertyChange(prop.dataKey, e.target.value)}
-              disabled={!prop.editable}
-              placeholder={prop.defaultValue || `Введите ${prop.label.toLowerCase()}...`}
-            />
-          </div>
-        ))}
+        {config.displayProperties.map(prop => {
+          // Use FormulaInput for formula type fields
+          if (prop.editorType === 'formula') {
+            return (
+              <div key={prop.dataKey} className={styles.fieldGroup}>
+                <FormulaInput
+                  id={`prop-${prop.dataKey}`}
+                  label={prop.label}
+                  value={propertyValues[prop.dataKey] || ''}
+                  onChange={(value) => handlePropertyChange(prop.dataKey, String(value || ''))}
+                  availableReferences={availableReferencesMap[prop.dataKey] || []}
+                  placeholder={prop.defaultValue || `Введите ${prop.label.toLowerCase()}...`}
+                />
+              </div>
+            );
+          }
+          
+          // Use regular input for text fields
+          return (
+            <div key={prop.dataKey} className={styles.fieldGroup}>
+              <label className={styles.propertyLabel} htmlFor={`prop-${prop.dataKey}`}>
+                {prop.label}
+              </label>
+              <input
+                id={`prop-${prop.dataKey}`}
+                type="text"
+                className={styles.propertyInput}
+                value={propertyValues[prop.dataKey] || ''}
+                onChange={(e) => handlePropertyChange(prop.dataKey, e.target.value)}
+                disabled={!prop.editable}
+                placeholder={prop.defaultValue || `Введите ${prop.label.toLowerCase()}...`}
+              />
+            </div>
+          );
+        })}
       </div>
     </section>
   );

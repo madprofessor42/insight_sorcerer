@@ -5,6 +5,12 @@
  */
 
 export { runSimulation } from './runner';
-export { DEFAULT_SIMULATION_CONFIG, TIME_UNITS } from './constants';
+export { 
+  DEFAULT_SIMULATION_CONFIG, 
+  TIME_UNITS,
+  generateChartColor,
+  CHART_DIMENSIONS
+} from './constants';
+export { getChartOptions } from './chartConfig';
 export type { SimulationConfig, SimulationRunResult } from './types';
 

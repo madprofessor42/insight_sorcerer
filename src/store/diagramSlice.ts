@@ -3,8 +3,8 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 import * as go from 'gojs';
 import type { LinkType } from '../config/diagram-rules';
 import { DEFAULT_LINK_TYPE } from '../config/diagram-rules';
-import type { SimulationConfig } from '../types/simulation';
-import { DEFAULT_SIMULATION_CONFIG } from '../types/simulation';
+import type { SimulationConfig } from '../utils/simulation';
+import { DEFAULT_SIMULATION_CONFIG } from '../utils/simulation';
 
 interface DiagramState {
   // GoJS model data - synced from diagram

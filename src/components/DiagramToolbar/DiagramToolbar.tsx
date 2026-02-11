@@ -5,7 +5,7 @@
 import { useState, useCallback } from 'react';
 import { useAppDispatch } from '../../store/hooks';
 import { clearDiagram, setSimulationConfig } from '../../store/diagramSlice';
-import { DEFAULT_SIMULATION_CONFIG } from '../../types/simulation';
+import { DEFAULT_SIMULATION_CONFIG } from '../../utils/simulation';
 import { useDiagramPersistence } from '../../hooks/diagram/useDiagramPersistence';
 import { saveLastOpenedDiagramId } from '../../utils/database';
 import type { DiagramMetadata } from '../../utils/database';

@@ -7,8 +7,8 @@
 import { useState, useCallback } from 'react';
 import { useAppSelector, useAppDispatch } from '../../../store/hooks';
 import { setSimulationConfig } from '../../../store/diagramSlice';
-import type { SimulationConfig } from '../../../types/simulation';
-import { DEFAULT_SIMULATION_CONFIG } from '../../../types/simulation';
+import type { SimulationConfig } from '../../../utils/simulation';
+import { DEFAULT_SIMULATION_CONFIG } from '../../../utils/simulation';
 import { BugIcon } from '../../ui';
 import { SimulationSettingsModal } from './SimulationSettingsModal';
 import { SimulationResultsModal } from './SimulationResultsModal';

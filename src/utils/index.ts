@@ -65,3 +65,16 @@ export {
   isIndexedDBAvailable
 } from './database';
 export type { DiagramData, DiagramMetadata } from './database';
+
+// Export simulation utilities
+export {
+  runSimulation,
+  DEFAULT_SIMULATION_CONFIG,
+  TIME_UNITS,
+  generateChartColor,
+  getChartOptions
+} from './simulation';
+export type {
+  SimulationConfig,
+  SimulationRunResult
+} from './simulation';

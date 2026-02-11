@@ -7,8 +7,8 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { Modal, FormField, ModalActions } from '../../ui';
-import type { SimulationConfig } from '../../../types/simulation';
-import { DEFAULT_SIMULATION_CONFIG, TIME_UNITS } from '../../../types/simulation';
+import type { SimulationConfig } from '../../../utils/simulation';
+import { DEFAULT_SIMULATION_CONFIG, TIME_UNITS } from '../../../utils/simulation';
 import styles from './SimulationSettingsModal.module.css';
 
 export interface SimulationSettingsModalProps {

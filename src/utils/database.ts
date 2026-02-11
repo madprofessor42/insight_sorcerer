@@ -6,7 +6,7 @@
  */
 
 import * as go from 'gojs';
-import type { SimulationConfig } from '../types/simulation';
+import type { SimulationConfig } from './simulation';
 
 /**
  * IndexedDB-based storage for diagrams

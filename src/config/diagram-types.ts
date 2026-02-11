@@ -210,6 +210,19 @@ export interface LinkConfiguration {
 }
 
 /**
+ * Available reference for formula input
+ * Represents a node or edge that can be referenced in a formula
+ */
+export interface AvailableReference {
+  /** ID of the reference (node or edge key) */
+  id: string | number;
+  /** Display name of the reference */
+  name: string;
+  /** Type of the reference (node type or link type) */
+  type: NodeType | string;
+}
+
+/**
  * Reference configuration for formula fields
  * Defines what references should be shown in formula input bubbles
  * 

@@ -4,9 +4,6 @@ export type { ModalProps } from './Modal/Modal';
 export { FormField } from './FormField/FormField';
 export type { FormFieldProps } from './FormField/FormField';
 
-export { FormulaInput } from './FormulaInput';
-export type { FormulaInputProps, AvailableReference } from './FormulaInput';
-
 export { ModalActions } from './ModalActions/ModalActions';
 export type { ModalActionsProps } from './ModalActions/ModalActions';
 

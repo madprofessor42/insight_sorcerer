@@ -3,7 +3,7 @@ import * as go from 'gojs';
 import { useAppSelector } from '../../../store/hooks';
 import { useEdgeOperations, useEdgeValidation } from '../../../hooks/edge';
 import { normalizeLinkType, getLinkConfiguration, getLinkReferenceConfig } from '../../../config';
-import { FormulaInput } from '../../ui';
+import { FormulaInput } from '../../Formula';
 import { getAvailableReferencesForEdge } from '../../../utils/diagram-data';
 import styles from './EdgePanel.module.css';
 

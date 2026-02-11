@@ -5,14 +5,10 @@
  * Displays "bubbles" (available references) always below the input.
  */
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useEffect, useState } from 'react';
+import type { AvailableReference } from '../../config';
 import styles from './FormulaInput.module.css';
-
-export interface AvailableReference {
-  id: string | number;
-  name: string;
-  type: 'Stock' | 'Variable' | 'Cloud' | 'link' | 'flow' | string;
-}
+import { FormulaEditorModal } from './FormulaEditorModal';
 
 export interface FormulaInputProps {
   id: string;
@@ -35,24 +31,43 @@ export function FormulaInput({
   onChange,
   availableReferences,
 }: FormulaInputProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Auto-resize textarea based on content
+  const adjustHeight = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      // Reset height to auto to get the correct scrollHeight
+      textarea.style.height = 'auto';
+      // Set new height based on scrollHeight
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+  }, []);
+
+  // Adjust height when value changes
+  useEffect(() => {
+    adjustHeight();
+  }, [value, adjustHeight]);
 
   const handleInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const newValue = e.target.value;
       onChange(newValue === '' ? undefined : newValue);
+      // Adjust height immediately on input
+      adjustHeight();
     },
-    [onChange]
+    [onChange, adjustHeight]
   );
 
   const insertReference = useCallback(
     (refName: string) => {
       const currentValue = String(value || '');
-      const input = inputRef.current;
+      const textarea = textareaRef.current;
       
-      if (input) {
-        const start = input.selectionStart || currentValue.length;
-        const end = input.selectionEnd || currentValue.length;
+      if (textarea) {
+        const start = textarea.selectionStart || currentValue.length;
+        const end = textarea.selectionEnd || currentValue.length;
         
         // Insert [RefName] at cursor position
         const newValue =
@@ -65,12 +80,29 @@ export function FormulaInput({
         // Set cursor position after inserted reference
         const newCursorPos = start + refName.length + 2; // +2 for brackets
         setTimeout(() => {
-          input.focus();
-          input.setSelectionRange(newCursorPos, newCursorPos);
+          textarea.focus();
+          textarea.setSelectionRange(newCursorPos, newCursorPos);
+          adjustHeight();
         }, 0);
       }
     },
-    [value, onChange]
+    [value, onChange, adjustHeight]
+  );
+
+  const handleOpenModal = useCallback(() => {
+    setIsModalOpen(true);
+  }, []);
+
+  const handleCloseModal = useCallback(() => {
+    setIsModalOpen(false);
+  }, []);
+
+  const handleApplyModal = useCallback(
+    (newValue: string | number | undefined) => {
+      onChange(newValue);
+      setIsModalOpen(false);
+    },
+    [onChange]
   );
 
   const getTypeColor = (type: string) => {
@@ -96,15 +128,26 @@ export function FormulaInput({
         {label}:
       </label>
       <div className={styles.inputWrapper}>
-        <input
-          ref={inputRef}
-          id={id}
-          type="text"
-          value={value ?? ''}
-          onChange={handleInputChange}
-          className={styles.input}
-          placeholder={placeholder}
-        />
+        <div className={styles.inputContainer}>
+          <textarea
+            ref={textareaRef}
+            id={id}
+            value={value ?? ''}
+            onChange={handleInputChange}
+            className={styles.input}
+            placeholder={placeholder}
+            rows={1}
+          />
+          <button
+            type="button"
+            className={styles.expandButton}
+            onClick={handleOpenModal}
+            title="Expand editor"
+            aria-label="Expand editor"
+          >
+            ⤢
+          </button>
+        </div>
         {availableReferences.length > 0 && (
           <div className={styles.suggestions}>
             <div className={styles.suggestionsHeader}>
@@ -129,6 +172,16 @@ export function FormulaInput({
           </div>
         )}
       </div>
+
+      <FormulaEditorModal
+        isOpen={isModalOpen}
+        label={label}
+        value={value}
+        placeholder={placeholder}
+        availableReferences={availableReferences}
+        onApply={handleApplyModal}
+        onCancel={handleCloseModal}
+      />
     </div>
   );
 }

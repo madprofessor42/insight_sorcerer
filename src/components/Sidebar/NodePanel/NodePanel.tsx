@@ -4,7 +4,7 @@ import { useAppSelector } from '../../../store/hooks';
 import { getNodeConfiguration, getNodeReferenceConfig } from '../../../config';
 import { useNodeOperations } from '../../../hooks/node/useNodeOperations';
 import type { NodeType } from '../../../config';
-import { FormulaInput } from '../../ui';
+import { FormulaInput } from '../../Formula';
 import { getAvailableReferences } from '../../../utils/diagram-data';
 import styles from './NodePanel.module.css';
 

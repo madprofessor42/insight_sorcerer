@@ -16,6 +16,7 @@ export type {
   LinkUIMetadata,
   LinkPropertyDisplay,
   LinkConfiguration,
+  AvailableReference,
   ReferenceConfig,
 } from './diagram-types';
 

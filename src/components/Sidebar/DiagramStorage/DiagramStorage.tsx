@@ -4,12 +4,13 @@
  * UI for saving and loading diagrams to/from IndexedDB
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useDiagramPersistence } from '../../../hooks/diagram/useDiagramPersistence';
 import { loadAutoSavedDiagram, clearAutoSavedDiagram, finishRestoration } from '../../../hooks/diagram/useDiagramAutoSave';
-import { useToast } from '../../Toast';
+import { useToast } from '../../ui';
 import { useAppDispatch } from '../../../store/hooks';
-import { clearDiagram, loadDiagram as loadDiagramAction } from '../../../store/diagramSlice';
+import { clearDiagram, loadDiagram as loadDiagramAction, setSimulationConfig } from '../../../store/diagramSlice';
+import { DEFAULT_SIMULATION_CONFIG } from '../../../types/simulation';
 import type { DiagramMetadata } from '../../../utils/database';
 import styles from './DiagramStorage.module.css';
 
@@ -35,46 +36,56 @@ export function DiagramStorage() {
     // Restore current diagram name from localStorage
     return localStorage.getItem('currentDiagramName') || '';
   });
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  
+  // Use ref to prevent double restoration (survives StrictMode remounts)
+  const hasRestoredRef = useRef(false);
 
   // Load saved diagrams on mount and restore auto-saved state
   useEffect(() => {
+    // Prevent double restoration - critical for StrictMode
+    if (hasRestoredRef.current) {
+      return;
+    }
+    hasRestoredRef.current = true;
+
     const initializeDiagrams = async () => {
       await loadSavedDiagrams();
       
       // Restore auto-saved diagram state on first load only
-      if (isInitialLoad) {
-        const autoSavedModel = loadAutoSavedDiagram();
-        if (autoSavedModel) {
-          try {
-            const modelObj = JSON.parse(autoSavedModel);
-            dispatch(
-              loadDiagramAction({
-                nodeDataArray: modelObj.nodeDataArray || [],
-                linkDataArray: modelObj.linkDataArray || [],
-                modelData: modelObj.modelData || {},
-              })
-            );
-            console.log('✅ Restored auto-saved diagram from localStorage');
-            
-            // Mark restoration as complete after React updates
-            finishRestoration();
-          } catch (err) {
-            console.error('Failed to restore auto-saved diagram:', err);
-            clearAutoSavedDiagram();
-            finishRestoration();
-          }
-        } else {
-          // No saved data, just mark as complete
+      const autoSavedModel = loadAutoSavedDiagram();
+      
+      console.log('📦 Auto-saved model exists:', !!autoSavedModel);
+      
+      if (autoSavedModel) {
+        try {
+          const modelObj = JSON.parse(autoSavedModel);
+          dispatch(
+            loadDiagramAction({
+              nodeDataArray: modelObj.nodeDataArray || [],
+              linkDataArray: modelObj.linkDataArray || [],
+              modelData: modelObj.modelData || {},
+            })
+          );
+          console.log('✅ Restored auto-saved diagram from localStorage');
+          
+          // Note: simulation config is already loaded in store initialization
+          
+          // Mark restoration as complete after React updates
+          finishRestoration();
+        } catch (err) {
+          console.error('Failed to restore auto-saved diagram:', err);
+          clearAutoSavedDiagram();
           finishRestoration();
         }
-        
-        setIsInitialLoad(false);
+      } else {
+        // No saved diagram, simulation config already loaded in store
+        finishRestoration();
       }
     };
 
     initializeDiagrams();
-  }, [isInitialLoad, dispatch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps - только один раз при монтировании
 
   const loadSavedDiagrams = async () => {
     try {
@@ -178,6 +189,7 @@ export function DiagramStorage() {
   const handleNew = () => {
     if (confirm('Создать новую диаграмму? Текущее состояние будет очищено.')) {
       dispatch(clearDiagram());
+      dispatch(setSimulationConfig(DEFAULT_SIMULATION_CONFIG)); // Reset simulation config to default
       updateCurrentDiagramId(null);
       updateCurrentDiagramName('');
       clearAutoSavedDiagram();

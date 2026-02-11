@@ -5,8 +5,8 @@
  */
 
 import { useCallback, useState } from 'react';
-import { useAppDispatch } from '../../store/hooks';
-import { loadDiagram as loadDiagramAction } from '../../store/diagramSlice';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { loadDiagram as loadDiagramAction, setSimulationConfig } from '../../store/diagramSlice';
 import {
   saveDiagram as saveDiagramToDB,
   loadDiagram as loadDiagramFromDB,
@@ -42,6 +42,7 @@ export interface UseDiagramPersistenceReturn {
  */
 export function useDiagramPersistence(): UseDiagramPersistenceReturn {
   const dispatch = useAppDispatch();
+  const simulationConfig = useAppSelector((state) => state.diagram.simulationConfig);
 
   const [status, setStatus] = useState<'idle' | 'saving' | 'loading' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -77,7 +78,8 @@ export function useDiagramPersistence(): UseDiagramPersistenceReturn {
           name,
           modelObj.nodeDataArray || [],
           modelObj.linkDataArray || [],
-          modelObj.modelData || {}
+          modelObj.modelData || {},
+          simulationConfig
         );
 
         setStatus('idle');
@@ -111,6 +113,11 @@ export function useDiagramPersistence(): UseDiagramPersistenceReturn {
             modelData: diagram.modelData,
           })
         );
+
+        // Load simulation config separately
+        if (diagram.simulationConfig) {
+          dispatch(setSimulationConfig(diagram.simulationConfig));
+        }
 
         setStatus('idle');
       } catch (err) {

@@ -3,11 +3,12 @@ import * as go from 'gojs';
 import { Diagram, type DiagramHandle } from '../../components/Diagram';
 import { DiagramOverview } from '../../components/DiagramOverview';
 import { Sidebar } from '../../components/Sidebar';
-import { ToastProvider } from '../../components/Toast';
+import { ToastProvider } from '../../components/ui';
 import { useAppSelector } from '../../store/hooks';
 import { useDiagramModelSync } from '../../hooks/diagram/useDiagramModelSync';
 import { useDiagramSelection } from '../../hooks/diagram/useDiagramSelection';
 import { useDiagramAutoSave } from '../../hooks/diagram/useDiagramAutoSave';
+import { useSimulationConfigAutoSave } from '../../hooks/diagram/useSimulationConfigAutoSave';
 import './DiagramEditor.css';
 
 export function DiagramEditor() {
@@ -20,6 +21,9 @@ export function DiagramEditor() {
   
   // Enable auto-save on every diagram change
   useDiagramAutoSave(diagramRef);
+  
+  // Enable auto-save for simulation config
+  useSimulationConfigAutoSave();
 
   // Update observed diagram for Overview when diagram is ready
   useEffect(() => {

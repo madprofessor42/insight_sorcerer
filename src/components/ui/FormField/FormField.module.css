@@ -1,0 +1,34 @@
+/**
+ * FormField styles - consistent form field styling
+ */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.required {
+  color: #dc2626;
+  margin-left: 4px;
+}
+
+.helpText {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.error {
+  font-size: 11px;
+  color: #dc2626;
+  margin: 0;
+}
+

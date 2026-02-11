@@ -6,6 +6,7 @@ import { NodePanel } from './NodePanel/NodePanel';
 import { EdgePanel } from './EdgePanel';
 import { DebugPanel } from './DebugPanel';
 import { DiagramStorage } from './DiagramStorage';
+import { SimulationPanel } from './SimulationPanel';
 import { LINK_CONFIGURATIONS, NODE_CONFIGURATIONS } from '../../config/diagram-rules';
 import styles from './Sidebar.module.css';
 
@@ -126,6 +127,9 @@ export function Sidebar() {
 
         {/* Edge Options Panel - shown when edge is selected */}
         <EdgePanel />
+
+        {/* Simulation Panel */}
+        <SimulationPanel />
 
         {/* Debug Panel - shown when nothing is selected */}
         <DebugPanel />

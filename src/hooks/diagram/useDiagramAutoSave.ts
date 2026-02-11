@@ -10,6 +10,7 @@ import { type RefObject } from 'react';
 import { type DiagramHandle } from '../../components/Diagram';
 
 const AUTO_SAVE_KEY = 'autoSavedDiagram';
+const AUTO_SAVE_SIMULATION_KEY = 'autoSavedSimulationConfig';
 const RESTORE_FLAG_KEY = 'isRestoringDiagram';
 
 /**
@@ -89,8 +90,34 @@ export function finishRestoration(): void {
 export function clearAutoSavedDiagram(): void {
   try {
     localStorage.removeItem(AUTO_SAVE_KEY);
+    localStorage.removeItem(AUTO_SAVE_SIMULATION_KEY);
   } catch (err) {
     console.error('Failed to clear auto-saved diagram:', err);
+  }
+}
+
+/**
+ * Save simulation config to localStorage
+ */
+export function saveSimulationConfig(config: any): void {
+  try {
+    localStorage.setItem(AUTO_SAVE_SIMULATION_KEY, JSON.stringify(config));
+    console.log('💾 Saved simulation config to localStorage:', config);
+  } catch (err) {
+    console.error('Failed to save simulation config:', err);
+  }
+}
+
+/**
+ * Load simulation config from localStorage
+ */
+export function loadSimulationConfig(): any | null {
+  try {
+    const saved = localStorage.getItem(AUTO_SAVE_SIMULATION_KEY);
+    return saved ? JSON.parse(saved) : null;
+  } catch (err) {
+    console.error('Failed to load simulation config:', err);
+    return null;
   }
 }
 

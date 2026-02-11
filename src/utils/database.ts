@@ -6,9 +6,10 @@
  */
 
 import * as go from 'gojs';
+import type { SimulationConfig } from '../types/simulation';
 
 const DB_NAME = 'InsightSorcererDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Increased version to add simulationConfig field
 const STORE_NAME = 'diagrams';
 
 /**
@@ -20,6 +21,7 @@ export interface DiagramData {
   nodeDataArray: Array<go.ObjectData>;
   linkDataArray: Array<go.ObjectData>;
   modelData: go.ObjectData;
+  simulationConfig: SimulationConfig;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -75,6 +77,7 @@ function openDatabase(): Promise<IDBDatabase> {
  * @param nodeDataArray - Array of node data
  * @param linkDataArray - Array of link data
  * @param modelData - Model metadata
+ * @param simulationConfig - Simulation configuration
  * @returns Promise that resolves when save is complete
  */
 export async function saveDiagram(
@@ -82,7 +85,8 @@ export async function saveDiagram(
   name: string,
   nodeDataArray: Array<go.ObjectData>,
   linkDataArray: Array<go.ObjectData>,
-  modelData: go.ObjectData
+  modelData: go.ObjectData,
+  simulationConfig: SimulationConfig
 ): Promise<void> {
   const db = await openDatabase();
 
@@ -102,6 +106,7 @@ export async function saveDiagram(
         nodeDataArray,
         linkDataArray,
         modelData,
+        simulationConfig,
         createdAt: existingDiagram?.createdAt || new Date(),
         updatedAt: new Date(),
       };

@@ -3,6 +3,26 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 import * as go from 'gojs';
 import type { LinkType } from '../config/diagram-rules';
 import { DEFAULT_LINK_TYPE } from '../config/diagram-rules';
+import type { SimulationConfig } from '../types/simulation';
+import { DEFAULT_SIMULATION_CONFIG } from '../types/simulation';
+
+/**
+ * Load initial simulation config from localStorage
+ */
+function loadInitialSimulationConfig(): SimulationConfig {
+  try {
+    const saved = localStorage.getItem('autoSavedSimulationConfig');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      console.log('🔵 Store initialization: Loaded simulation config from localStorage', parsed);
+      return parsed;
+    }
+  } catch (err) {
+    console.error('Failed to load initial simulation config:', err);
+  }
+  console.log('🔵 Store initialization: Using default simulation config');
+  return DEFAULT_SIMULATION_CONFIG;
+}
 
 interface DiagramState {
   // GoJS model data - synced from diagram
@@ -18,6 +38,8 @@ interface DiagramState {
   selectedNodeKey: go.Key | null;
   // Selected edge key (actual data comes from linkDataArray)
   selectedEdgeKey: go.Key | null;
+  // Simulation configuration
+  simulationConfig: SimulationConfig;
 }
 
 const initialState: DiagramState = {
@@ -28,6 +50,7 @@ const initialState: DiagramState = {
   selectedLinkType: DEFAULT_LINK_TYPE,
   selectedNodeKey: null,
   selectedEdgeKey: null,
+  simulationConfig: loadInitialSimulationConfig(), // Load from localStorage on initialization
 };
 
 // Helper functions for immutable array updates
@@ -130,6 +153,11 @@ export const diagramSlice = createSlice({
     clearSelectedEdge: (state) => {
       state.selectedEdgeKey = null;
     },
+
+    // Set simulation configuration
+    setSimulationConfig: (state, action: PayloadAction<SimulationConfig>) => {
+      state.simulationConfig = action.payload;
+    },
   },
 });
 
@@ -148,7 +176,8 @@ export const {
   setSelectedNodeKey,
   clearSelectedNode,
   setSelectedEdgeKey,
-  clearSelectedEdge
+  clearSelectedEdge,
+  setSimulationConfig
 } = diagramSlice.actions;
 
 export default diagramSlice.reducer;

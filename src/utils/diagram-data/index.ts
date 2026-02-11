@@ -22,6 +22,10 @@ export {
   // Type guards and checks
   isLinkLabelNodeData,
   
+  // Composite key utilities (to distinguish nodes and edges with same numeric key)
+  makeNodeCompositeKey,
+  makeEdgeCompositeKey,
+  
   // Basic property getters
   getNodeDisplayName,
   getLinkDisplayName,

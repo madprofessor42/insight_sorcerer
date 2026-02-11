@@ -11,6 +11,7 @@ import type { Stock, Variable, Flow, Link } from 'simulation';
 import type * as go from 'gojs';
 import { DEFAULT_SIMULATION_CONFIG } from './constants';
 import type { SimulationConfig } from './types';
+import { makeNodeCompositeKey, makeEdgeCompositeKey } from '../diagram-data/core';
 import {
   createStockPrimitive,
   createVariablePrimitive,
@@ -69,8 +70,8 @@ export function convertToSimulationModel(
       if (result.error) {
         errors.push(result.error);
       } else if (result.primitive) {
-        // Use 'node:' prefix to avoid collisions with links
-        const mapKey = `node:${node.key}`;
+        // Use composite key to avoid collisions with links
+        const mapKey = makeNodeCompositeKey(node.key);
         primitiveMap.set(mapKey, result.primitive);
       }
     }
@@ -83,8 +84,8 @@ export function convertToSimulationModel(
       if (result.error) {
         errors.push(result.error);
       } else if (result.primitive) {
-        // Use 'link:' prefix to avoid collisions with nodes
-        const mapKey = `link:${link.key}`;
+        // Use composite key to avoid collisions with nodes
+        const mapKey = makeEdgeCompositeKey(link.key);
         primitiveMap.set(mapKey, result.primitive);
       }
     }

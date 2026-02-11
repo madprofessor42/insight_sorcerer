@@ -199,6 +199,33 @@ export function getLinkLabel(linkData: go.ObjectData): string {
 }
 
 // ============================================================================
+// COMPOSITE KEY UTILITIES
+// Used to distinguish between nodes and edges that may share the same numeric key
+// ============================================================================
+
+/**
+ * Create a composite key for a node.
+ * This ensures nodes and edges with the same numeric key don't collide.
+ * 
+ * @param key - The node's key
+ * @returns Composite key in format 'node:KEY'
+ */
+export function makeNodeCompositeKey(key: go.Key): string {
+  return `node:${key}`;
+}
+
+/**
+ * Create a composite key for an edge/link.
+ * This ensures nodes and edges with the same numeric key don't collide.
+ * 
+ * @param key - The edge's key
+ * @returns Composite key in format 'link:KEY'
+ */
+export function makeEdgeCompositeKey(key: go.Key): string {
+  return `link:${key}`;
+}
+
+// ============================================================================
 // PARENT EDGE LOOKUP
 // ============================================================================
 

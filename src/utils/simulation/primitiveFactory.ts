@@ -8,8 +8,12 @@
 // @ts-expect-error - simulation package has JS with JSDoc types
 import type { Model, Stock, Variable, Flow, Link } from 'simulation';
 import type * as go from 'gojs';
-// Core utilities - basic property getters
-import { getNodeDisplayName, getLinkDisplayName } from '../diagram-data/core';
+// Core utilities - basic property getters and composite key generation
+import { 
+  getNodeDisplayName, 
+  getLinkDisplayName,
+  makeNodeCompositeKey
+} from '../diagram-data/core';
 // Simulation utilities - endpoint resolution
 import { 
   resolveFlowEndpointKey, 
@@ -140,8 +144,8 @@ export function createFlowPrimitive(
   const targetKey = resolveFlowEndpointKey(link.to as go.Key | null | undefined, nodeDataArray);
   
   // Get Stock primitives from map (null is valid for Cloud nodes)
-  const source = sourceKey ? (primitiveMap.get(`node:${sourceKey}`) as Stock | undefined) || null : null;
-  const target = targetKey ? (primitiveMap.get(`node:${targetKey}`) as Stock | undefined) || null : null;
+  const source = sourceKey ? (primitiveMap.get(makeNodeCompositeKey(sourceKey)) as Stock | undefined) || null : null;
+  const target = targetKey ? (primitiveMap.get(makeNodeCompositeKey(targetKey)) as Stock | undefined) || null : null;
 
   // Use diagram-data utility for name resolution (handles defaults, etc.)
   const linkName = getLinkDisplayName(link);

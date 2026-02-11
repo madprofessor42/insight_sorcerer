@@ -11,7 +11,9 @@ import {
   getLinkDisplayName, 
   getLinkType, 
   getNodeDisplayName,
-  isLinkBidirectional 
+  isLinkBidirectional,
+  makeNodeCompositeKey,
+  makeEdgeCompositeKey
 } from './core';
 
 // ============================================================================
@@ -24,19 +26,24 @@ import {
 function tryAddNodeReference(
   node: go.ObjectData,
   references: AvailableReference[],
-  addedKeys: Set<go.Key>
+  addedKeys: Set<string>
 ): boolean {
-  if (node && 
-      node.category !== 'Cloud' && 
+  if (!node) {
+    return false;
+  }
+  
+  const compositeKey = makeNodeCompositeKey(node.key);
+  
+  if (node.category !== 'Cloud' && 
       !isLinkLabelNodeData(node) && 
-      !addedKeys.has(node.key)) {
+      !addedKeys.has(compositeKey)) {
     const name = getNodeDisplayName(node);
     references.push({
       id: node.key,
       name: name,
       type: (node.category || 'Variable') as NodeType,
     });
-    addedKeys.add(node.key);
+    addedKeys.add(compositeKey);
     return true;
   }
   return false;
@@ -49,16 +56,22 @@ function tryAddEdgeReference(
   edge: go.ObjectData,
   edgeType: LinkType,
   references: AvailableReference[],
-  addedKeys: Set<go.Key>
+  addedKeys: Set<string>
 ): boolean {
-  if (edge && !addedKeys.has(edge.key)) {
+  if (!edge) {
+    return false;
+  }
+  
+  const compositeKey = makeEdgeCompositeKey(edge.key);
+  
+  if (!addedKeys.has(compositeKey)) {
     const edgeName = getLinkDisplayName(edge);
     references.push({
       id: edge.key,
       name: edgeName,
       type: edgeType,
     });
-    addedKeys.add(edge.key);
+    addedKeys.add(compositeKey);
     return true;
   }
   return false;
@@ -128,7 +141,7 @@ export function getAvailableReferences(
   config: ReferenceConfig
 ): AvailableReference[] {
   const references: AvailableReference[] = [];
-  const addedKeys = new Set<go.Key>();
+  const addedKeys = new Set<string>();
 
   // Include incoming connections (both nodes and edges)
   // Config specifies which LINK TYPES to include (not node/edge types)
@@ -257,7 +270,7 @@ export function getAvailableReferencesForEdge(
   config: ReferenceConfig
 ): AvailableReference[] {
   const references: AvailableReference[] = [];
-  const addedKeys = new Set<go.Key>();
+  const addedKeys = new Set<string>();
 
   const sourceNodeKey = currentEdge.from;
   const targetNodeKey = currentEdge.to;

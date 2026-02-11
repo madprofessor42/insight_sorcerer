@@ -2,11 +2,10 @@
  * FormulaInput - Input field with autocomplete for formula references.
  * 
  * Shows available elements that can be referenced with [Name] syntax.
- * Displays "bubbles" (dropdown suggestions) when focused.
+ * Displays "bubbles" (available references) always below the input.
  */
 
-import { useState, useCallback, useRef } from 'react';
-import { useClickOutside } from '../../../hooks/useClickOutside';
+import { useCallback, useRef } from 'react';
 import styles from './FormulaInput.module.css';
 
 export interface AvailableReference {
@@ -36,16 +35,7 @@ export function FormulaInput({
   onChange,
   availableReferences,
 }: FormulaInputProps) {
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const suggestionsRef = useRef<HTMLDivElement>(null);
-
-  // Handle click outside to close suggestions
-  useClickOutside(
-    [inputRef, suggestionsRef],
-    () => setShowSuggestions(false),
-    showSuggestions
-  );
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,12 +44,6 @@ export function FormulaInput({
     },
     [onChange]
   );
-
-  const handleFocus = useCallback(() => {
-    if (availableReferences.length > 0) {
-      setShowSuggestions(true);
-    }
-  }, [availableReferences.length]);
 
   const insertReference = useCallback(
     (refName: string) => {
@@ -78,16 +62,13 @@ export function FormulaInput({
         
         onChange(newValue);
         
-        // Set cursor position after inserted reference and keep suggestions open
+        // Set cursor position after inserted reference
         const newCursorPos = start + refName.length + 2; // +2 for brackets
         setTimeout(() => {
           input.focus();
           input.setSelectionRange(newCursorPos, newCursorPos);
         }, 0);
       }
-      
-      // Keep suggestions open after insertion
-      // User can continue adding more references
     },
     [value, onChange]
   );
@@ -121,12 +102,11 @@ export function FormulaInput({
           type="text"
           value={value ?? ''}
           onChange={handleInputChange}
-          onFocus={handleFocus}
           className={styles.input}
           placeholder={placeholder}
         />
-        {showSuggestions && availableReferences.length > 0 && (
-          <div ref={suggestionsRef} className={styles.suggestions}>
+        {availableReferences.length > 0 && (
+          <div className={styles.suggestions}>
             <div className={styles.suggestionsHeader}>
               Доступные ссылки:
             </div>

@@ -12,7 +12,12 @@
  */
 
 import type * as go from 'gojs';
-import { isLinkLabelNodeData, findParentEdgeForLabelNode } from './core';
+import { 
+  isLinkLabelNodeData, 
+  findParentEdgeForLabelNode,
+  makeNodeCompositeKey,
+  makeEdgeCompositeKey
+} from './core';
 
 /**
  * Error type for simulation conversion operations.
@@ -123,7 +128,7 @@ export function resolveLinkEndpoint(
     
     if (parentEdge) {
       // Return prefixed key for parent edge (influence link connects to flow/link)
-      return { mapKey: `link:${parentEdge.key}` };
+      return { mapKey: makeEdgeCompositeKey(parentEdge.key) };
     }
     
     return {
@@ -135,6 +140,6 @@ export function resolveLinkEndpoint(
   }
   
   // Regular node (Stock, Variable)
-  return { mapKey: `node:${endpointKey}` };
+  return { mapKey: makeNodeCompositeKey(endpointKey) };
 }
 

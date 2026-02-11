@@ -27,6 +27,7 @@ export function NodePanel() {
     
     const nodeType = selectedNode.category as NodeType;
     const config = getNodeConfiguration(nodeType);
+    
     if (!config) return {};
     
     const referencesMap: Record<string, ReturnType<typeof getAvailableReferences>> = {};

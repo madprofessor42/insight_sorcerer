@@ -7,7 +7,7 @@ import { NodePanel } from './NodePanel/NodePanel';
 import { EdgePanel } from './EdgePanel';
 import { DebugPanel } from './DebugPanel';
 import { SimulationPanel } from './SimulationPanel';
-import { LINK_CONFIGURATIONS, NODE_CONFIGURATIONS } from '../../config/diagram-rules';
+import { LINK_CONFIGURATIONS, NODE_CONFIGURATIONS } from '../../config';
 import styles from './Sidebar.module.css';
 
 const MIN_WIDTH = 220;

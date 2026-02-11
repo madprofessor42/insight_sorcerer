@@ -4,7 +4,7 @@
 
 import * as go from 'gojs';
 import type { AvailableReference } from '../../components/ui';
-import type { NodeType, LinkType, ReferenceConfig } from '../../config/diagram-rules';
+import type { NodeType, LinkType, ReferenceConfig } from '../../config';
 import { 
   isLinkLabelNodeData, 
   findParentEdgeForLabelNode, 

@@ -5,7 +5,7 @@ import {
   LINK_LABEL_CATEGORY,
   type LinkConfiguration,
   type NodeConfiguration
-} from '../config/diagram-rules';
+} from '../config';
 
 /**
  * Helper function to create tooltip Adornment for nodes

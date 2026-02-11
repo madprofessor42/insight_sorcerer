@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import * as go from 'gojs';
 import type { ReactDiagram } from 'gojs-react';
-import type { LinkType } from '../../config/diagram-rules';
-import { normalizeLinkType, LINK_LABEL_CATEGORY, linkTypeNeedsLabelNode } from '../../config/diagram-rules';
+import type { LinkType } from '../../config';
+import { normalizeLinkType, LINK_LABEL_CATEGORY, linkTypeNeedsLabelNode } from '../../config';
 import { getDefaultLinkText } from '../../utils/diagram-data';
 import { 
   hasDuplicateLink, 

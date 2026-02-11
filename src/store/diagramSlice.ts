@@ -1,8 +1,8 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import * as go from 'gojs';
-import type { LinkType } from '../config/diagram-rules';
-import { DEFAULT_LINK_TYPE } from '../config/diagram-rules';
+import type { LinkType } from '../config';
+import { DEFAULT_LINK_TYPE } from '../config';
 import type { SimulationConfig } from '../utils/simulation';
 import { DEFAULT_SIMULATION_CONFIG } from '../utils/simulation';
 

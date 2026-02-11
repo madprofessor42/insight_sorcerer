@@ -1,0 +1,52 @@
+/**
+ * Diagram configuration module
+ * Central export point for all diagram-related configurations and utilities
+ */
+
+// Types
+export type {
+  NodeType,
+  ManuallyCreatableNodeType,
+  NodeShapeType,
+  NodeVisualStyle,
+  NodePropertyDisplay,
+  NodePortConfig,
+  NodeConfiguration,
+  LinkVisualStyle,
+  LinkUIMetadata,
+  LinkPropertyDisplay,
+  LinkConfiguration,
+  ReferenceConfig,
+} from './diagram-types';
+
+// Node configurations and utilities
+export {
+  NODE_CONFIGURATIONS,
+  getNodeConfiguration,
+  getManuallyCreatableNodeTypes,
+} from './diagram-nodes';
+
+// Link configurations and utilities
+export {
+  LINK_CONFIGURATIONS,
+  type LinkType,
+  DEFAULT_LINK_TYPE,
+  LINK_LABEL_CATEGORY,
+  getLinkConfiguration,
+  getAllLinkTypes,
+  normalizeLinkType,
+  canLinkFromEdge,
+  canLinkToEdge,
+  isValidEdgeSource,
+  isValidEdgeTarget,
+  hasAnyEdgeToEdgeSupport,
+  linkTypeNeedsLabelNode,
+} from './diagram-links';
+
+// Reference configurations
+export {
+  REFERENCE_CONFIGURATIONS,
+  getNodeReferenceConfig,
+  getLinkReferenceConfig,
+} from './diagram-references';
+

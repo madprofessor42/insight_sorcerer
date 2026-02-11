@@ -4,7 +4,7 @@
  */
 
 import * as go from 'gojs';
-import type { LinkType, NodeType } from '../config/diagram-rules';
+import type { LinkType, NodeType } from '../config';
 import { 
   getLinkConfiguration,
   normalizeLinkType,
@@ -12,7 +12,7 @@ import {
   LINK_LABEL_CATEGORY,
   isValidEdgeSource,
   isValidEdgeTarget
-} from '../config/diagram-rules';
+} from '../config';
 
 // ============================================================================
 // INTERNAL CONSTRAINT FUNCTIONS

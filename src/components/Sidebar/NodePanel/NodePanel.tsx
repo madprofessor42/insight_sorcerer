@@ -1,9 +1,9 @@
 import { useEffect, useState, useMemo } from 'react';
 import * as go from 'gojs';
 import { useAppSelector } from '../../../store/hooks';
-import { getNodeConfiguration, getNodeReferenceConfig } from '../../../config/diagram-rules';
+import { getNodeConfiguration, getNodeReferenceConfig } from '../../../config';
 import { useNodeOperations } from '../../../hooks/node/useNodeOperations';
-import type { NodeType } from '../../../config/diagram-rules';
+import type { NodeType } from '../../../config';
 import { FormulaInput } from '../../ui';
 import { getAvailableReferences } from '../../../utils/diagram-data';
 import styles from './NodePanel.module.css';

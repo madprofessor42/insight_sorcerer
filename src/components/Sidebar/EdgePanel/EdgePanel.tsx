@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import * as go from 'gojs';
 import { useAppSelector } from '../../../store/hooks';
 import { useEdgeOperations, useEdgeValidation } from '../../../hooks/edge';
-import { normalizeLinkType, getLinkConfiguration, getLinkReferenceConfig } from '../../../config/diagram-rules';
+import { normalizeLinkType, getLinkConfiguration, getLinkReferenceConfig } from '../../../config';
 import { FormulaInput } from '../../ui';
 import { getAvailableReferencesForEdge } from '../../../utils/diagram-data';
 import styles from './EdgePanel.module.css';

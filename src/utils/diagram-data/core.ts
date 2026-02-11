@@ -17,8 +17,8 @@ import {
   getLinkConfiguration, 
   getNodeConfiguration,
   LINK_LABEL_CATEGORY 
-} from '../../config/diagram-rules';
-import type { LinkType, NodeType } from '../../config/diagram-rules';
+} from '../../config';
+import type { LinkType, NodeType } from '../../config';
 
 // ============================================================================
 // DEFAULT VALUE UTILITIES

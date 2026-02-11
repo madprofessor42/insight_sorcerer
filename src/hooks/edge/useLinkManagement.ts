@@ -2,7 +2,8 @@ import { useEffect } from 'react';
 import * as go from 'gojs';
 import type { ReactDiagram } from 'gojs-react';
 import type { LinkType } from '../../config/diagram-rules';
-import { normalizeLinkType, LINK_LABEL_CATEGORY, linkTypeNeedsLabelNode, getLinkConfiguration } from '../../config/diagram-rules';
+import { normalizeLinkType, LINK_LABEL_CATEGORY, linkTypeNeedsLabelNode } from '../../config/diagram-rules';
+import { getDefaultLinkText } from '../../utils/diagram-data';
 import { 
   hasDuplicateLink, 
   findReverseLink, 
@@ -47,8 +48,7 @@ export function useLinkManagement(
     // This is needed so CustomLinkingTool.insertLink() can read the category
     // and decide whether to create a label node for edge-to-edge connections
     // Also set default text so links display their name immediately upon creation
-    const linkConfig = getLinkConfiguration(selectedLinkType);
-    const defaultText = linkConfig?.displayProperties.find(p => p.dataKey === 'text')?.defaultValue || '';
+    const defaultText = getDefaultLinkText(selectedLinkType);
     diagram.toolManager.linkingTool.archetypeLinkData = { 
       category: selectedLinkType,
       text: defaultText

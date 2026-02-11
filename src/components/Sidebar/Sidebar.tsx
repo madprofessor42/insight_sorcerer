@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { setLinkType } from '../../store/diagramSlice';
 import { usePaletteDragDrop } from '../../hooks/palette/usePaletteDragDrop';
+import { getDefaultNodeName } from '../../utils/diagram-data';
 import { NodePanel } from './NodePanel/NodePanel';
 import { EdgePanel } from './EdgePanel';
 import { DebugPanel } from './DebugPanel';
@@ -77,7 +78,7 @@ export function Sidebar() {
                 draggable
                 onDragStart={(e) => handleDragStart(e, config.id, { 
                   category: config.id, 
-                  name: config.style.defaultText || config.label
+                  name: getDefaultNodeName(config.id)
                 })}
               >
                 <div className={styles.nodeIcon}>

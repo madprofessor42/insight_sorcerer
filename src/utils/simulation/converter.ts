@@ -95,7 +95,7 @@ export function convertToSimulationModel(
       return !category || category === 'link';
     });
     for (const link of linkLinks) {
-      const result = createLinkPrimitive(model, link, primitiveMap, nodes);
+      const result = createLinkPrimitive(model, link, primitiveMap, nodes, links);
       
       if (result.error) {
         errors.push(result.error);

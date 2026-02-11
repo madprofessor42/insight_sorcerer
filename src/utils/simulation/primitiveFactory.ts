@@ -8,14 +8,17 @@
 // @ts-expect-error - simulation package has JS with JSDoc types
 import type { Model, Stock, Variable, Flow, Link } from 'simulation';
 import type * as go from 'gojs';
+// Core utilities - basic property getters
+import { getNodeDisplayName, getLinkDisplayName } from '../diagram-data/core';
+// Simulation utilities - endpoint resolution
+import { 
+  resolveFlowEndpointKey, 
+  resolveLinkEndpoint,
+  type SimulationConversionError 
+} from '../diagram-data/simulation';
 
-// Internal error type
-export interface ConversionError {
-  type: 'missing_node' | 'missing_link' | 'invalid_formula' | 'circular_dependency';
-  message: string;
-  nodeKey?: string | number;
-  linkKey?: string | number;
-}
+// Re-export for backward compatibility
+export type ConversionError = SimulationConversionError;
 
 // Primitive types from simulation library
 type SimulationPrimitive = Stock | Variable | Flow | Link;
@@ -82,27 +85,15 @@ function createConfig(
 }
 
 /**
- * Get node name from GoJS node data.
- */
-function getNodeName(node: go.ObjectData): string {
-  return (node.name as string) || (node.text as string) || 'Unnamed';
-}
-
-/**
- * Get link name from GoJS link data.
- */
-function getLinkName(link: go.ObjectData): string {
-  return (link.text as string) || 'Flow';
-}
-
-/**
  * Create Stock primitive from GoJS node data.
+ * Uses core diagram-data utilities for consistent name resolution across the app.
  */
 export function createStockPrimitive(
   model: Model,
   node: go.ObjectData
 ): PrimitiveCreationResult<Stock> {
-  const nodeName = getNodeName(node);
+  // Use core utility for name resolution (handles defaults)
+  const nodeName = getNodeDisplayName(node);
   return createPrimitive<Stock>(nodeName, 'stock', node.key, () => {
     const config = createConfig(
       nodeName,
@@ -115,12 +106,14 @@ export function createStockPrimitive(
 
 /**
  * Create Variable primitive from GoJS node data.
+ * Uses core diagram-data utilities for consistent name resolution across the app.
  */
 export function createVariablePrimitive(
   model: Model,
   node: go.ObjectData
 ): PrimitiveCreationResult<Variable> {
-  const nodeName = getNodeName(node);
+  // Use core utility for name resolution (handles defaults)
+  const nodeName = getNodeDisplayName(node);
   return createPrimitive<Variable>(nodeName, 'variable', node.key, () => {
     const config = createConfig(
       nodeName,
@@ -134,6 +127,7 @@ export function createVariablePrimitive(
 /**
  * Create Flow primitive from GoJS link data.
  * Handles Cloud nodes (which should be null in simulation).
+ * Uses diagram-data utilities for proper node resolution.
  */
 export function createFlowPrimitive(
   model: Model,
@@ -141,40 +135,16 @@ export function createFlowPrimitive(
   primitiveMap: Map<string, SimulationPrimitive>,
   nodeDataArray: Array<go.ObjectData>
 ): PrimitiveCreationResult<Flow> {
-  // Get source and target keys
-  const sourceKey = link.from as go.Key | null | undefined;
-  const targetKey = link.to as go.Key | null | undefined;
+  // Resolve source and target using diagram-data utilities
+  const sourceKey = resolveFlowEndpointKey(link.from as go.Key | null | undefined, nodeDataArray);
+  const targetKey = resolveFlowEndpointKey(link.to as go.Key | null | undefined, nodeDataArray);
   
-  let source: Stock | null = null;
-  let target: Stock | null = null;
+  // Get Stock primitives from map (null is valid for Cloud nodes)
+  const source = sourceKey ? (primitiveMap.get(`node:${sourceKey}`) as Stock | undefined) || null : null;
+  const target = targetKey ? (primitiveMap.get(`node:${targetKey}`) as Stock | undefined) || null : null;
 
-  // Resolve source - only if it exists and is not a Cloud
-  if (sourceKey !== null && sourceKey !== undefined) {
-    const sourceNode = nodeDataArray.find(n => n.key === sourceKey);
-    if (sourceNode && sourceNode.category === 'Cloud') {
-      // Cloud nodes should be null in simulation
-      source = null;
-    } else {
-      // Try to get Stock from primitiveMap (use node: prefix)
-      const mapKey = `node:${sourceKey}`;
-      source = (primitiveMap.get(mapKey) as Stock) || null;
-    }
-  }
-
-  // Resolve target - only if it exists and is not a Cloud
-  if (targetKey !== null && targetKey !== undefined) {
-    const targetNode = nodeDataArray.find(n => n.key === targetKey);
-    if (targetNode && targetNode.category === 'Cloud') {
-      // Cloud nodes should be null in simulation
-      target = null;
-    } else {
-      // Try to get Stock from primitiveMap (use node: prefix)
-      const mapKey = `node:${targetKey}`;
-      target = (primitiveMap.get(mapKey) as Stock) || null;
-    }
-  }
-
-  const linkName = getLinkName(link);
+  // Use diagram-data utility for name resolution (handles defaults, etc.)
+  const linkName = getLinkDisplayName(link);
   return createPrimitive<Flow>(linkName, 'flow', link.key, () => {
     const config = createConfig(
       linkName,
@@ -188,53 +158,50 @@ export function createFlowPrimitive(
 /**
  * Create Link primitive from GoJS link data.
  * For bidirectional links, creates two links (both directions).
- * Skips Cloud nodes (Links cannot connect to Clouds).
+ * Handles edge-to-edge connections via LinkLabel nodes.
+ * Uses diagram-data utilities for proper endpoint resolution.
  */
 export function createLinkPrimitive(
   model: Model,
   link: go.ObjectData,
   primitiveMap: Map<string, SimulationPrimitive>,
-  nodeDataArray: Array<go.ObjectData>
+  nodeDataArray: Array<go.ObjectData>,
+  linkDataArray: Array<go.ObjectData>
 ): PrimitiveCreationResult<Link> {
-  const sourceKey = link.from as go.Key | null | undefined;
-  const targetKey = link.to as go.Key | null | undefined;
+  // Resolve source endpoint using diagram-data utilities
+  const sourceResult = resolveLinkEndpoint(
+    link.from as go.Key | null | undefined,
+    nodeDataArray,
+    linkDataArray,
+    'source'
+  );
   
-  // Check if source or target is a Cloud node
-  const sourceNode = sourceKey ? nodeDataArray.find(n => n.key === sourceKey) : null;
-  const targetNode = targetKey ? nodeDataArray.find(n => n.key === targetKey) : null;
-
-  if (sourceNode?.category === 'Cloud') {
-    return {
-      primitive: null,
-      error: {
-        type: 'missing_node',
-        message: `Link cannot connect from Cloud node`,
-        linkKey: link.key,
-      },
-    };
-  }
-
-  if (targetNode?.category === 'Cloud') {
-    return {
-      primitive: null,
-      error: {
-        type: 'missing_node',
-        message: `Link cannot connect to Cloud node`,
-        linkKey: link.key,
-      },
-    };
+  if (sourceResult.error) {
+    return { primitive: null, error: { ...sourceResult.error, linkKey: link.key } };
   }
   
-  // Look up primitives in the map (use node: prefix)
-  const source = sourceKey ? (primitiveMap.get(`node:${sourceKey}`) ?? null) : null;
-  const target = targetKey ? (primitiveMap.get(`node:${targetKey}`) ?? null) : null;
+  // Resolve target endpoint using diagram-data utilities
+  const targetResult = resolveLinkEndpoint(
+    link.to as go.Key | null | undefined,
+    nodeDataArray,
+    linkDataArray,
+    'target'
+  );
+  
+  if (targetResult.error) {
+    return { primitive: null, error: { ...targetResult.error, linkKey: link.key } };
+  }
+  
+  // Get primitives from map
+  const source = primitiveMap.get(sourceResult.mapKey!);
+  const target = primitiveMap.get(targetResult.mapKey!);
 
   if (!source) {
     return {
       primitive: null,
       error: {
         type: 'missing_node',
-        message: `Link references missing source node: ${sourceKey}`,
+        message: `Link references missing source primitive: ${sourceResult.mapKey}`,
         linkKey: link.key,
       },
     };
@@ -245,13 +212,14 @@ export function createLinkPrimitive(
       primitive: null,
       error: {
         type: 'missing_node',
-        message: `Link references missing target node: ${targetKey}`,
+        message: `Link references missing target primitive: ${targetResult.mapKey}`,
         linkKey: link.key,
       },
     };
   }
 
-  const linkName = getLinkName(link);
+  // Use diagram-data utility for name resolution (handles defaults, etc.)
+  const linkName = getLinkDisplayName(link);
   return createPrimitive<Link>(linkName, 'link', link.key, () => {
     // Create forward link (source → target)
     const forwardLink = model.Link(source, target);

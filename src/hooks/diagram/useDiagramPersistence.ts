@@ -5,7 +5,8 @@
  */
 
 import { useCallback, useState } from 'react';
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { useAppDispatch } from '../../store/hooks';
+import { store } from '../../store/store';
 import { loadDiagram as loadDiagramAction, setSimulationConfig } from '../../store/diagramSlice';
 import {
   saveDiagram as saveDiagramToDB,
@@ -13,6 +14,7 @@ import {
   getAllDiagramMetadata,
   deleteDiagram as deleteDiagramFromDB,
   generateDiagramId,
+  saveLastOpenedDiagramId,
   type DiagramMetadata,
 } from '../../utils/database';
 import { getDiagramFromDOM } from '../../utils/diagram-access';
@@ -42,8 +44,8 @@ export interface UseDiagramPersistenceReturn {
  */
 export function useDiagramPersistence(): UseDiagramPersistenceReturn {
   const dispatch = useAppDispatch();
-  const simulationConfig = useAppSelector((state) => state.diagram.simulationConfig);
-
+  // Don't capture simulationConfig here - read it inside callbacks to avoid stale closure
+  
   const [status, setStatus] = useState<'idle' | 'saving' | 'loading' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
 
@@ -73,14 +75,20 @@ export function useDiagramPersistence(): UseDiagramPersistenceReturn {
 
         const diagramId = id || generateDiagramId();
         
+        // Read simulationConfig directly from store to avoid stale closure
+        const currentSimulationConfig = store.getState().diagram.simulationConfig;
+        
         await saveDiagramToDB(
           diagramId,
           name,
           modelObj.nodeDataArray || [],
           modelObj.linkDataArray || [],
           modelObj.modelData || {},
-          simulationConfig
+          currentSimulationConfig
         );
+
+        // Save this as the last opened diagram
+        await saveLastOpenedDiagramId(diagramId);
 
         setStatus('idle');
         return diagramId;
@@ -106,6 +114,12 @@ export function useDiagramPersistence(): UseDiagramPersistenceReturn {
       try {
         const diagram = await loadDiagramFromDB(id);
 
+        // Load simulation config first
+        if (diagram.simulationConfig) {
+          dispatch(setSimulationConfig(diagram.simulationConfig));
+        }
+
+        // Then load diagram
         dispatch(
           loadDiagramAction({
             nodeDataArray: diagram.nodeDataArray,
@@ -114,10 +128,8 @@ export function useDiagramPersistence(): UseDiagramPersistenceReturn {
           })
         );
 
-        // Load simulation config separately
-        if (diagram.simulationConfig) {
-          dispatch(setSimulationConfig(diagram.simulationConfig));
-        }
+        // Save this as the last opened diagram
+        await saveLastOpenedDiagramId(id);
 
         setStatus('idle');
       } catch (err) {

@@ -8,9 +8,20 @@
 import * as go from 'gojs';
 import type { SimulationConfig } from '../types/simulation';
 
+/**
+ * IndexedDB-based storage for diagrams
+ * 
+ * This module provides persistent storage for diagrams using IndexedDB.
+ * It includes:
+ * - Manual save/load of named diagrams
+ * - Auto-save functionality using a special __autosave__ slot
+ * - Metadata queries for listing saved diagrams
+ */
+
 const DB_NAME = 'InsightSorcererDB';
-const DB_VERSION = 2; // Increased version to add simulationConfig field
+const DB_VERSION = 1;
 const STORE_NAME = 'diagrams';
+const METADATA_STORE = 'metadata'; // Store for app metadata like last opened diagram
 
 /**
  * Diagram data structure for storage
@@ -57,13 +68,18 @@ function openDatabase(): Promise<IDBDatabase> {
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
       
-      // Create object store if it doesn't exist
+      // Create diagrams object store if it doesn't exist
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         const objectStore = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
         
         // Create indexes
         objectStore.createIndex('name', 'name', { unique: false });
         objectStore.createIndex('updatedAt', 'updatedAt', { unique: false });
+      }
+
+      // Create metadata object store for app settings
+      if (!db.objectStoreNames.contains(METADATA_STORE)) {
+        db.createObjectStore(METADATA_STORE, { keyPath: 'key' });
       }
     };
   });
@@ -180,6 +196,8 @@ export async function getAllDiagramMetadata(): Promise<DiagramMetadata[]> {
 
     request.onsuccess = () => {
       const diagrams = request.result as DiagramData[];
+      
+      // Map to metadata
       const metadata = diagrams.map(diagram => ({
         id: diagram.id,
         name: diagram.name,
@@ -248,5 +266,56 @@ export function generateDiagramId(): string {
  */
 export function isIndexedDBAvailable(): boolean {
   return typeof indexedDB !== 'undefined';
+}
+
+/**
+ * Save the ID of the last opened diagram
+ */
+export async function saveLastOpenedDiagramId(id: string | null): Promise<void> {
+  const db = await openDatabase();
+
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([METADATA_STORE], 'readwrite');
+    const store = transaction.objectStore(METADATA_STORE);
+    const request = store.put({ key: 'lastOpenedDiagramId', value: id });
+
+    request.onsuccess = () => {
+      resolve();
+    };
+
+    request.onerror = () => {
+      reject(new Error('Failed to save last opened diagram ID'));
+    };
+
+    transaction.oncomplete = () => {
+      db.close();
+    };
+  });
+}
+
+/**
+ * Get the ID of the last opened diagram
+ */
+export async function getLastOpenedDiagramId(): Promise<string | null> {
+  const db = await openDatabase();
+
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([METADATA_STORE], 'readonly');
+    const store = transaction.objectStore(METADATA_STORE);
+    const request = store.get('lastOpenedDiagramId');
+
+    request.onsuccess = () => {
+      const result = request.result;
+      resolve(result?.value || null);
+    };
+
+    request.onerror = () => {
+      reject(new Error('Failed to get last opened diagram ID'));
+    };
+
+    transaction.oncomplete = () => {
+      db.close();
+    };
+  });
 }
 

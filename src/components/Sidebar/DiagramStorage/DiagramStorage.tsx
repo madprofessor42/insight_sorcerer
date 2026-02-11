@@ -6,11 +6,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useDiagramPersistence } from '../../../hooks/diagram/useDiagramPersistence';
-import { loadAutoSavedDiagram, clearAutoSavedDiagram, finishRestoration } from '../../../hooks/diagram/useDiagramAutoSave';
 import { useToast } from '../../ui';
 import { useAppDispatch } from '../../../store/hooks';
-import { clearDiagram, loadDiagram as loadDiagramAction, setSimulationConfig } from '../../../store/diagramSlice';
+import { clearDiagram, setSimulationConfig } from '../../../store/diagramSlice';
 import { DEFAULT_SIMULATION_CONFIG } from '../../../types/simulation';
+import { getLastOpenedDiagramId, saveLastOpenedDiagramId } from '../../../utils/database';
 import type { DiagramMetadata } from '../../../utils/database';
 import styles from './DiagramStorage.module.css';
 
@@ -28,19 +28,13 @@ export function DiagramStorage() {
 
   const [diagramName, setDiagramName] = useState('');
   const [savedDiagrams, setSavedDiagrams] = useState<DiagramMetadata[]>([]);
-  const [currentDiagramId, setCurrentDiagramId] = useState<string | null>(() => {
-    // Restore current diagram ID from localStorage
-    return localStorage.getItem('currentDiagramId') || null;
-  });
-  const [currentDiagramName, setCurrentDiagramName] = useState<string>(() => {
-    // Restore current diagram name from localStorage
-    return localStorage.getItem('currentDiagramName') || '';
-  });
+  const [currentDiagramId, setCurrentDiagramId] = useState<string | null>(null);
+  const [currentDiagramName, setCurrentDiagramName] = useState<string>('');
   
   // Use ref to prevent double restoration (survives StrictMode remounts)
   const hasRestoredRef = useRef(false);
 
-  // Load saved diagrams on mount and restore auto-saved state
+  // Load saved diagrams on mount and restore last opened diagram
   useEffect(() => {
     // Prevent double restoration - critical for StrictMode
     if (hasRestoredRef.current) {
@@ -51,35 +45,33 @@ export function DiagramStorage() {
     const initializeDiagrams = async () => {
       await loadSavedDiagrams();
       
-      // Restore auto-saved diagram state on first load only
-      const autoSavedModel = loadAutoSavedDiagram();
-      
-      console.log('📦 Auto-saved model exists:', !!autoSavedModel);
-      
-      if (autoSavedModel) {
-        try {
-          const modelObj = JSON.parse(autoSavedModel);
-          dispatch(
-            loadDiagramAction({
-              nodeDataArray: modelObj.nodeDataArray || [],
-              linkDataArray: modelObj.linkDataArray || [],
-              modelData: modelObj.modelData || {},
-            })
-          );
-          console.log('✅ Restored auto-saved diagram from localStorage');
+      // Try to load the last opened diagram
+      try {
+        const lastOpenedId = await getLastOpenedDiagramId();
+        
+        if (lastOpenedId) {
+          console.log('📦 Found last opened diagram ID:', lastOpenedId);
           
-          // Note: simulation config is already loaded in store initialization
-          
-          // Mark restoration as complete after React updates
-          finishRestoration();
-        } catch (err) {
-          console.error('Failed to restore auto-saved diagram:', err);
-          clearAutoSavedDiagram();
-          finishRestoration();
+          // Try to load it
+          try {
+            await loadDiagram(lastOpenedId);
+            
+            // Find diagram name
+            const diagrams = await getSavedDiagrams();
+            const diagram = diagrams.find(d => d.id === lastOpenedId);
+            if (diagram) {
+              updateCurrentDiagramId(lastOpenedId);
+              updateCurrentDiagramName(diagram.name);
+              console.log('✅ Restored last opened diagram:', diagram.name);
+            }
+          } catch (err) {
+            console.warn('Failed to load last opened diagram, starting fresh:', err);
+          }
+        } else {
+          console.log('📦 No last opened diagram, starting fresh');
         }
-      } else {
-        // No saved diagram, simulation config already loaded in store
-        finishRestoration();
+      } catch (err) {
+        console.error('Failed to check last opened diagram:', err);
       }
     };
 
@@ -96,24 +88,14 @@ export function DiagramStorage() {
     }
   };
 
-  // Helper to update current diagram ID with localStorage sync
+  // Helper to update current diagram ID
   const updateCurrentDiagramId = (id: string | null) => {
     setCurrentDiagramId(id);
-    if (id) {
-      localStorage.setItem('currentDiagramId', id);
-    } else {
-      localStorage.removeItem('currentDiagramId');
-    }
   };
 
-  // Helper to update current diagram name with localStorage sync
+  // Helper to update current diagram name
   const updateCurrentDiagramName = (name: string) => {
     setCurrentDiagramName(name);
-    if (name) {
-      localStorage.setItem('currentDiagramName', name);
-    } else {
-      localStorage.removeItem('currentDiagramName');
-    }
   };
 
   // Сохранить текущую диаграмму (перезапись в IndexedDB)
@@ -153,6 +135,7 @@ export function DiagramStorage() {
 
   const handleLoad = async (id: string, name: string) => {
     try {
+      // useDiagramPersistence already handles restoration flags internally
       await loadDiagram(id);
       updateCurrentDiagramId(id);
       updateCurrentDiagramName(name);
@@ -186,13 +169,13 @@ export function DiagramStorage() {
   };
 
   // Создать новую диаграмму (очистить canvas)
-  const handleNew = () => {
-    if (confirm('Создать новую диаграмму? Текущее состояние будет очищено.')) {
+  const handleNew = async () => {
+    if (confirm('Создать новую диаграмму? Несохранённые изменения будут потеряны.')) {
       dispatch(clearDiagram());
       dispatch(setSimulationConfig(DEFAULT_SIMULATION_CONFIG)); // Reset simulation config to default
       updateCurrentDiagramId(null);
       updateCurrentDiagramName('');
-      clearAutoSavedDiagram();
+      await saveLastOpenedDiagramId(null); // Clear last opened diagram
       toast.showInfo('Создана новая диаграмма');
     }
   };

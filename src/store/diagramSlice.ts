@@ -6,24 +6,6 @@ import { DEFAULT_LINK_TYPE } from '../config/diagram-rules';
 import type { SimulationConfig } from '../types/simulation';
 import { DEFAULT_SIMULATION_CONFIG } from '../types/simulation';
 
-/**
- * Load initial simulation config from localStorage
- */
-function loadInitialSimulationConfig(): SimulationConfig {
-  try {
-    const saved = localStorage.getItem('autoSavedSimulationConfig');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      console.log('🔵 Store initialization: Loaded simulation config from localStorage', parsed);
-      return parsed;
-    }
-  } catch (err) {
-    console.error('Failed to load initial simulation config:', err);
-  }
-  console.log('🔵 Store initialization: Using default simulation config');
-  return DEFAULT_SIMULATION_CONFIG;
-}
-
 interface DiagramState {
   // GoJS model data - synced from diagram
   nodeDataArray: Array<go.ObjectData>;
@@ -50,7 +32,7 @@ const initialState: DiagramState = {
   selectedLinkType: DEFAULT_LINK_TYPE,
   selectedNodeKey: null,
   selectedEdgeKey: null,
-  simulationConfig: loadInitialSimulationConfig(), // Load from localStorage on initialization
+  simulationConfig: DEFAULT_SIMULATION_CONFIG,
 };
 
 // Helper functions for immutable array updates

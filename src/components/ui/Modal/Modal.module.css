@@ -57,15 +57,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 24px;
+  padding: var(--spacing-lg);
   border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-hover);
 }
 
 .title {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
   margin: 0;
   color: var(--color-text-primary);
+  letter-spacing: 0.3px;
 }
 
 .closeButton {
@@ -77,16 +79,16 @@
   line-height: 1;
   color: var(--color-text-secondary);
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: var(--border-radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s, color 0.2s;
+  transition: var(--transition-normal);
   padding: 0;
 }
 
 .closeButton:hover {
-  background: var(--color-surface-hover);
+  background: var(--color-surface-active);
   color: var(--color-text-primary);
 }
 

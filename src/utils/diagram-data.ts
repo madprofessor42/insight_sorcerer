@@ -13,8 +13,13 @@
  */
 
 import * as go from 'gojs';
-import { normalizeLinkType, getLinkConfiguration, LINK_LABEL_CATEGORY } from '../config/diagram-rules';
-import type { LinkType } from '../config/diagram-rules';
+import { 
+  normalizeLinkType, 
+  getLinkConfiguration, 
+  getNodeConfiguration,
+  LINK_LABEL_CATEGORY 
+} from '../config/diagram-rules';
+import type { LinkType, NodeType } from '../config/diagram-rules';
 
 /**
  * Resolved information about a node for display purposes
@@ -173,6 +178,7 @@ export function resolveConnectionEndpoint(
 /**
  * Resolve a node key to display information.
  * Looks up the node in the provided array and extracts name, type, id.
+ * Falls back to default values from configuration if no name is set.
  * NOTE: This function does NOT resolve LinkLabel → parent edge.
  * Use resolveConnectionEndpoint() for edge-to-edge aware resolution.
  *
@@ -193,8 +199,23 @@ export function resolveNodeInfo(
     return { name: '(not found)', type: '—', id: String(key) };
   }
 
+  // Try to get name from node data
+  let name = (node.name as string) || (node.text as string);
+  
+  // If no name, fallback to default from configuration
+  if (!name || name.trim() === '') {
+    const category = node.category as NodeType | undefined;
+    if (category) {
+      const config = getNodeConfiguration(category);
+      const nameProperty = config?.displayProperties.find(prop => prop.dataKey === 'name');
+      name = nameProperty?.defaultValue || category;
+    } else {
+      name = '(no name)';
+    }
+  }
+
   return {
-    name: (node.name as string) || (node.text as string) || '(no name)',
+    name,
     type: (node.category as string) || 'Unknown',
     id: String(node.key),
   };
@@ -202,13 +223,23 @@ export function resolveNodeInfo(
 
 /**
  * Get the display name of a link.
- * Falls back to '(unnamed)' if no text is set.
+ * Falls back to default value from configuration if no text is set.
  * 
  * @param linkData - Link data object from Redux store
  * @returns Display name string
  */
 export function getLinkDisplayName(linkData: go.ObjectData): string {
-  return (linkData.text as string) || '(unnamed)';
+  const text = linkData.text as string;
+  if (text && text.trim() !== '') {
+    return text;
+  }
+  
+  // Fallback to default value from configuration
+  const type = getLinkType(linkData);
+  const config = getLinkConfiguration(type);
+  const textProperty = config?.displayProperties.find(prop => prop.dataKey === 'text');
+  
+  return textProperty?.defaultValue || type || '(unnamed)';
 }
 
 /**

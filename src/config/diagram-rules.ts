@@ -390,7 +390,7 @@ export const LINK_CONFIGURATIONS: LinkConfiguration[] = [
         dataKey: 'text',
         label: 'Name',
         editable: true,
-        defaultValue: '',
+        defaultValue: 'Link',
         segmentOffset: { x: 0, y: -10 }
       },
       {
@@ -432,7 +432,7 @@ export const LINK_CONFIGURATIONS: LinkConfiguration[] = [
         dataKey: 'text',
         label: 'Name',
         editable: true,
-        defaultValue: '',
+        defaultValue: 'Flow',
         segmentOffset: { x: 0, y: -10 }
         // segmentIndex and segmentFraction are omitted - will use middle of entire link (NaN)
       },

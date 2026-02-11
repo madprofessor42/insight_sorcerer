@@ -11,22 +11,24 @@ import type { SimulationConfig } from '../../../types/simulation';
 import { DEFAULT_SIMULATION_CONFIG } from '../../../types/simulation';
 import { BugIcon } from '../../ui';
 import { SimulationSettingsModal } from './SimulationSettingsModal';
+import { SimulationResultsModal } from './SimulationResultsModal';
+import { runSimulation } from '../../../utils/simulation';
+import type { SimulationRunResult } from '../../../utils/simulation';
 import styles from './SimulationPanel.module.css';
 
 export function SimulationPanel() {
   const dispatch = useAppDispatch();
   const config = useAppSelector((state) => state.diagram.simulationConfig);
   const nodeDataArray = useAppSelector((state) => state.diagram.nodeDataArray);
+  const linkDataArray = useAppSelector((state) => state.diagram.linkDataArray);
   const selectedNodeKey = useAppSelector((state) => state.diagram.selectedNodeKey);
   const selectedEdgeKey = useAppSelector((state) => state.diagram.selectedEdgeKey);
   const canRun = nodeDataArray.length > 0; // Simple check - can run if we have nodes
   
   const [showSettings, setShowSettings] = useState(false);
-
-  // Only show when nothing is selected
-  if (selectedNodeKey !== null || selectedEdgeKey !== null) {
-    return null;
-  }
+  const [showResults, setShowResults] = useState(false);
+  const [simulationResult, setSimulationResult] = useState<SimulationRunResult | null>(null);
+  const [isRunning, setIsRunning] = useState(false);
 
   // Handle settings apply
   const handleApplySettings = useCallback((newConfig: SimulationConfig) => {
@@ -34,11 +36,28 @@ export function SimulationPanel() {
   }, [dispatch]);
 
   // Handle run simulation
-  const handleRunSimulation = useCallback(() => {
-    // TODO: Implement simulation execution
-    console.log('Running simulation with config:', config);
-    alert('Simulation functionality will be implemented soon!');
-  }, [config]);
+  const handleRunSimulation = useCallback(async () => {
+    setIsRunning(true);
+    try {
+      const result = await runSimulation(nodeDataArray, linkDataArray, config);
+      setSimulationResult(result);
+      setShowResults(true);
+    } catch (error) {
+      const errorResult: SimulationRunResult = {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+      };
+      setSimulationResult(errorResult);
+      setShowResults(true);
+    } finally {
+      setIsRunning(false);
+    }
+  }, [nodeDataArray, linkDataArray, config]);
+
+  // Only show when nothing is selected
+  if (selectedNodeKey !== null || selectedEdgeKey !== null) {
+    return null;
+  }
 
   return (
     <section className={styles.panel}>
@@ -82,10 +101,10 @@ export function SimulationPanel() {
       {/* Run button */}
       <button
         onClick={handleRunSimulation}
-        disabled={!canRun}
+        disabled={!canRun || isRunning}
         className={styles.runButton}
       >
-        Run Simulation
+        {isRunning ? 'Running...' : 'Run Simulation'}
       </button>
 
       {/* Settings Modal */}
@@ -94,6 +113,15 @@ export function SimulationPanel() {
         onClose={() => setShowSettings(false)}
         initialConfig={config}
         onApply={handleApplySettings}
+      />
+
+      {/* Results Modal */}
+      <SimulationResultsModal
+        isOpen={showResults}
+        onClose={() => setShowResults(false)}
+        result={simulationResult}
+        nodeDataArray={nodeDataArray}
+        linkDataArray={linkDataArray}
       />
     </section>
   );

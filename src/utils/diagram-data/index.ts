@@ -69,6 +69,5 @@ export {
 // ============================================================================
 export {
   getAvailableReferences,
-  getAllAvailableReferences,
   getAvailableReferencesForEdge,
 } from './references';

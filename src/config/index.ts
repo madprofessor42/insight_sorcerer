@@ -51,3 +51,12 @@ export {
   getLinkReferenceConfig,
 } from './diagram-references';
 
+// Formula functions
+export type {
+  FormulaFunction,
+  FunctionCategory,
+} from './formula-functions';
+export {
+  FORMULA_FUNCTIONS,
+} from './formula-functions';
+

@@ -26,11 +26,11 @@
 .input {
   flex: 1;
   width: 100%;
-  min-height: 36px;
+  min-height: var(--input-height, 36px);
   padding: var(--spacing-sm, 8px);
   background: var(--color-background, #0f172a);
   color: var(--color-text-primary, #f1f5f9);
-  border: 1px solid var(--color-border, #475569);
+  border: var(--input-border-width, 1px) solid var(--color-border, #475569);
   border-radius: var(--border-radius-sm, 4px);
   font-size: var(--font-size-sm, 14px);
   font-family: 'Courier New', monospace;
@@ -49,17 +49,17 @@
 
 .expandButton {
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
+  width: var(--button-height, 36px);
+  height: var(--button-height, 36px);
   padding: 0;
-  border: 1px solid var(--color-border, #475569);
+  border: var(--input-border-width, 1px) solid var(--color-border, #475569);
   background: var(--color-surface, #1e293b);
   border-radius: var(--border-radius-sm, 4px);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: var(--font-size-lg, 18px);
   color: var(--color-text-secondary, #94a3b8);
   transition: var(--transition-fast, 150ms ease);
 }
@@ -79,16 +79,16 @@
   margin-top: var(--spacing-2, 8px);
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--spacing-1, 4px);
   padding: var(--spacing-2, 8px);
   background: var(--color-background, #0f172a);
-  border: 1px solid var(--color-border, #475569);
+  border: var(--input-border-width, 1px) solid var(--color-border, #475569);
   border-radius: var(--border-radius-sm, 4px);
 }
 
 .suggestionsHeader {
   width: 100%;
-  margin-bottom: 4px;
+  margin-bottom: var(--spacing-1, 4px);
   font-size: var(--font-size-xs, 11px);
   font-weight: var(--font-weight-semibold, 600);
   color: var(--color-text-secondary, #94a3b8);
@@ -98,14 +98,14 @@
 .suggestion {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  border: 1px solid var(--color-border, #475569);
+  gap: var(--spacing-1, 4px);
+  padding: var(--spacing-1, 4px) var(--spacing-2, 8px);
+  border: var(--input-border-width, 1px) solid var(--color-border, #475569);
   background: var(--color-surface, #1e293b);
-  border-radius: 12px;
+  border-radius: var(--border-radius-lg, 12px);
   cursor: pointer;
   transition: var(--transition-fast, 150ms ease);
-  font-size: 13px;
+  font-size: var(--font-size-sm, 14px);
 }
 
 .suggestion:hover {
@@ -122,8 +122,8 @@
 
 .suggestionType {
   display: inline-block;
-  padding: 2px 5px;
-  font-size: 9px;
+  padding: var(--spacing-1, 4px) 5px;
+  font-size: var(--font-size-xs, 11px);
   font-weight: var(--font-weight-semibold, 600);
   color: white !important;
   text-transform: uppercase;
@@ -133,7 +133,7 @@
 
 .suggestionName {
   font-family: 'Courier New', monospace;
-  font-size: 12px;
+  font-size: var(--font-size-xs, 11px);
   color: var(--color-text-primary, #f1f5f9) !important;
   font-weight: var(--font-weight-medium, 500);
 }

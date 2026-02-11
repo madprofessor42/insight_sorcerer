@@ -17,7 +17,7 @@
   border-radius: var(--border-radius-lg, 8px);
   box-shadow: var(--shadow-xl, 0 8px 16px rgba(0, 0, 0, 0.35));
   width: 100%;
-  max-width: 800px;
+  max-width: 1400px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -44,12 +44,12 @@
 .closeButton {
   background: none;
   border: none;
-  font-size: 24px;
+  font-size: var(--font-size-xxl, 24px);
   color: var(--color-text-secondary, #94a3b8);
   cursor: pointer;
   padding: 0;
-  width: 32px;
-  height: 32px;
+  width: var(--spacing-xl, 32px);
+  height: var(--spacing-xl, 32px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -65,22 +65,24 @@
 .content {
   flex: 1;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: var(--spacing-md, 16px);
   padding: var(--spacing-lg, 24px);
-  overflow-y: auto;
+  overflow: hidden;
   background: var(--color-surface, #1e293b);
 }
 
 .editorSection {
   flex: 1;
-  min-height: 200px;
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
 }
 
 .textarea {
   width: 100%;
-  height: 100%;
-  min-height: 200px;
+  flex: 1;
+  min-height: 500px;
   padding: var(--spacing-3, 12px);
   background: var(--color-background, #0f172a);
   color: var(--color-text-primary, #f1f5f9);
@@ -89,7 +91,7 @@
   font-size: var(--font-size-sm, 14px);
   font-family: 'Courier New', monospace;
   line-height: var(--line-height-normal, 1.6);
-  resize: vertical;
+  resize: none;
   transition: var(--transition-fast, 150ms ease);
 }
 
@@ -99,55 +101,139 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
-.referencesSection {
-  border-top: 1px solid var(--color-border, #475569);
-  padding-top: var(--spacing-md, 16px);
-}
-
-.referencesHeader {
-  margin-bottom: var(--spacing-3, 12px);
-  font-size: var(--font-size-xs, 11px);
-  font-weight: var(--font-weight-semibold, 600);
-  color: var(--color-text-secondary, #94a3b8);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.references {
+/* Sidebar with functions */
+.sidebar {
+  width: 400px;
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-2, 8px);
+  flex-direction: column;
+  gap: var(--spacing-md, 16px);
+  overflow: hidden;
 }
 
-.reference {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border: 1px solid var(--color-border, #475569);
+.searchSection {
+  flex-shrink: 0;
+}
+
+.searchInput {
+  width: 100%;
+  padding: var(--spacing-sm, 8px) var(--spacing-3, 12px);
   background: var(--color-background, #0f172a);
-  border-radius: 16px;
+  color: var(--color-text-primary, #f1f5f9);
+  border: 1px solid var(--color-border, #475569);
+  border-radius: var(--border-radius-md, 6px);
+  font-size: var(--font-size-sm, 14px);
+  transition: var(--transition-fast, 150ms ease);
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--color-primary, #3b82f6);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.searchInput::placeholder {
+  color: var(--color-text-placeholder, #64748b);
+}
+
+.categoriesSection {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3, 12px);
+}
+
+/* Scrollbar styles */
+.categoriesSection::-webkit-scrollbar {
+  width: var(--spacing-2, 8px);
+}
+
+.categoriesSection::-webkit-scrollbar-track {
+  background: var(--color-background, #0f172a);
+  border-radius: var(--border-radius-sm, 4px);
+}
+
+.categoriesSection::-webkit-scrollbar-thumb {
+  background: var(--color-border, #475569);
+  border-radius: var(--border-radius-sm, 4px);
+}
+
+.categoriesSection::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary, #94a3b8);
+}
+
+/* Category */
+.category {
+  display: flex;
+  flex-direction: column;
+}
+
+.categoryHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2, 8px);
+  padding: var(--spacing-2, 8px) var(--spacing-3, 12px);
+  background: var(--color-background, #0f172a);
+  border: none;
+  border-radius: var(--border-radius-sm, 4px);
+  color: var(--color-text-primary, #f1f5f9);
+  font-size: var(--font-size-md, 16px);
+  font-weight: var(--font-weight-semibold, 600);
   cursor: pointer;
   transition: var(--transition-fast, 150ms ease);
-  font-size: 13px;
+  text-align: left;
 }
 
-.reference:hover {
-  background-color: var(--color-surface-hover, #334155);
-  border-color: var(--color-primary, #3b82f6);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md, 0 2px 4px rgba(0, 0, 0, 0.15));
+.categoryHeader:hover {
+  background: var(--color-surface-hover, #334155);
 }
 
-.reference:active {
-  transform: translateY(0);
-  box-shadow: none;
+.categoryIcon {
+  font-size: var(--font-size-sm, 14px);
+  color: var(--color-text-secondary, #94a3b8);
 }
 
-.referenceType {
+.categoryName {
+  flex: 1;
+}
+
+.categoryContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1, 4px);
+  padding-left: var(--spacing-lg, 24px);
+  padding-top: var(--spacing-2, 8px);
+}
+
+/* Items (functions and references) */
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2, 8px);
+  padding: var(--spacing-2, 8px) var(--spacing-3, 12px);
+  background: transparent;
+  border: none;
+  border-radius: var(--border-radius-sm, 4px);
+  color: var(--color-text-primary, #f1f5f9);
+  font-size: var(--font-size-sm, 14px);
+  cursor: pointer;
+  transition: var(--transition-fast, 150ms ease);
+  text-align: left;
+  width: 100%;
+}
+
+.item:hover {
+  background: var(--color-surface-hover, #334155);
+}
+
+.item:active {
+  background: var(--color-surface-active, #475569);
+}
+
+.itemBadge {
   display: inline-block;
-  padding: 2px 6px;
-  font-size: 9px;
+  padding: var(--spacing-1, 4px) var(--spacing-2, 8px);
+  font-size: var(--font-size-xs, 11px);
   font-weight: var(--font-weight-semibold, 600);
   color: white !important;
   text-transform: uppercase;
@@ -155,11 +241,20 @@
   flex-shrink: 0;
 }
 
-.referenceName {
+.itemName {
   font-family: 'Courier New', monospace;
-  font-size: 13px;
-  color: var(--color-text-primary, #f1f5f9) !important;
   font-weight: var(--font-weight-medium, 500);
+  color: var(--color-text-primary, #f1f5f9);
+  font-size: var(--font-size-sm, 14px);
+}
+
+.itemSignature {
+  font-family: 'Courier New', monospace;
+  font-size: var(--font-size-sm, 14px);
+  color: var(--color-text-secondary, #94a3b8);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .footer {
@@ -174,7 +269,7 @@
 
 .cancelButton,
 .applyButton {
-  padding: 10px 24px;
+  padding: var(--button-padding-vertical, 8px) var(--button-padding-horizontal, 16px);
   border-radius: var(--border-radius-md, 6px);
   font-size: var(--font-size-sm, 14px);
   font-weight: var(--font-weight-medium, 500);

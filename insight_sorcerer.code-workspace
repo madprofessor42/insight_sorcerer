@@ -4,16 +4,13 @@
 			"path": "."
 		},
 		{
-			"path": "../system_dynamics_reborn"
-		},
-		{
 			"path": "../gojs-react-samples"
 		},
 		{
 			"path": "../GoJS"
 		},
 		{
-			"path": "../system_dynamics"
+			"path": "../simulation"
 		}
 	],
 	"settings": {}

@@ -7,6 +7,7 @@
 
 import { useCallback, useRef, useEffect, useState } from 'react';
 import type { AvailableReference } from '../../config';
+import { FORMULA_FUNCTIONS } from '../../config/formula-functions';
 import styles from './FormulaEditorModal.module.css';
 
 export interface FormulaEditorModalProps {
@@ -32,6 +33,8 @@ export function FormulaEditorModal({
   onCancel,
 }: FormulaEditorModalProps) {
   const [editedValue, setEditedValue] = useState(value);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['References']));
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Update local state when modal opens with new value
@@ -53,8 +56,8 @@ export function FormulaEditorModal({
     []
   );
 
-  const insertReference = useCallback(
-    (refName: string) => {
+  const insertText = useCallback(
+    (text: string) => {
       const currentValue = String(editedValue || '');
       const textarea = textareaRef.current;
       
@@ -62,16 +65,15 @@ export function FormulaEditorModal({
         const start = textarea.selectionStart || currentValue.length;
         const end = textarea.selectionEnd || currentValue.length;
         
-        // Insert [RefName] at cursor position
         const newValue =
           currentValue.substring(0, start) +
-          `[${refName}]` +
+          text +
           currentValue.substring(end);
         
         setEditedValue(newValue);
         
-        // Set cursor position after inserted reference
-        const newCursorPos = start + refName.length + 2; // +2 for brackets
+        // Set cursor position after inserted text
+        const newCursorPos = start + text.length;
         setTimeout(() => {
           textarea.focus();
           textarea.setSelectionRange(newCursorPos, newCursorPos);
@@ -80,6 +82,32 @@ export function FormulaEditorModal({
     },
     [editedValue]
   );
+
+  const insertReference = useCallback(
+    (refName: string) => {
+      insertText(`[${refName}]`);
+    },
+    [insertText]
+  );
+
+  const insertFunction = useCallback(
+    (signature: string) => {
+      insertText(signature);
+    },
+    [insertText]
+  );
+
+  const toggleCategory = useCallback((category: string) => {
+    setExpandedCategories((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(category)) {
+        newSet.delete(category);
+      } else {
+        newSet.add(category);
+      }
+      return newSet;
+    });
+  }, []);
 
   const handleApply = useCallback(() => {
     onApply(editedValue);
@@ -147,31 +175,106 @@ export function FormulaEditorModal({
             />
           </div>
 
-          {availableReferences.length > 0 && (
-            <div className={styles.referencesSection}>
-              <div className={styles.referencesHeader}>
-                Доступные ссылки:
-              </div>
-              <div className={styles.references}>
-                {availableReferences.map((ref) => (
-                  <button
-                    key={ref.id}
-                    type="button"
-                    className={styles.reference}
-                    onClick={() => insertReference(ref.name)}
-                  >
-                    <span
-                      className={styles.referenceType}
-                      style={{ backgroundColor: getTypeColor(ref.type) }}
-                    >
-                      {ref.type}
-                    </span>
-                    <span className={styles.referenceName}>[{ref.name}]</span>
-                  </button>
-                ))}
-              </div>
+          <div className={styles.sidebar}>
+            <div className={styles.searchSection}>
+              <input
+                type="text"
+                className={styles.searchInput}
+                placeholder="Filter functions and references..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-          )}
+
+            <div className={styles.categoriesSection}>
+              {/* References Category */}
+              {availableReferences.length > 0 && (
+                <div className={styles.category}>
+                  <button
+                    type="button"
+                    className={styles.categoryHeader}
+                    onClick={() => toggleCategory('References')}
+                  >
+                    <span className={styles.categoryIcon}>
+                      {expandedCategories.has('References') ? '▼' : '▶'}
+                    </span>
+                    <span className={styles.categoryName}>References</span>
+                  </button>
+                  {expandedCategories.has('References') && (
+                    <div className={styles.categoryContent}>
+                      {availableReferences
+                        .filter((ref) =>
+                          searchQuery === '' ||
+                          ref.name.toLowerCase().includes(searchQuery.toLowerCase())
+                        )
+                        .map((ref) => (
+                          <button
+                            key={ref.id}
+                            type="button"
+                            className={styles.item}
+                            onClick={() => insertReference(ref.name)}
+                            title={`${ref.type}: ${ref.name}`}
+                          >
+                            <span
+                              className={styles.itemBadge}
+                              style={{ backgroundColor: getTypeColor(ref.type) }}
+                            >
+                              {ref.type}
+                            </span>
+                            <span className={styles.itemName}>[{ref.name}]</span>
+                          </button>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Function Categories */}
+              {FORMULA_FUNCTIONS.map((category) => {
+                const filteredFunctions = category.functions.filter(
+                  (fn) =>
+                    searchQuery === '' ||
+                    fn.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    fn.description.toLowerCase().includes(searchQuery.toLowerCase())
+                );
+
+                if (filteredFunctions.length === 0) return null;
+
+                return (
+                  <div key={category.name} className={styles.category}>
+                    <button
+                      type="button"
+                      className={styles.categoryHeader}
+                      onClick={() => toggleCategory(category.name)}
+                    >
+                      <span className={styles.categoryIcon}>
+                        {expandedCategories.has(category.name) ? '▼' : '▶'}
+                      </span>
+                      <span className={styles.categoryName}>{category.name}</span>
+                    </button>
+                    {expandedCategories.has(category.name) && (
+                      <div className={styles.categoryContent}>
+                        {filteredFunctions.map((fn) => (
+                          <button
+                            key={fn.name}
+                            type="button"
+                            className={styles.item}
+                            onClick={() => insertFunction(fn.signature)}
+                            title={`${fn.description}${fn.example ? '\nExample: ' + fn.example : ''}`}
+                          >
+                            <span className={styles.itemName}>{fn.name}</span>
+                            <span className={styles.itemSignature}>
+                              {fn.signature.replace(fn.name, '')}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         <div className={styles.footer}>

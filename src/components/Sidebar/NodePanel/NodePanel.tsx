@@ -4,7 +4,7 @@ import { useAppSelector } from '../../../store/hooks';
 import { getNodeConfiguration, getNodeReferenceConfig } from '../../../config';
 import { useNodeOperations } from '../../../hooks/node/useNodeOperations';
 import type { NodeType } from '../../../config';
-import { FormulaInput, SingleReferenceInput } from '../../Formula';
+import { FormulaInput, SingleReferenceInput, DataPointsTableInput } from '../../Formula';
 import { getAvailableReferences } from '../../../utils/diagram-data';
 import styles from './NodePanel.module.css';
 
@@ -168,6 +168,21 @@ export function NodePanel() {
                   availableReferences={availableReferencesMap[prop.dataKey] || []}
                   defaultOptions={prop.defaultOptions || []}
                   placeholder={prop.defaultValue || `Select ${prop.label.toLowerCase()}...`}
+                />
+              </div>
+            );
+          }
+          
+          // Use DataPointsTableInput for table type fields
+          if (prop.editorType === 'table') {
+            return (
+              <div key={prop.dataKey} className={styles.fieldGroup}>
+                <DataPointsTableInput
+                  id={`prop-${prop.dataKey}`}
+                  label={prop.label}
+                  value={propertyValues[prop.dataKey] || ''}
+                  onChange={(value) => handlePropertyChange(prop.dataKey, String(value || ''))}
+                  placeholder={prop.defaultValue}
                 />
               </div>
             );

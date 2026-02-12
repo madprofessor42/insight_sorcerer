@@ -1,0 +1,163 @@
+/* DataPointsTableInput Component Styles */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  width: 100%;
+}
+
+.label {
+  display: block;
+  margin-bottom: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.tableWrapper {
+  border: var(--input-border-width) solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  overflow: auto;
+  max-height: 300px;
+  background-color: var(--color-background);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+.headerCell {
+  padding: var(--spacing-2) var(--spacing-3);
+  text-align: left;
+  font-weight: var(--font-weight-semibold);
+  background-color: var(--color-surface);
+  border-bottom: 2px solid var(--color-border);
+  color: var(--color-text-primary);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.headerCellActions {
+  padding: var(--spacing-2) var(--spacing-3);
+  text-align: center;
+  font-weight: var(--font-weight-semibold);
+  background-color: var(--color-surface);
+  border-bottom: 2px solid var(--color-border);
+  color: var(--color-text-primary);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  width: 60px;
+}
+
+.row {
+  transition: background-color var(--transition-fast);
+}
+
+.row:hover {
+  background-color: var(--color-surface-hover);
+}
+
+.cell {
+  padding: 0;
+  border-bottom: var(--input-border-width) solid var(--color-border);
+}
+
+.cellDisplay {
+  padding: var(--spacing-2) var(--spacing-3);
+  cursor: pointer;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  color: var(--color-text-primary);
+  transition: background-color var(--transition-fast);
+}
+
+.cellDisplay:hover {
+  background-color: var(--color-surface-hover);
+}
+
+.cellInput {
+  width: 100%;
+  padding: var(--spacing-2) var(--spacing-3);
+  border: none;
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.cellInput:focus {
+  outline: 2px solid var(--color-primary);
+}
+
+.cellActions {
+  padding: var(--spacing-1);
+  text-align: center;
+  border-bottom: var(--input-border-width) solid var(--color-border);
+}
+
+.removeButton {
+  background: transparent;
+  border: none;
+  color: var(--color-danger);
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--border-radius-sm);
+  transition: background-color var(--transition-fast);
+  line-height: 1;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.removeButton:hover:not(:disabled) {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--color-danger-hover);
+}
+
+.removeButton:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.addButton {
+  align-self: flex-start;
+  padding: var(--spacing-2) var(--spacing-3);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  background-color: var(--color-primary);
+  border: var(--input-border-width) solid transparent;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.addButton:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.addButton:active {
+  transform: translateY(1px);
+  background-color: var(--color-primary-active);
+}
+
+.hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-placeholder);
+  font-style: italic;
+  margin: 0;
+  padding: var(--spacing-1) 0;
+}
+

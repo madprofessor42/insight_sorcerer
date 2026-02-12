@@ -61,7 +61,7 @@ export interface NodePropertyDisplay {
   /** Show this property as the main text label on the node */
   showAsMainLabel?: boolean;
   /** Input type for the editor */
-  editorType?: 'text' | 'formula' | 'select' | 'singleReference';
+  editorType?: 'text' | 'formula' | 'select' | 'singleReference' | 'table';
   /** Options for select dropdown (only used when editorType is 'select') */
   selectOptions?: Array<{ value: string; label: string }>;
   /** Whether to populate select options dynamically using reference system (for 'select' and 'singleReference' types) */

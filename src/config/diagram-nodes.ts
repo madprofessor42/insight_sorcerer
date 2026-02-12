@@ -188,7 +188,7 @@ export const NODE_CONFIGURATIONS: NodeConfiguration[] = [
         editable: true,
         defaultValue: '0,0;1,1;2,2',
         showAsTooltip: true,
-        editorType: 'text'
+        editorType: 'table'
       },
       {
         dataKey: 'note',

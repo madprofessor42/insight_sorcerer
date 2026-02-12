@@ -178,3 +178,9 @@
   border-bottom: none;
 }
 
+/* Scatter plot error message */
+.scatterError {
+  padding: var(--spacing-lg);
+  color: var(--color-text-secondary);
+}
+

@@ -373,3 +373,20 @@
   background-color: var(--color-surface);
 }
 
+/* Chart Type Display */
+.chartTypeDisplay {
+  padding: var(--spacing-sm);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  text-transform: capitalize;
+}
+
+/* Add Buttons Container */
+.addButtonsContainer {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+

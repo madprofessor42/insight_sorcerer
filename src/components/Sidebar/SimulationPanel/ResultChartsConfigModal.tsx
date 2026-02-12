@@ -279,15 +279,7 @@ export function ResultChartsConfigModal({
               {/* Chart Type Display */}
               <div className={styles.formField}>
                 <label className={styles.label}>Chart Type</label>
-                <div style={{ 
-                  padding: 'var(--spacing-sm)', 
-                  backgroundColor: 'var(--color-surface)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: 'var(--border-radius-sm)',
-                  fontSize: 'var(--font-size-sm)',
-                  color: 'var(--color-text-primary)',
-                  textTransform: 'capitalize'
-                }}>
+                <div className={styles.chartTypeDisplay}>
                   {editingChart.type === 'timeSeries' && 'Time Series'}
                   {editingChart.type === 'scatterPlot' && 'Scatter Plot'}
                   {editingChart.type === 'table' && 'Table'}
@@ -535,7 +527,7 @@ export function ResultChartsConfigModal({
             {/* Header with Add Buttons */}
             <div className={styles.header}>
               <h3 className={styles.headerTitle}>Configured Charts</h3>
-              <div style={{ display: 'flex', gap: 'var(--spacing-xs)' }}>
+              <div className={styles.addButtonsContainer}>
                 <button
                   type="button"
                   className={styles.addButton}

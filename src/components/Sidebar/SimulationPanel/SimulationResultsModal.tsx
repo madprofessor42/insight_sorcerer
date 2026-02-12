@@ -314,7 +314,7 @@ export function SimulationResultsModal({
                     {chartInfo.type === 'scatterPlot' && (
                       <>
                         {(chartInfo as any).error ? (
-                          <div style={{ padding: 'var(--spacing-lg)', color: 'var(--color-text-secondary)' }}>
+                          <div className={styles.scatterError}>
                             {(chartInfo as any).error}
                           </div>
                         ) : (

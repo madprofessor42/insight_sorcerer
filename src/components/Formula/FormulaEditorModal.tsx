@@ -149,8 +149,8 @@ export function FormulaEditorModal({
   if (!isOpen) return null;
 
   return (
-    <div className={styles.overlay} onClick={onCancel}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+    <div className={styles.overlay}>
+      <div className={styles.modal}>
         <div className={styles.header}>
           <h2 className={styles.title}>{label}</h2>
           <button
@@ -264,7 +264,7 @@ export function FormulaEditorModal({
                           >
                             <span className={styles.itemName}>{fn.name}</span>
                             <span className={styles.itemSignature}>
-                              {fn.signature.replace(fn.name, '')}
+                              {fn.displaySignature || fn.signature.replace(fn.name, '')}
                             </span>
                           </button>
                         ))}

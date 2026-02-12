@@ -7,6 +7,7 @@ export interface FormulaFunction {
   name: string;
   description: string;
   signature: string;
+  displaySignature?: string; // Optional: for displaying shortened version in UI
   example?: string;
 }
 
@@ -168,7 +169,6 @@ export const FORMULA_FUNCTIONS: FunctionCategory[] = [
   {
     name: 'General Functions',
     functions: [
-      { name: 'IfThenElse', description: 'Conditional expression', signature: 'IfThenElse(Test Condition, Value if True, Value if False)', example: 'IfThenElse(x>5, 1, 0)' },
       { name: 'Stop', description: 'Stops the simulation', signature: 'Stop()', example: 'Stop()' },
       { name: 'Pause', description: 'Pauses the simulation', signature: 'Pause()', example: 'Pause()' },
       { name: 'ConverterTable', description: 'Returns converter table', signature: 'ConverterTable([Converter])', example: 'ConverterTable([MyConverter])' },
@@ -186,6 +186,103 @@ export const FORMULA_FUNCTIONS: FunctionCategory[] = [
       { name: 'String.Contains', description: 'Checks if string contains substring', signature: 'String.Contains(Needle)', example: '"hello".Contains("ll") → true' },
       { name: 'String.LowerCase', description: 'Converts string to lowercase', signature: 'String.LowerCase()', example: '"Hello".LowerCase() → "hello"' },
       { name: 'String.UpperCase', description: 'Converts string to uppercase', signature: 'String.UpperCase()', example: '"HELLO".UpperCase() → "HELLO"' },
+    ],
+  },
+  {
+    name: 'Programming',
+    functions: [
+      { 
+        name: 'Variable', 
+        description: 'Assigns a value to a variable', 
+        signature: 'Variable <- Value', 
+        example: 'x <- 10' 
+      },
+      { 
+        name: 'Multiple Assignment', 
+        description: 'Assigns multiple values using destructuring', 
+        signature: 'a, b <- {Value1, Value2}', 
+        example: 'x, y <- {10, 20}' 
+      },
+      { 
+        name: 'IfThenElse', 
+        description: 'Single-line conditional expression', 
+        signature: 'IfThenElse(Test Condition, Value if True, Value if False)', 
+        example: 'IfThenElse(x>5, 1, 0)' 
+      },
+      { 
+        name: 'If Statement', 
+        description: 'Multi-line conditional block', 
+        signature: 'if Condition then\n  Expression\nelse if Condition then\n  Expression\nelse\n  Expression\nend if',
+        displaySignature: 'if...then...else if...else...end if',
+        example: 'if x > 5 then\n  "High"\nelse\n  "Low"\nend if' 
+      },
+      { 
+        name: 'While Loop', 
+        description: 'Repeats while condition is true', 
+        signature: 'while Condition\n  Expression\nend loop',
+        displaySignature: 'while...end loop',
+        example: 'while x < 10\n  x <- x + 1\nend loop' 
+      },
+      { 
+        name: 'For Loop', 
+        description: 'Iterates from start to end', 
+        signature: 'for Variable from Start to End [by Step]\n  Expression\nend loop',
+        displaySignature: 'for...from...to...end loop',
+        example: 'for i from 1 to 10\n  total <- total + i\nend loop' 
+      },
+      { 
+        name: 'For In Loop', 
+        description: 'Iterates over vector elements', 
+        signature: 'for Element in Vector\n  Expression\nend loop',
+        displaySignature: 'for...in...end loop',
+        example: 'for x in {1, 2, 3}\n  sum <- sum + x\nend loop' 
+      },
+      { 
+        name: 'Function', 
+        description: 'Defines a named function', 
+        signature: 'Function Name()\n  Expression\nEnd Function',
+        displaySignature: 'Function...End Function',
+        example: 'Function Double(x)\n  x * 2\nEnd Function' 
+      },
+      { 
+        name: 'Anonymous Function', 
+        description: 'Multi-line anonymous function', 
+        signature: 'Variable <- Function()\n  Expression\nEnd Function',
+        displaySignature: 'Variable <- Function()...End Function',
+        example: 'Double <- Function(x)\n  x * 2\nEnd Function' 
+      },
+      { 
+        name: 'Anonymous Function (inline)', 
+        description: 'Single-line anonymous function', 
+        signature: 'Function() Expression',
+        example: 'Function(x) x * 2' 
+      },
+      { 
+        name: 'Throw Error', 
+        description: 'Throws an error with a message', 
+        signature: 'throw \'Message\'',
+        example: 'throw \'Invalid value\'' 
+      },
+      { 
+        name: 'Try Catch', 
+        description: 'Error handling block', 
+        signature: 'Try\n  Expression\nCatch ErrorString\n  Expression\nEnd Try',
+        displaySignature: 'Try...Catch...End Try',
+        example: 'Try\n  x / y\nCatch err\n  0\nEnd Try' 
+      },
+      { 
+        name: 'Comment', 
+        description: 'Single-line comment', 
+        signature: '# Comment', 
+        example: '# This is a comment' 
+      },
+      { 
+        name: 'Multi-line Comment', 
+        description: 'Multi-line comment block', 
+        signature: '/* Comment\n   Multiple lines\n*/',
+        displaySignature: '/* ... */',
+        example: '/* This spans\n   multiple lines */' 
+      },
     ],
   },
   {

@@ -279,7 +279,8 @@ export function createLinkTemplateMap(): go.Map<string, go.Link> {
     // Add bindings for link properties (two-way)
     link.bindTwoWay('points'); // Save link route points to model
     link.bindTwoWay('curviness'); // Save curviness to model
-    link.bindTwoWay('bidirectional'); // Save bidirectional state to model
+    // Note: bidirectional is a data-only property, not a Link property
+    // It's bound to visual elements (like arrow visibility) via .bind() below
     
     // Add invisible thick shape for larger click area
     link.add(

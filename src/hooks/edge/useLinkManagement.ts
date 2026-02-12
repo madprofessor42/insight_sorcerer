@@ -51,7 +51,8 @@ export function useLinkManagement(
     const defaultText = getDefaultLinkText(selectedLinkType);
     diagram.toolManager.linkingTool.archetypeLinkData = { 
       category: selectedLinkType,
-      text: defaultText
+      text: defaultText,
+      bidirectional: false // Initialize to prevent binding errors
     };
 
     // Set archetypeLabelNodeData based on whether this link type needs label nodes

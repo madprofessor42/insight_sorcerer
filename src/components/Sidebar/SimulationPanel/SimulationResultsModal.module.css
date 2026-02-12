@@ -10,21 +10,21 @@
 .chartsGrid {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: var(--spacing-xl);
 }
 
 .chartWrapper {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 1.5rem;
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
 }
 
 .chartWrapperTitle {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-md);
 }
 
 .placeholder {
@@ -62,7 +62,7 @@
   margin: var(--spacing-sm) 0 0;
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
-  font-family: 'Monaco', 'Courier New', monospace;
+  font-family: var(--font-family);
 }
 
 /* Chart Container */
@@ -95,7 +95,7 @@
   font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: var(--spacing-1);
   font-weight: var(--font-weight-medium);
 }
 
@@ -132,5 +132,49 @@
 
 .closeButton:active {
   transform: translateY(1px);
+}
+
+/* Table Styles */
+.tableWrapper {
+  height: 100%;
+  overflow: auto;
+}
+
+.dataTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+}
+
+.dataTable thead {
+  position: sticky;
+  top: 0;
+  background-color: var(--color-surface);
+  z-index: var(--z-index-dropdown);
+}
+
+.dataTable th {
+  padding: var(--spacing-sm) var(--spacing-md);
+  text-align: left;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  border-bottom: var(--spacing-1) solid var(--color-border);
+  white-space: nowrap;
+}
+
+.dataTable td {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+  font-family: var(--font-family);
+  font-size: var(--font-size-xs);
+}
+
+.dataTable tbody tr:hover {
+  background-color: var(--color-surface-hover);
+}
+
+.dataTable tbody tr:last-child td {
+  border-bottom: none;
 }
 

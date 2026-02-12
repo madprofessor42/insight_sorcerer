@@ -1,8 +1,7 @@
 /**
  * Result Charts Configuration Modal - configure charts to display after simulation.
  * 
- * For now, only Time Series charts are supported.
- * Future: Scatter Plot and Table views.
+ * Supports: Time Series, Scatter Plot, and Table charts.
  */
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
@@ -10,7 +9,7 @@ import { Modal, ModalActions } from '../../ui';
 import { useAppSelector } from '../../../store/hooks';
 import { resolveNodeInfo, getLinkDisplayName, isLinkLabelNodeData } from '../../../utils/diagram-data';
 import { VISUALIZABLE_TYPES } from '../../../utils/simulation';
-import type { ResultChartConfig } from '../../../utils/simulation';
+import type { ResultChartConfig, ChartType } from '../../../utils/simulation';
 import { nanoid } from 'nanoid';
 import styles from './ResultChartsConfigModal.module.css';
 
@@ -23,8 +22,11 @@ export interface ResultChartsConfigModalProps {
 
 interface EditingChart {
   id: string;
+  type: ChartType;
   title: string;
   selectedKeys: Set<string>;
+  xAxisKey?: string;  // For scatter plot
+  yAxisKey?: string;  // For scatter plot
 }
 
 /**
@@ -34,6 +36,33 @@ interface SelectableItem {
   key: string;
   displayName: string;
   type: 'node' | 'edge';
+}
+
+/**
+ * Resolve display name for a simulation key.
+ */
+function resolveSimulationKeyName(
+  key: string | undefined,
+  nodes: Array<any>,
+  links: Array<any>
+): string {
+  if (!key) return 'Not set';
+  
+  // Try to find as node first
+  const node = nodes.find(n => String(n.key) === String(key));
+  if (node) {
+    const nodeInfo = resolveNodeInfo(key, nodes);
+    return nodeInfo.name;
+  }
+  
+  // Try to find as link
+  const link = links.find(l => String(l.key) === String(key));
+  if (link) {
+    return getLinkDisplayName(link);
+  }
+  
+  // Fallback if not found
+  return String(key);
 }
 
 export function ResultChartsConfigModal({
@@ -103,11 +132,20 @@ export function ResultChartsConfigModal({
   }, [nodeDataArray, linkDataArray]);
 
   // Start editing a new chart
-  const handleAddChart = useCallback(() => {
+  const handleAddChart = useCallback((type: ChartType) => {
+    const titleMap: Record<ChartType, string> = {
+      timeSeries: 'New Time Series',
+      scatterPlot: 'New Scatter Plot',
+      table: 'New Table',
+    };
+    
     setEditingChart({
       id: nanoid(),
-      title: 'New Time Series',
+      type,
+      title: titleMap[type],
       selectedKeys: new Set(),
+      xAxisKey: undefined,
+      yAxisKey: undefined,
     });
   }, []);
 
@@ -115,8 +153,11 @@ export function ResultChartsConfigModal({
   const handleEditChart = useCallback((chart: ResultChartConfig) => {
     setEditingChart({
       id: chart.id,
+      type: chart.type,
       title: chart.title,
       selectedKeys: new Set(chart.selectedKeys),
+      xAxisKey: chart.type === 'scatterPlot' ? (chart as any).xAxisKey : undefined,
+      yAxisKey: chart.type === 'scatterPlot' ? (chart as any).yAxisKey : undefined,
     });
   }, []);
 
@@ -134,12 +175,21 @@ export function ResultChartsConfigModal({
   const handleSaveEdit = useCallback(() => {
     if (!editingChart) return;
 
-    const chartConfig: ResultChartConfig = {
+    const baseConfig = {
       id: editingChart.id,
-      type: 'timeSeries',
+      type: editingChart.type,
       title: editingChart.title,
       selectedKeys: Array.from(editingChart.selectedKeys),
     };
+
+    // Add type-specific configuration
+    const chartConfig: ResultChartConfig = editingChart.type === 'scatterPlot'
+      ? {
+          ...baseConfig,
+          xAxisKey: editingChart.xAxisKey,
+          yAxisKey: editingChart.yAxisKey,
+        } as any
+      : baseConfig;
 
     setLocalCharts(prev => {
       const existing = prev.find(c => c.id === chartConfig.id);
@@ -226,6 +276,24 @@ export function ResultChartsConfigModal({
 
             {/* Editor Content - Scrollable */}
             <div className={styles.editorContent}>
+              {/* Chart Type Display */}
+              <div className={styles.formField}>
+                <label className={styles.label}>Chart Type</label>
+                <div style={{ 
+                  padding: 'var(--spacing-sm)', 
+                  backgroundColor: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--border-radius-sm)',
+                  fontSize: 'var(--font-size-sm)',
+                  color: 'var(--color-text-primary)',
+                  textTransform: 'capitalize'
+                }}>
+                  {editingChart.type === 'timeSeries' && 'Time Series'}
+                  {editingChart.type === 'scatterPlot' && 'Scatter Plot'}
+                  {editingChart.type === 'table' && 'Table'}
+                </div>
+              </div>
+
               {/* Title Input */}
               <div className={styles.formField}>
                 <label className={styles.label} htmlFor="chart-title">
@@ -241,80 +309,198 @@ export function ResultChartsConfigModal({
                 />
               </div>
 
-              {/* Selected Items Display */}
-              <div className={styles.selectorSection}>
-                <div className={styles.selectorHeader}>
-                  <span className={styles.selectorLabel}>
-                    Selected ({editingChart.selectedKeys.size})
-                  </span>
-                  {editingChart.selectedKeys.size > 0 && (
-                    <button
-                      type="button"
-                      className={styles.selectAllButton}
-                      onClick={handleClearAll}
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-                <div className={styles.selectedBubbles}>
-                  {editingChart.selectedKeys.size === 0 ? (
-                    <span className={styles.emptySelection}>
-                      Click on items below to add
-                    </span>
-                  ) : (
-                    Array.from(editingChart.selectedKeys).map(key => {
-                      const item = availableItems.find(i => i.key === key);
-                      return (
-                        <div key={key} className={styles.selectedBubble}>
-                          {item?.displayName || key}
+              {/* Scatter Plot Axis Selection with Bubbles */}
+              {editingChart.type === 'scatterPlot' && (
+                <>
+                  {/* X-Axis Selection */}
+                  <div className={styles.selectorSection}>
+                    <div className={styles.selectorHeader}>
+                      <span className={styles.selectorLabel}>
+                        X-Axis Variable {editingChart.xAxisKey && '✓'}
+                      </span>
+                      {editingChart.xAxisKey && (
+                        <button
+                          type="button"
+                          className={styles.selectAllButton}
+                          onClick={() => setEditingChart(prev => prev ? { ...prev, xAxisKey: undefined } : prev)}
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                    <div className={styles.selectedBubbles}>
+                      {editingChart.xAxisKey ? (
+                        <div className={styles.selectedBubble}>
+                          {availableItems.find(i => i.key === editingChart.xAxisKey)?.displayName || editingChart.xAxisKey}
                           <span
                             className={styles.removeIcon}
-                            onClick={() => handleToggleItem(key)}
+                            onClick={() => setEditingChart(prev => prev ? { ...prev, xAxisKey: undefined } : prev)}
                           >
                             ×
                           </span>
                         </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
+                      ) : (
+                        <span className={styles.emptySelection}>
+                          Click on an item below to select X-axis
+                        </span>
+                      )}
+                    </div>
+                    <div className={styles.availableBubbles}>
+                      {availableItems.length === 0 ? (
+                        <span className={styles.emptySelection}>
+                          No items available
+                        </span>
+                      ) : (
+                        availableItems.map(item => (
+                          <div
+                            key={item.key}
+                            className={`${styles.bubble} ${
+                              editingChart.xAxisKey === item.key ? styles.selected : ''
+                            }`}
+                            onClick={() => setEditingChart(prev => prev ? { ...prev, xAxisKey: item.key } : prev)}
+                          >
+                            {item.displayName}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
 
-              {/* Available Items Selector */}
-              <div className={styles.selectorSection}>
-                <div className={styles.selectorHeader}>
-                  <span className={styles.selectorLabel}>
-                    Available Items
-                  </span>
-                  <button
-                    type="button"
-                    className={styles.selectAllButton}
-                    onClick={handleSelectAll}
-                  >
-                    Select All
-                  </button>
-                </div>
-                <div className={styles.availableBubbles}>
-                  {availableItems.length === 0 ? (
-                    <span className={styles.emptySelection}>
-                      No items available
-                    </span>
-                  ) : (
-                    availableItems.map(item => (
-                      <div
-                        key={item.key}
-                        className={`${styles.bubble} ${
-                          editingChart.selectedKeys.has(item.key) ? styles.selected : ''
-                        }`}
-                        onClick={() => handleToggleItem(item.key)}
+                  {/* Y-Axis Selection */}
+                  <div className={styles.selectorSection}>
+                    <div className={styles.selectorHeader}>
+                      <span className={styles.selectorLabel}>
+                        Y-Axis Variable {editingChart.yAxisKey && '✓'}
+                      </span>
+                      {editingChart.yAxisKey && (
+                        <button
+                          type="button"
+                          className={styles.selectAllButton}
+                          onClick={() => setEditingChart(prev => prev ? { ...prev, yAxisKey: undefined } : prev)}
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                    <div className={styles.selectedBubbles}>
+                      {editingChart.yAxisKey ? (
+                        <div className={styles.selectedBubble}>
+                          {availableItems.find(i => i.key === editingChart.yAxisKey)?.displayName || editingChart.yAxisKey}
+                          <span
+                            className={styles.removeIcon}
+                            onClick={() => setEditingChart(prev => prev ? { ...prev, yAxisKey: undefined } : prev)}
+                          >
+                            ×
+                          </span>
+                        </div>
+                      ) : (
+                        <span className={styles.emptySelection}>
+                          Click on an item below to select Y-axis
+                        </span>
+                      )}
+                    </div>
+                    <div className={styles.availableBubbles}>
+                      {availableItems.length === 0 ? (
+                        <span className={styles.emptySelection}>
+                          No items available
+                        </span>
+                      ) : (
+                        availableItems.map(item => (
+                          <div
+                            key={item.key}
+                            className={`${styles.bubble} ${
+                              editingChart.yAxisKey === item.key ? styles.selected : ''
+                            }`}
+                            onClick={() => setEditingChart(prev => prev ? { ...prev, yAxisKey: item.key } : prev)}
+                          >
+                            {item.displayName}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Item Selection - for Time Series and Table */}
+              {(editingChart.type === 'timeSeries' || editingChart.type === 'table') && (
+                <>
+                  {/* Selected Items Display */}
+                  <div className={styles.selectorSection}>
+                    <div className={styles.selectorHeader}>
+                      <span className={styles.selectorLabel}>
+                        Selected ({editingChart.selectedKeys.size})
+                      </span>
+                      {editingChart.selectedKeys.size > 0 && (
+                        <button
+                          type="button"
+                          className={styles.selectAllButton}
+                          onClick={handleClearAll}
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                    <div className={styles.selectedBubbles}>
+                      {editingChart.selectedKeys.size === 0 ? (
+                        <span className={styles.emptySelection}>
+                          Click on items below to add
+                        </span>
+                      ) : (
+                        Array.from(editingChart.selectedKeys).map(key => {
+                          const item = availableItems.find(i => i.key === key);
+                          return (
+                            <div key={key} className={styles.selectedBubble}>
+                              {item?.displayName || key}
+                              <span
+                                className={styles.removeIcon}
+                                onClick={() => handleToggleItem(key)}
+                              >
+                                ×
+                              </span>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Available Items Selector */}
+                  <div className={styles.selectorSection}>
+                    <div className={styles.selectorHeader}>
+                      <span className={styles.selectorLabel}>
+                        Available Items
+                      </span>
+                      <button
+                        type="button"
+                        className={styles.selectAllButton}
+                        onClick={handleSelectAll}
                       >
-                        {item.displayName}
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
+                        Select All
+                      </button>
+                    </div>
+                    <div className={styles.availableBubbles}>
+                      {availableItems.length === 0 ? (
+                        <span className={styles.emptySelection}>
+                          No items available
+                        </span>
+                      ) : (
+                        availableItems.map(item => (
+                          <div
+                            key={item.key}
+                            className={`${styles.bubble} ${
+                              editingChart.selectedKeys.has(item.key) ? styles.selected : ''
+                            }`}
+                            onClick={() => handleToggleItem(item.key)}
+                          >
+                            {item.displayName}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Editor Actions */}
@@ -330,7 +516,12 @@ export function ResultChartsConfigModal({
                 type="button"
                 className={styles.saveButton}
                 onClick={handleSaveEdit}
-                disabled={!editingChart.title.trim() || editingChart.selectedKeys.size === 0}
+                disabled={
+                  !editingChart.title.trim() || 
+                  (editingChart.type === 'timeSeries' && editingChart.selectedKeys.size === 0) ||
+                  (editingChart.type === 'scatterPlot' && (!editingChart.xAxisKey || !editingChart.yAxisKey)) ||
+                  (editingChart.type === 'table' && editingChart.selectedKeys.size === 0)
+                }
               >
                 {localCharts.find(c => c.id === editingChart.id) ? 'Update' : 'Add'}
               </button>
@@ -341,16 +532,35 @@ export function ResultChartsConfigModal({
         {/* Charts List - shown when not editing */}
         {!editingChart && (
           <>
-            {/* Header with Add Button */}
+            {/* Header with Add Buttons */}
             <div className={styles.header}>
               <h3 className={styles.headerTitle}>Configured Charts</h3>
-              <button
-                type="button"
-                className={styles.addButton}
-                onClick={handleAddChart}
-              >
-                + Time Series
-              </button>
+              <div style={{ display: 'flex', gap: 'var(--spacing-xs)' }}>
+                <button
+                  type="button"
+                  className={styles.addButton}
+                  onClick={() => handleAddChart('timeSeries')}
+                  title="Add Time Series Chart"
+                >
+                  + Time Series
+                </button>
+                <button
+                  type="button"
+                  className={styles.addButton}
+                  onClick={() => handleAddChart('scatterPlot')}
+                  title="Add Scatter Plot"
+                >
+                  + Scatter Plot
+                </button>
+                <button
+                  type="button"
+                  className={styles.addButton}
+                  onClick={() => handleAddChart('table')}
+                  title="Add Table"
+                >
+                  + Table
+                </button>
+              </div>
             </div>
 
             {/* Content */}
@@ -359,39 +569,51 @@ export function ResultChartsConfigModal({
                 <div className={styles.emptyState}>
                   <h3 className={styles.emptyStateTitle}>No charts configured</h3>
                   <p className={styles.emptyStateText}>
-                    Click "+ Time Series" to add a chart
+                    Click a button above to add a chart
                   </p>
                 </div>
               ) : (
                 <div className={styles.chartsList}>
-                  {localCharts.map(chart => (
-                    <div key={chart.id} className={styles.chartItem}>
-                      <div className={styles.chartHeader}>
-                        <div>
-                          <div className={styles.chartTitle}>{chart.title}</div>
-                          <div className={styles.chartType}>
-                            {chart.selectedKeys.length} item{chart.selectedKeys.length !== 1 ? 's' : ''}
+                  {localCharts.map(chart => {
+                    const typeLabel = 
+                      chart.type === 'timeSeries' ? 'Time Series' :
+                      chart.type === 'scatterPlot' ? 'Scatter Plot' :
+                      'Table';
+                    
+                    const itemsInfo = 
+                      chart.type === 'scatterPlot' 
+                        ? `X: ${resolveSimulationKeyName((chart as any).xAxisKey, nodeDataArray, linkDataArray)}, Y: ${resolveSimulationKeyName((chart as any).yAxisKey, nodeDataArray, linkDataArray)}`
+                        : `${chart.selectedKeys.length} item${chart.selectedKeys.length !== 1 ? 's' : ''}`;
+                    
+                    return (
+                      <div key={chart.id} className={styles.chartItem}>
+                        <div className={styles.chartHeader}>
+                          <div>
+                            <div className={styles.chartTitle}>{chart.title}</div>
+                            <div className={styles.chartType}>
+                              {typeLabel} • {itemsInfo}
+                            </div>
+                          </div>
+                          <div className={styles.chartActions}>
+                            <button
+                              type="button"
+                              className={styles.editButton}
+                              onClick={() => handleEditChart(chart)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.deleteButton}
+                              onClick={() => handleDeleteChart(chart.id)}
+                            >
+                              Delete
+                            </button>
                           </div>
                         </div>
-                        <div className={styles.chartActions}>
-                          <button
-                            type="button"
-                            className={styles.editButton}
-                            onClick={() => handleEditChart(chart)}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            className={styles.deleteButton}
-                            onClick={() => handleDeleteChart(chart.id)}
-                          >
-                            Delete
-                          </button>
-                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

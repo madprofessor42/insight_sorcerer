@@ -8,6 +8,8 @@
 import { useCallback, useRef, useEffect, useState } from 'react';
 import type { AvailableReference } from '../../config';
 import { FORMULA_FUNCTIONS } from '../../config/formula-functions';
+import { FormulaEditor } from './FormulaEditor';
+import { EditorView } from '@codemirror/view';
 import styles from './FormulaEditorModal.module.css';
 
 export interface FormulaEditorModalProps {
@@ -35,52 +37,45 @@ export function FormulaEditorModal({
   const [editedValue, setEditedValue] = useState(value);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['References']));
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const editorViewRef = useRef<EditorView | null>(null);
 
   // Update local state when modal opens with new value
   useEffect(() => {
     if (isOpen) {
       setEditedValue(value);
-      // Focus textarea when modal opens
+      // Focus editor when modal opens
       setTimeout(() => {
-        textareaRef.current?.focus();
+        if (editorViewRef.current) {
+          editorViewRef.current.focus();
+        }
       }, 100);
     }
   }, [isOpen, value]);
 
   const handleInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      const newValue = e.target.value;
-      setEditedValue(newValue === '' ? undefined : newValue);
+    (newValue: string | number | undefined) => {
+      setEditedValue(newValue);
     },
     []
   );
 
   const insertText = useCallback(
     (text: string) => {
-      const currentValue = String(editedValue || '');
-      const textarea = textareaRef.current;
-      
-      if (textarea) {
-        const start = textarea.selectionStart || currentValue.length;
-        const end = textarea.selectionEnd || currentValue.length;
+      if (editorViewRef.current) {
+        const view = editorViewRef.current;
+        const { from, to } = view.state.selection.main;
         
-        const newValue =
-          currentValue.substring(0, start) +
-          text +
-          currentValue.substring(end);
+        view.dispatch({
+          changes: { from, to, insert: text },
+          selection: { anchor: from + text.length },
+        });
         
-        setEditedValue(newValue);
-        
-        // Set cursor position after inserted text
-        const newCursorPos = start + text.length;
-        setTimeout(() => {
-          textarea.focus();
-          textarea.setSelectionRange(newCursorPos, newCursorPos);
-        }, 0);
+        view.focus();
+      } else {
+        console.warn('EditorView not available yet');
       }
     },
-    [editedValue]
+    [editorViewRef]
   );
 
   const insertReference = useCallback(
@@ -112,22 +107,6 @@ export function FormulaEditorModal({
   const handleApply = useCallback(() => {
     onApply(editedValue);
   }, [editedValue, onApply]);
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      // Ctrl/Cmd + Enter to apply
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        e.preventDefault();
-        handleApply();
-      }
-      // Escape to cancel
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        onCancel();
-      }
-    },
-    [handleApply, onCancel]
-  );
 
   const getTypeColor = (type: string) => {
     switch (type) {
@@ -165,13 +144,14 @@ export function FormulaEditorModal({
 
         <div className={styles.content}>
           <div className={styles.editorSection}>
-            <textarea
-              ref={textareaRef}
-              value={editedValue ?? ''}
+            <FormulaEditor
+              value={editedValue}
               onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              className={styles.textarea}
               placeholder={placeholder}
+              availableReferences={availableReferences}
+              onApply={handleApply}
+              onCancel={onCancel}
+              editorViewRef={editorViewRef}
             />
           </div>
 

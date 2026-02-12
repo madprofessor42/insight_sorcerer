@@ -1,0 +1,178 @@
+.editorWrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--border-radius-md, 6px);
+  overflow: hidden;
+  border: 1px solid var(--color-border, #475569);
+  background: #1e2433;
+  transition: var(--transition-fast, 150ms ease);
+}
+
+.editorWrapper:focus-within {
+  border-color: var(--color-primary, #3b82f6);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+/* CodeMirror bright theme customization */
+.editorWrapper :global(.cm-editor) {
+  background: #1e2433 !important;
+  color: #ffffff !important;
+  height: 100%;
+}
+
+.editorWrapper :global(.cm-content) {
+  font-family: 'Courier New', Consolas, Monaco, monospace;
+  caret-color: #ffffff !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+.editorWrapper :global(.cm-line) {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+.editorWrapper :global(.cm-cursor) {
+  border-left-color: #ffffff !important;
+  border-left-width: 2px !important;
+}
+
+.editorWrapper :global(.cm-selectionBackground) {
+  background: rgba(59, 130, 246, 0.3) !important;
+}
+
+.editorWrapper :global(.cm-focused .cm-selectionBackground) {
+  background: rgba(59, 130, 246, 0.4) !important;
+}
+
+.editorWrapper :global(.cm-activeLine) {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.editorWrapper :global(.cm-activeLineGutter) {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Gutters (line numbers) */
+.editorWrapper :global(.cm-gutters) {
+  background-color: #151826;
+  border-right: 1px solid var(--color-border, #475569);
+  color: #9ca3af;
+}
+
+.editorWrapper :global(.cm-lineNumbers .cm-gutterElement) {
+  color: var(--color-text-secondary, #94a3b8);
+  padding-right: 12px;
+}
+
+/* Autocomplete popup */
+.editorWrapper :global(.cm-tooltip-autocomplete) {
+  background: var(--color-surface, #1e293b);
+  border: 1px solid var(--color-border, #475569);
+  border-radius: var(--border-radius-md, 6px);
+  box-shadow: var(--shadow-xl, 0 8px 16px rgba(0, 0, 0, 0.35));
+  padding: 4px;
+  font-family: 'Courier New', Consolas, Monaco, monospace;
+}
+
+.editorWrapper :global(.cm-tooltip-autocomplete ul) {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.editorWrapper :global(.cm-tooltip-autocomplete ul li) {
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  cursor: pointer;
+  border-radius: var(--border-radius-sm, 4px);
+  color: var(--color-text-primary, #f1f5f9);
+  font-size: 14px;
+}
+
+.editorWrapper :global(.cm-tooltip-autocomplete ul li:hover) {
+  background: var(--color-surface-hover, #334155);
+}
+
+.editorWrapper :global(.cm-tooltip-autocomplete ul li[aria-selected]) {
+  background: var(--color-primary, #3b82f6);
+  color: white;
+}
+
+.editorWrapper :global(.cm-completionLabel) {
+  flex: 1;
+  font-family: 'Courier New', Consolas, Monaco, monospace;
+}
+
+.editorWrapper :global(.cm-completionDetail) {
+  font-style: italic;
+  color: var(--color-text-secondary, #94a3b8);
+  margin-left: 8px;
+  font-size: 12px;
+}
+
+.editorWrapper :global(.cm-tooltip-autocomplete ul li[aria-selected] .cm-completionDetail) {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.editorWrapper :global(.cm-completionInfo) {
+  background: var(--color-surface, #1e293b);
+  border: 1px solid var(--color-border, #475569);
+  border-radius: var(--border-radius-md, 6px);
+  box-shadow: var(--shadow-xl, 0 8px 16px rgba(0, 0, 0, 0.35));
+  padding: 8px;
+  color: var(--color-text-primary, #f1f5f9);
+  max-width: 400px;
+  font-size: 13px;
+}
+
+/* Placeholder */
+.editorWrapper :global(.cm-placeholder) {
+  color: var(--color-text-placeholder, #64748b);
+  font-style: italic;
+}
+
+/* Matching brackets */
+.editorWrapper :global(.cm-matchingBracket) {
+  background-color: rgba(59, 130, 246, 0.2);
+  outline: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.editorWrapper :global(.cm-nonmatchingBracket) {
+  background-color: rgba(239, 68, 68, 0.2);
+  outline: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+/* Scrollbar */
+.editorWrapper :global(.cm-scroller::-webkit-scrollbar) {
+  width: 8px;
+  height: 8px;
+}
+
+.editorWrapper :global(.cm-scroller::-webkit-scrollbar-track) {
+  background: var(--color-background, #0f172a);
+}
+
+.editorWrapper :global(.cm-scroller::-webkit-scrollbar-thumb) {
+  background: var(--color-border, #475569);
+  border-radius: 4px;
+}
+
+.editorWrapper :global(.cm-scroller::-webkit-scrollbar-thumb:hover) {
+  background: var(--color-text-secondary, #94a3b8);
+}
+
+/* Selection */
+.editorWrapper :global(.cm-selectionMatch) {
+  background-color: rgba(59, 130, 246, 0.2);
+}
+
+/* Focused state */
+.editorWrapper :global(.cm-focused) {
+  outline: none;
+}
+

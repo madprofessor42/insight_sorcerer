@@ -18,6 +18,13 @@ export interface DataPointsTableInputProps {
 }
 
 /**
+ * Sort data points by X in ascending order.
+ */
+function sortDataPointsByX(points: DataPoint[]): DataPoint[] {
+  return [...points].sort((a, b) => a.x - b.x);
+}
+
+/**
  * Editable table component for converter data points.
  */
 export function DataPointsTableInput({
@@ -27,7 +34,7 @@ export function DataPointsTableInput({
   onChange,
   placeholder = '0,0;1,1;2,2'
 }: DataPointsTableInputProps) {
-  const [dataPoints, setDataPoints] = useState<DataPoint[]>(() => parseDataPoints(value));
+  const [dataPoints, setDataPoints] = useState<DataPoint[]>(() => sortDataPointsByX(parseDataPoints(value)));
   const [editingCell, setEditingCell] = useState<{ row: number; col: 'x' | 'y' } | null>(null);
   const [tempEditValue, setTempEditValue] = useState<string>('');
   const [draggedRow, setDraggedRow] = useState<number | null>(null);
@@ -38,7 +45,7 @@ export function DataPointsTableInput({
   // Only update if the change came from outside (not from our own updates)
   useEffect(() => {
     if (!isInternalUpdateRef.current && value !== prevValueRef.current) {
-      const parsed = parseDataPoints(value);
+      const parsed = sortDataPointsByX(parseDataPoints(value));
       setDataPoints(parsed);
       prevValueRef.current = value;
     }
@@ -64,10 +71,11 @@ export function DataPointsTableInput({
   }, [dataPoints, onChange]);
 
   const handleAddRow = useCallback(() => {
-    // Add new point with x = last x + 1, y = last y
-    const lastPoint = dataPoints[dataPoints.length - 1] || { x: 0, y: 0 };
+    // Add new point with x = max x + 1, y = last y (after sorting)
+    const sorted = sortDataPointsByX(dataPoints);
+    const lastPoint = sorted[sorted.length - 1] || { x: 0, y: 0 };
     const newPoint = { x: lastPoint.x + 1, y: lastPoint.y };
-    const updated = [...dataPoints, newPoint];
+    const updated = sortDataPointsByX([...dataPoints, newPoint]);
     setDataPoints(updated);
     
     // Call onChange after state update, not inside setState
@@ -157,9 +165,12 @@ export function DataPointsTableInput({
     // Valid value - make sure it's committed
     const updated = [...dataPoints];
     updated[rowIndex] = { ...updated[rowIndex], [col]: numValue };
-    setDataPoints(updated);
     
-    const formatted = formatDataPoints(updated);
+    // Sort by X if X column was changed
+    const sorted = col === 'x' ? sortDataPointsByX(updated) : updated;
+    setDataPoints(sorted);
+    
+    const formatted = formatDataPoints(sorted);
     isInternalUpdateRef.current = true;
     prevValueRef.current = formatted;
     onChange(formatted);

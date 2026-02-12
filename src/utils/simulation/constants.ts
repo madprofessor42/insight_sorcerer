@@ -29,6 +29,7 @@ export const CHART_COLORS = {
   grid: 'rgba(148, 163, 184, 0.2)',
   background: '#0f172a',     // --color-background
   border: '#475569',         // --color-border
+  accent: '#4A90E2',         // --color-accent (for chart lines, highlights)
 } as const;
 
 /** Color generation using golden angle for optimal distribution */

@@ -10,6 +10,7 @@
   --color-surface-hover: #334155;
   --color-surface-active: #475569;
   --color-surface-secondary: #1e293b;
+  --color-background-elevated: #1e293b; /* Same as surface, for semantic clarity */
   --color-border: #475569;
   --color-text-primary: #f1f5f9;
   --color-text-secondary: #94a3b8;
@@ -20,6 +21,9 @@
   --color-primary: #3b82f6;
   --color-primary-hover: #2563eb;
   --color-primary-active: #1d4ed8;
+  
+  /* Accent (Used for charts, highlights) */
+  --color-accent: #4A90E2;
   
   /* Success (Green) */
   --color-success: #10b981;

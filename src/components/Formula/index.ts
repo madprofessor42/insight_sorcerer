@@ -10,3 +10,6 @@ export type { FormulaEditorModalProps } from './FormulaEditorModal';
 export { DataPointsTableInput } from './DataPointsTableInput';
 export type { DataPointsTableInputProps } from './DataPointsTableInput';
 
+export { ConverterPreviewChart } from './ConverterPreviewChart';
+export type { ConverterPreviewChartProps } from './ConverterPreviewChart';
+

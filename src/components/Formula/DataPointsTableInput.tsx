@@ -3,10 +3,12 @@
  * 
  * Allows users to edit converter data points in a table format (x, y pairs).
  * Supports adding, removing, and editing rows.
+ * Includes a preview chart showing the interpolation.
  */
 
 import { useCallback, useState, useEffect, useRef } from 'react';
 import { parseDataPoints, formatDataPoints, type DataPoint } from '../../utils/simulation';
+import { ConverterPreviewChart } from './ConverterPreviewChart';
 import styles from './DataPointsTableInput.module.css';
 
 export interface DataPointsTableInputProps {
@@ -14,6 +16,7 @@ export interface DataPointsTableInputProps {
   label: string;
   value: string; // Format: "x1,y1;x2,y2;..."
   onChange: (value: string) => void;
+  interpolation?: 'Linear' | 'Discrete'; // For preview chart
 }
 
 /**
@@ -30,7 +33,8 @@ export function DataPointsTableInput({
   id,
   label,
   value,
-  onChange
+  onChange,
+  interpolation = 'Linear'
 }: DataPointsTableInputProps) {
   const [dataPoints, setDataPoints] = useState<DataPoint[]>(() => parseDataPoints(value));
   const [editingCell, setEditingCell] = useState<{ row: number; col: 'x' | 'y' } | null>(null);
@@ -182,6 +186,12 @@ export function DataPointsTableInput({
       <label className={styles.label} htmlFor={id}>
         {label}
       </label>
+      
+      {/* Preview chart */}
+      <ConverterPreviewChart 
+        dataPoints={dataPoints}
+        interpolation={interpolation}
+      />
       
       <div className={styles.tableWrapper}>
         <table className={styles.table}>

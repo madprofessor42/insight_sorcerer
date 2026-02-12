@@ -203,6 +203,11 @@ export function NodePanel() {
           
           // Use DataPointsTableInput for table type fields
           if (prop.editorType === 'table') {
+            // For Converter nodes, pass the interpolation mode to the chart
+            const interpolation = nodeType === 'Converter' 
+              ? (selectedNode.interpolation as 'Linear' | 'Discrete' | undefined) 
+              : undefined;
+            
             return (
               <div key={prop.dataKey} className={styles.fieldGroup}>
                 <DataPointsTableInput
@@ -210,6 +215,7 @@ export function NodePanel() {
                   label={prop.label}
                   value={propertyValues[prop.dataKey] || ''}
                   onChange={(value) => handlePropertyChange(prop.dataKey, String(value || ''))}
+                  interpolation={interpolation}
                 />
               </div>
             );

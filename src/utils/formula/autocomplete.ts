@@ -5,8 +5,8 @@
 
 import { CompletionContext } from '@codemirror/autocomplete';
 import type { CompletionResult } from '@codemirror/autocomplete';
-import type { AvailableReference } from '../config';
-import { FORMULA_FUNCTIONS } from '../config/formula-functions';
+import type { AvailableReference } from '../../config';
+import { FORMULA_FUNCTIONS } from '../../config/formula-functions';
 
 export interface AutocompleteOptions {
   availableReferences: AvailableReference[];

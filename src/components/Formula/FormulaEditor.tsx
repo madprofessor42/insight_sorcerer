@@ -10,8 +10,12 @@ import { autocompletion } from '@codemirror/autocomplete';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { syntaxHighlighting } from '@codemirror/language';
 import type { AvailableReference } from '../../config';
-import { formulaLanguage, formulaHighlightStyle } from '../../utils/formula-language';
-import { createFormulaAutocomplete, referenceCompletionSource } from '../../utils/formula-autocomplete';
+import {
+  formulaLanguage,
+  formulaHighlightStyle,
+  createFormulaAutocomplete,
+  referenceCompletionSource,
+} from '../../utils/formula';
 import styles from './FormulaEditor.module.css';
 
 export interface FormulaEditorProps {
@@ -75,7 +79,8 @@ export function FormulaEditor({
         referenceCompletionSource({ availableReferences }),
       ],
       activateOnTyping: true,
-      maxRenderedOptions: 15,
+      maxRenderedOptions: 20,
+      defaultKeymap: true,
     }),
     keymap.of([
       ...defaultKeymap,

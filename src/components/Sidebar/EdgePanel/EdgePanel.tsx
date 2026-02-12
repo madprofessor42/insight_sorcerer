@@ -80,8 +80,7 @@ export function EdgePanel() {
     setPreviousEdgeKey(selectedEdgeKey);
   }, [selectedEdgeKey, previousEdgeKey, linkDataArray, updateEdgeProperty]);
 
-  // Initialize property values ONLY when selection changes (not when properties update)
-  // This prevents overwriting user input while they're typing
+  // Initialize property values when selection changes
   useEffect(() => {
     if (selectedEdgeKey && selectedEdge) {
       setBidirectionalActive(selectedEdge.bidirectional === true);
@@ -100,6 +99,41 @@ export function EdgePanel() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedEdgeKey]); // Only depend on KEY change, not on edge data updates
+  
+  // Sync property values when edge data changes externally (e.g., inline editing)
+  // But preserve local values that user is currently editing
+  useEffect(() => {
+    if (selectedEdgeKey && selectedEdge) {
+      // Sync bidirectional state
+      if (selectedEdge.bidirectional !== bidirectionalActive) {
+        setBidirectionalActive(selectedEdge.bidirectional === true);
+      }
+      
+      // Sync property values
+      const linkType = normalizeLinkType(selectedEdge.category);
+      const config = getLinkConfiguration(linkType);
+      if (config) {
+        setPropertyValues(prevValues => {
+          const newValues = { ...prevValues };
+          let hasChanges = false;
+          
+          config.displayProperties.forEach(prop => {
+            const currentValue = selectedEdge[prop.dataKey];
+            const normalizedValue = (currentValue ?? '') as string;
+            
+            // Only update if value changed externally
+            if (normalizedValue !== prevValues[prop.dataKey]) {
+              newValues[prop.dataKey] = normalizedValue;
+              hasChanges = true;
+            }
+          });
+          
+          // Only trigger state update if something actually changed
+          return hasChanges ? newValues : prevValues;
+        });
+      }
+    }
+  }, [selectedEdge, selectedEdgeKey, bidirectionalActive]);
 
   if (!selectedEdge) {
     return null;

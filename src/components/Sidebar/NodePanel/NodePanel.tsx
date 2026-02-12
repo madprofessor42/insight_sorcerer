@@ -81,8 +81,7 @@ export function NodePanel() {
     setPreviousNodeKey(selectedNodeKey);
   }, [selectedNodeKey, previousNodeKey, nodeDataArray, updateNodeProperty]);
 
-  // Initialize property values ONLY when selection changes (not when properties update)
-  // This prevents overwriting user input while they're typing
+  // Initialize property values when selection changes
   useEffect(() => {
     if (selectedNodeKey && selectedNode) {
       const nodeType = selectedNode.category as NodeType;
@@ -98,6 +97,35 @@ export function NodePanel() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedNodeKey]); // Only depend on KEY change, not on node data updates
+  
+  // Sync property values when node data changes externally (e.g., inline editing)
+  // But preserve local values that user is currently editing
+  useEffect(() => {
+    if (selectedNodeKey && selectedNode) {
+      const nodeType = selectedNode.category as NodeType;
+      const config = getNodeConfiguration(nodeType);
+      if (config && config.displayProperties && config.displayProperties.length > 0) {
+        setPropertyValues(prevValues => {
+          const newValues = { ...prevValues };
+          let hasChanges = false;
+          
+          config.displayProperties.forEach(prop => {
+            const currentValue = selectedNode[prop.dataKey];
+            const normalizedValue = (currentValue ?? '') as string;
+            
+            // Only update if value changed externally (different from both current local and redux)
+            if (normalizedValue !== prevValues[prop.dataKey]) {
+              newValues[prop.dataKey] = normalizedValue;
+              hasChanges = true;
+            }
+          });
+          
+          // Only trigger state update if something actually changed
+          return hasChanges ? newValues : prevValues;
+        });
+      }
+    }
+  }, [selectedNode, selectedNodeKey]);
 
   if (!selectedNode) {
     return null;

@@ -182,7 +182,6 @@ export function NodePanel() {
                   label={prop.label}
                   value={propertyValues[prop.dataKey] || ''}
                   onChange={(value) => handlePropertyChange(prop.dataKey, String(value || ''))}
-                  placeholder={prop.defaultValue}
                 />
               </div>
             );

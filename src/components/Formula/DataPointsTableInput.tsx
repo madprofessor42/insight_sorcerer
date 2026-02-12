@@ -14,7 +14,6 @@ export interface DataPointsTableInputProps {
   label: string;
   value: string; // Format: "x1,y1;x2,y2;..."
   onChange: (value: string) => void;
-  placeholder?: string;
 }
 
 /**
@@ -31,26 +30,35 @@ export function DataPointsTableInput({
   id,
   label,
   value,
-  onChange,
-  placeholder = '0,0;1,1;2,2'
+  onChange
 }: DataPointsTableInputProps) {
-  const [dataPoints, setDataPoints] = useState<DataPoint[]>(() => sortDataPointsByX(parseDataPoints(value)));
+  const [dataPoints, setDataPoints] = useState<DataPoint[]>(() => parseDataPoints(value));
   const [editingCell, setEditingCell] = useState<{ row: number; col: 'x' | 'y' } | null>(null);
   const [tempEditValue, setTempEditValue] = useState<string>('');
   const [draggedRow, setDraggedRow] = useState<number | null>(null);
-  const isInternalUpdateRef = useRef(false);
-  const prevValueRef = useRef(value);
+  // Track the last value we saved to redux so we can distinguish our own
+  // updates from external changes (e.g., selecting a different node)
+  const lastSavedRef = useRef(value);
 
-  // Sync internal state with external value changes (e.g., when selecting different node)
-  // Only update if the change came from outside (not from our own updates)
+  // Sync from external changes only (e.g., selecting different node)
+  // Ignore our own writes coming back through value prop
   useEffect(() => {
-    if (!isInternalUpdateRef.current && value !== prevValueRef.current) {
-      const parsed = sortDataPointsByX(parseDataPoints(value));
-      setDataPoints(parsed);
-      prevValueRef.current = value;
+    if (value !== lastSavedRef.current) {
+      setDataPoints(parseDataPoints(value));
+      lastSavedRef.current = value;
     }
-    isInternalUpdateRef.current = false;
   }, [value]);
+
+  /**
+   * Sort data points and save to redux without affecting local display state.
+   * Local state keeps user's editing order; redux always gets sorted data.
+   */
+  const saveToRedux = useCallback((points: DataPoint[]) => {
+    const sorted = sortDataPointsByX(points);
+    const formatted = formatDataPoints(sorted);
+    lastSavedRef.current = formatted;
+    onChange(formatted);
+  }, [onChange]);
 
   const handleCellChange = useCallback((rowIndex: number, col: 'x' | 'y', newValue: string) => {
     // Allow empty input during editing
@@ -62,28 +70,18 @@ export function DataPointsTableInput({
     const updated = [...dataPoints];
     updated[rowIndex] = { ...updated[rowIndex], [col]: numValue };
     setDataPoints(updated);
-    
-    // Call onChange after state update, not inside setState
-    const formatted = formatDataPoints(updated);
-    isInternalUpdateRef.current = true;
-    prevValueRef.current = formatted;
-    onChange(formatted);
-  }, [dataPoints, onChange]);
+    saveToRedux(updated);
+  }, [dataPoints, saveToRedux]);
 
   const handleAddRow = useCallback(() => {
-    // Add new point with x = max x + 1, y = last y (after sorting)
-    const sorted = sortDataPointsByX(dataPoints);
-    const lastPoint = sorted[sorted.length - 1] || { x: 0, y: 0 };
-    const newPoint = { x: lastPoint.x + 1, y: lastPoint.y };
-    const updated = sortDataPointsByX([...dataPoints, newPoint]);
+    // Add new point with x = max x + 1, y = last y
+    const lastPoint = dataPoints[dataPoints.length - 1] || { x: 0, y: 0 };
+    const maxX = Math.max(...dataPoints.map(p => p.x), 0);
+    const newPoint = { x: maxX + 1, y: lastPoint.y };
+    const updated = [...dataPoints, newPoint];
     setDataPoints(updated);
-    
-    // Call onChange after state update, not inside setState
-    const formatted = formatDataPoints(updated);
-    isInternalUpdateRef.current = true;
-    prevValueRef.current = formatted;
-    onChange(formatted);
-  }, [dataPoints, onChange]);
+    saveToRedux(updated);
+  }, [dataPoints, saveToRedux]);
 
   const handleRemoveRow = useCallback((rowIndex: number) => {
     if (dataPoints.length <= 1) {
@@ -93,13 +91,8 @@ export function DataPointsTableInput({
     
     const updated = dataPoints.filter((_, i) => i !== rowIndex);
     setDataPoints(updated);
-    
-    // Call onChange after state update, not inside setState
-    const formatted = formatDataPoints(updated);
-    isInternalUpdateRef.current = true;
-    prevValueRef.current = formatted;
-    onChange(formatted);
-  }, [dataPoints, onChange]);
+    saveToRedux(updated);
+  }, [dataPoints, saveToRedux]);
 
   const handleDragStart = useCallback((e: React.DragEvent, rowIndex: number) => {
     setDraggedRow(rowIndex);
@@ -130,26 +123,20 @@ export function DataPointsTableInput({
     
     // Save final state
     if (draggedRow !== null) {
-      const formatted = formatDataPoints(dataPoints);
-      isInternalUpdateRef.current = true;
-      prevValueRef.current = formatted;
-      onChange(formatted);
+      saveToRedux(dataPoints);
     }
     
     setDraggedRow(null);
-  }, [draggedRow, dataPoints, onChange]);
+  }, [draggedRow, dataPoints, saveToRedux]);
 
   const handleDragEnd = useCallback(() => {
     // Save final state on drag end (in case drop wasn't triggered)
     if (draggedRow !== null) {
-      const formatted = formatDataPoints(dataPoints);
-      isInternalUpdateRef.current = true;
-      prevValueRef.current = formatted;
-      onChange(formatted);
+      saveToRedux(dataPoints);
     }
     
     setDraggedRow(null);
-  }, [draggedRow, dataPoints, onChange]);
+  }, [draggedRow, dataPoints, saveToRedux]);
 
   const handleCellBlur = useCallback((rowIndex: number, col: 'x' | 'y') => {
     // If the temp value is empty or invalid, restore the previous value
@@ -165,19 +152,12 @@ export function DataPointsTableInput({
     // Valid value - make sure it's committed
     const updated = [...dataPoints];
     updated[rowIndex] = { ...updated[rowIndex], [col]: numValue };
-    
-    // Sort by X if X column was changed
-    const sorted = col === 'x' ? sortDataPointsByX(updated) : updated;
-    setDataPoints(sorted);
-    
-    const formatted = formatDataPoints(sorted);
-    isInternalUpdateRef.current = true;
-    prevValueRef.current = formatted;
-    onChange(formatted);
+    setDataPoints(updated);
+    saveToRedux(updated);
     
     setEditingCell(null);
     setTempEditValue('');
-  }, [tempEditValue, dataPoints, onChange]);
+  }, [tempEditValue, dataPoints, saveToRedux]);
 
   const handleCellClick = useCallback((rowIndex: number, col: 'x' | 'y') => {
     setEditingCell({ row: rowIndex, col });
@@ -294,12 +274,6 @@ export function DataPointsTableInput({
       >
         + Add Data Point
       </button>
-
-      {placeholder && dataPoints.length === 1 && dataPoints[0].x === 0 && dataPoints[0].y === 0 && (
-        <p className={styles.hint}>
-          Hint: {placeholder}
-        </p>
-      )}
     </div>
   );
 }

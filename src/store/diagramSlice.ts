@@ -3,7 +3,7 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 import * as go from 'gojs';
 import type { LinkType } from '../config';
 import { DEFAULT_LINK_TYPE } from '../config';
-import type { SimulationConfig } from '../utils/simulation';
+import type { SimulationConfig, ResultChartConfig } from '../utils/simulation';
 import { DEFAULT_SIMULATION_CONFIG } from '../utils/simulation';
 
 interface DiagramState {
@@ -22,6 +22,8 @@ interface DiagramState {
   selectedEdgeKey: go.Key | null;
   // Simulation configuration
   simulationConfig: SimulationConfig;
+  // Result charts configuration
+  resultCharts: ResultChartConfig[];
 }
 
 const initialState: DiagramState = {
@@ -33,6 +35,7 @@ const initialState: DiagramState = {
   selectedNodeKey: null,
   selectedEdgeKey: null,
   simulationConfig: DEFAULT_SIMULATION_CONFIG,
+  resultCharts: [],
 };
 
 // Helper functions for immutable array updates
@@ -140,6 +143,26 @@ export const diagramSlice = createSlice({
     setSimulationConfig: (state, action: PayloadAction<SimulationConfig>) => {
       state.simulationConfig = action.payload;
     },
+
+    // Result charts configuration
+    addResultChart: (state, action: PayloadAction<ResultChartConfig>) => {
+      state.resultCharts.push(action.payload);
+    },
+    
+    updateResultChart: (state, action: PayloadAction<ResultChartConfig>) => {
+      const index = state.resultCharts.findIndex(c => c.id === action.payload.id);
+      if (index !== -1) {
+        state.resultCharts[index] = action.payload;
+      }
+    },
+    
+    removeResultChart: (state, action: PayloadAction<string>) => {
+      state.resultCharts = state.resultCharts.filter(c => c.id !== action.payload);
+    },
+    
+    setResultCharts: (state, action: PayloadAction<ResultChartConfig[]>) => {
+      state.resultCharts = action.payload;
+    },
   },
 });
 
@@ -159,7 +182,11 @@ export const {
   clearSelectedNode,
   setSelectedEdgeKey,
   clearSelectedEdge,
-  setSimulationConfig
+  setSimulationConfig,
+  addResultChart,
+  updateResultChart,
+  removeResultChart,
+  setResultCharts
 } = diagramSlice.actions;
 
 export default diagramSlice.reducer;

@@ -12,5 +12,13 @@ export {
   CHART_DIMENSIONS
 } from './constants';
 export { getChartOptions } from './chartConfig';
-export type { SimulationConfig, SimulationRunResult } from './types';
+export type { 
+  SimulationConfig, 
+  SimulationRunResult,
+  ResultChartConfig,
+  ChartType,
+  TimeSeriesChartConfig,
+  ScatterPlotChartConfig,
+  TableChartConfig
+} from './types';
 

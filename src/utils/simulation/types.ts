@@ -27,3 +27,41 @@ export interface SimulationRunResult {
   errorPrimitiveName?: string;
 }
 
+/**
+ * Type of result chart
+ */
+export type ChartType = 'timeSeries' | 'scatterPlot' | 'table';
+
+/**
+ * Configuration for a single result chart
+ */
+export interface ResultChartConfig {
+  id: string; // unique chart ID
+  type: ChartType;
+  title: string;
+  selectedKeys: string[]; // node/edge keys to display
+}
+
+/**
+ * Time series specific configuration
+ */
+export interface TimeSeriesChartConfig extends ResultChartConfig {
+  type: 'timeSeries';
+}
+
+/**
+ * Scatter plot specific configuration (placeholder for future)
+ */
+export interface ScatterPlotChartConfig extends ResultChartConfig {
+  type: 'scatterPlot';
+  xAxisKey?: string;
+  yAxisKey?: string;
+}
+
+/**
+ * Table specific configuration (placeholder for future)
+ */
+export interface TableChartConfig extends ResultChartConfig {
+  type: 'table';
+}
+

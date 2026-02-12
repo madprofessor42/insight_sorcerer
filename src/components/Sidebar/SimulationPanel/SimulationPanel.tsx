@@ -6,12 +6,13 @@
 
 import { useState, useCallback } from 'react';
 import { useAppSelector, useAppDispatch } from '../../../store/hooks';
-import { setSimulationConfig } from '../../../store/diagramSlice';
+import { setSimulationConfig, setResultCharts } from '../../../store/diagramSlice';
 import type { SimulationConfig } from '../../../utils/simulation';
 import { DEFAULT_SIMULATION_CONFIG } from '../../../utils/simulation';
-import { BugIcon } from '../../ui';
+import { BugIcon, ChartIcon } from '../../ui';
 import { SimulationSettingsModal } from './SimulationSettingsModal';
 import { SimulationResultsModal } from './SimulationResultsModal';
+import { ResultChartsConfigModal } from './ResultChartsConfigModal';
 import { runSimulation } from '../../../utils/simulation';
 import type { SimulationRunResult } from '../../../utils/simulation';
 import styles from './SimulationPanel.module.css';
@@ -19,6 +20,7 @@ import styles from './SimulationPanel.module.css';
 export function SimulationPanel() {
   const dispatch = useAppDispatch();
   const config = useAppSelector((state) => state.diagram.simulationConfig);
+  const resultCharts = useAppSelector((state) => state.diagram.resultCharts);
   const nodeDataArray = useAppSelector((state) => state.diagram.nodeDataArray);
   const linkDataArray = useAppSelector((state) => state.diagram.linkDataArray);
   const selectedNodeKey = useAppSelector((state) => state.diagram.selectedNodeKey);
@@ -26,6 +28,7 @@ export function SimulationPanel() {
   const canRun = nodeDataArray.length > 0; // Simple check - can run if we have nodes
   
   const [showSettings, setShowSettings] = useState(false);
+  const [showChartsConfig, setShowChartsConfig] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [simulationResult, setSimulationResult] = useState<SimulationRunResult | null>(null);
   const [isRunning, setIsRunning] = useState(false);
@@ -33,6 +36,11 @@ export function SimulationPanel() {
   // Handle settings apply
   const handleApplySettings = useCallback((newConfig: SimulationConfig) => {
     dispatch(setSimulationConfig(newConfig));
+  }, [dispatch]);
+
+  // Handle charts config apply
+  const handleApplyChartsConfig = useCallback((charts: typeof resultCharts) => {
+    dispatch(setResultCharts(charts));
   }, [dispatch]);
 
   // Handle run simulation
@@ -61,17 +69,27 @@ export function SimulationPanel() {
 
   return (
     <section className={styles.panel}>
-      {/* Header with bug icon button */}
+      {/* Header with title and config buttons */}
       <div className={styles.header}>
         <h2 className={styles.title}>Simulation</h2>
-        <button
-          onClick={() => setShowSettings(true)}
-          className={styles.settingsButton}
-          title="Simulation Settings"
-          aria-label="Open simulation settings"
-        >
-          <BugIcon width={18} height={18} />
-        </button>
+        <div className={styles.headerButtons}>
+          <button
+            onClick={() => setShowSettings(true)}
+            className={styles.settingsButton}
+            title="Simulation Settings"
+            aria-label="Open simulation settings"
+          >
+            <BugIcon width={18} height={18} />
+          </button>
+          <button
+            onClick={() => setShowChartsConfig(true)}
+            className={styles.chartsButton}
+            title="Configure Result Charts"
+            aria-label="Configure result charts"
+          >
+            <ChartIcon width={18} height={18} />
+          </button>
+        </div>
       </div>
 
       {/* Quick config display */}
@@ -115,6 +133,14 @@ export function SimulationPanel() {
         onApply={handleApplySettings}
       />
 
+      {/* Result Charts Config Modal */}
+      <ResultChartsConfigModal
+        isOpen={showChartsConfig}
+        onClose={() => setShowChartsConfig(false)}
+        charts={resultCharts}
+        onSave={handleApplyChartsConfig}
+      />
+
       {/* Results Modal */}
       <SimulationResultsModal
         isOpen={showResults}
@@ -122,6 +148,7 @@ export function SimulationPanel() {
         result={simulationResult}
         nodeDataArray={nodeDataArray}
         linkDataArray={linkDataArray}
+        charts={resultCharts}
       />
     </section>
   );

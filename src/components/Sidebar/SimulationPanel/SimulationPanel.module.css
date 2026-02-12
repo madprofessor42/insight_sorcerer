@@ -20,7 +20,13 @@
   color: var(--color-text-primary);
 }
 
-.settingsButton {
+.headerButtons {
+  display: flex;
+  gap: 6px;
+}
+
+.settingsButton,
+.chartsButton {
   padding: 6px;
   background: transparent;
   border: 1px solid var(--color-border);
@@ -33,7 +39,8 @@
   transition: all 0.2s;
 }
 
-.settingsButton:hover {
+.settingsButton:hover,
+.chartsButton:hover {
   background: var(--color-surface-hover);
   border-color: var(--color-primary);
   color: var(--color-primary);

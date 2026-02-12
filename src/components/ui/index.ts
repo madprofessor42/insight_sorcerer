@@ -7,7 +7,7 @@ export type { FormFieldProps } from './FormField/FormField';
 export { ModalActions } from './ModalActions/ModalActions';
 export type { ModalActionsProps } from './ModalActions/ModalActions';
 
-export { SettingsIcon, BugIcon } from './Icons/Icons';
+export { SettingsIcon, BugIcon, ChartIcon } from './Icons/Icons';
 
 export { Toast } from './Toast/Toast';
 export { ToastContainer } from './Toast/ToastContainer';

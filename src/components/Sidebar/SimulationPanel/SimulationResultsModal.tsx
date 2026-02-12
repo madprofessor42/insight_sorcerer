@@ -2,6 +2,7 @@
  * Simulation Results Modal - displays simulation results with chart.
  * 
  * Shows either success (chart + statistics) or error message.
+ * Supports multiple configured charts.
  */
 
 import { useMemo } from 'react';
@@ -17,7 +18,7 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { Modal } from '../../ui';
-import type { SimulationRunResult } from '../../../utils/simulation';
+import type { SimulationRunResult, ResultChartConfig } from '../../../utils/simulation';
 import { generateChartColor } from '../../../utils/simulation/constants';
 import { getChartOptions } from '../../../utils/simulation/chartConfig';
 import { resolveNodeInfo, getLinkDisplayName } from '../../../utils/diagram-data';
@@ -41,6 +42,7 @@ export interface SimulationResultsModalProps {
   result: SimulationRunResult | null;
   nodeDataArray: Array<go.ObjectData>;
   linkDataArray: Array<go.ObjectData>;
+  charts: ResultChartConfig[];
 }
 
 /**
@@ -80,34 +82,69 @@ export function SimulationResultsModal({
   result,
   nodeDataArray,
   linkDataArray,
+  charts,
 }: SimulationResultsModalProps) {
-  const chartData = useMemo(() => {
+  // Generate chart data for each configured chart
+  const chartsData = useMemo(() => {
     if (!result?.success || !result.times || !result.series) {
-      return null;
+      return [];
     }
 
-    // Create datasets for each series - resolve names on-demand from series keys
-    const datasets = Object.entries(result.series).map(([key, values], index) => {
-      // Use diagram-data utilities to resolve display name
-      const label = resolveSimulationKeyName(key, nodeDataArray, linkDataArray);
-      
+    // If no charts configured, show all series in a default chart
+    if (charts.length === 0) {
+      const datasets = Object.entries(result.series).map(([key, values], index) => {
+        const label = resolveSimulationKeyName(key, nodeDataArray, linkDataArray);
+        
+        return {
+          label,
+          data: values,
+          borderColor: generateChartColor(index),
+          backgroundColor: generateChartColor(index),
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          tension: 0.1,
+        };
+      });
+
+      return [{
+        title: 'All Results',
+        data: {
+          labels: result.times.map(t => t.toString()),
+          datasets,
+        },
+      }];
+    }
+
+    // Generate data for each configured chart
+    return charts.map(chart => {
+      const datasets = chart.selectedKeys
+        .filter(key => result.series?.[key]) // Only include keys that have data
+        .map((key, index) => {
+          const label = resolveSimulationKeyName(key, nodeDataArray, linkDataArray);
+          const values = result.series![key];
+          
+          return {
+            label,
+            data: values,
+            borderColor: generateChartColor(index),
+            backgroundColor: generateChartColor(index),
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            tension: 0.1,
+          };
+        });
+
       return {
-        label,
-        data: values,
-        borderColor: generateChartColor(index),
-        backgroundColor: generateChartColor(index),
-        borderWidth: 2,
-        pointRadius: 0, // Hide points for cleaner look
-        pointHoverRadius: 4,
-        tension: 0.1, // Slight curve
+        title: chart.title,
+        data: {
+          labels: result.times!.map(t => t.toString()),
+          datasets,
+        },
       };
     });
-
-    return {
-      labels: result.times.map(t => t.toString()),
-      datasets,
-    };
-  }, [result, nodeDataArray, linkDataArray]);
+  }, [result, nodeDataArray, linkDataArray, charts]);
 
   const chartOptions = useMemo(() => getChartOptions(), []);
 
@@ -138,10 +175,17 @@ export function SimulationResultsModal({
           </div>
         )}
 
-        {result && result.success && chartData && (
+        {result && result.success && chartsData.length > 0 && (
           <>
-            <div className={styles.chartContainer}>
-              <Line data={chartData} options={chartOptions} />
+            <div className={styles.chartsGrid}>
+              {chartsData.map((chartInfo, index) => (
+                <div key={index} className={styles.chartWrapper}>
+                  <h3 className={styles.chartWrapperTitle}>{chartInfo.title}</h3>
+                  <div className={styles.chartContainer}>
+                    <Line data={chartInfo.data} options={chartOptions} />
+                  </div>
+                </div>
+              ))}
             </div>
             
             <div className={styles.stats}>
@@ -154,6 +198,10 @@ export function SimulationResultsModal({
                 <span className={styles.statValue}>
                   {Object.keys(result.series || {}).length}
                 </span>
+              </div>
+              <div className={styles.stat}>
+                <span className={styles.statLabel}>Charts:</span>
+                <span className={styles.statValue}>{chartsData.length}</span>
               </div>
             </div>
 

@@ -130,6 +130,8 @@ export function DiagramToolbar({
     try {
       await deleteDiagram(id);
       if (id === currentDiagramId) {
+        // Clear current diagram and lastOpenedDiagramId
+        await saveLastOpenedDiagramId(null);
         onDiagramChanged(null, '');
       }
       toast.showSuccess('Диаграмма удалена');

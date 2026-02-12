@@ -5,15 +5,17 @@ import { DiagramOverview } from '../../components/DiagramOverview';
 import { DiagramToolbar } from '../../components/DiagramToolbar';
 import { Sidebar } from '../../components/Sidebar';
 import { ToastProvider } from '../../components/ui';
-import { useAppSelector } from '../../store/hooks';
+import { useAppSelector, useAppDispatch } from '../../store/hooks';
+import { clearDiagram } from '../../store/diagramSlice';
 import { useDiagramModelSync } from '../../hooks/diagram/useDiagramModelSync';
 import { useDiagramSelection } from '../../hooks/diagram/useDiagramSelection';
 import { useDiagramPersistence } from '../../hooks/diagram/useDiagramPersistence';
-import { getLastOpenedDiagramId } from '../../utils/database';
+import { getLastOpenedDiagramId, saveLastOpenedDiagramId } from '../../utils/database';
 import './DiagramEditor.css';
 
 export function DiagramEditor() {
   const { selectedLinkType } = useAppSelector((state) => state.diagram);
+  const dispatch = useAppDispatch();
   const handleModelChange = useDiagramModelSync();
   const handleDiagramEvent = useDiagramSelection();
   const { loadDiagram, getSavedDiagrams } = useDiagramPersistence();
@@ -45,6 +47,11 @@ export function DiagramEditor() {
         }
       } catch (err) {
         console.error('Failed to load last diagram:', err);
+        // If diagram was deleted, clear the last opened ID and start with new diagram
+        await saveLastOpenedDiagramId(null);
+        dispatch(clearDiagram());
+        setCurrentDiagramId(null);
+        setCurrentDiagramName('');
       }
     };
 

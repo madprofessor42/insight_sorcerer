@@ -188,8 +188,8 @@ export function DataPointsTableInput({
           <thead>
             <tr>
               <th className={styles.headerCellDrag}></th>
-              <th className={styles.headerCell}>X (Input)</th>
-              <th className={styles.headerCell}>Y (Output)</th>
+              <th className={styles.headerCell}>Input</th>
+              <th className={styles.headerCell}>Output</th>
               <th className={styles.headerCellActions}>Actions</th>
             </tr>
           </thead>

@@ -21,6 +21,7 @@
   overflow: auto;
   max-height: 300px;
   background-color: var(--color-background);
+  position: relative;
 }
 
 .table {
@@ -28,6 +29,19 @@
   border-collapse: collapse;
   font-size: var(--font-size-sm);
   table-layout: fixed;
+}
+
+.headerCellDrag {
+  padding: var(--spacing-2);
+  text-align: center;
+  font-weight: var(--font-weight-semibold);
+  background-color: var(--color-surface);
+  border-bottom: 2px solid var(--color-border);
+  color: var(--color-text-primary);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  width: 40px;
 }
 
 .headerCell {
@@ -52,20 +66,77 @@
   position: sticky;
   top: 0;
   z-index: 1;
-  width: 80px;
+  width: 70px;
+  min-width: 70px;
+  white-space: nowrap;
 }
 
 .row {
-  transition: background-color var(--transition-fast);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: move;
+  position: relative;
 }
 
-.row:hover {
+.row:hover:not(.rowDragging) {
   background-color: var(--color-surface-hover);
+  transform: scale(1.01);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.rowDragging {
+  opacity: 0.6;
+  background-color: var(--color-primary);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: scale(1.02);
+  z-index: 1000;
+}
+
+.rowDragging .cellDisplay,
+.rowDragging .dragHandle {
+  color: white;
+}
+
+.rowDragging .cellInput {
+  color: var(--color-text-primary);
+}
+
+.cellDrag {
+  padding: var(--spacing-1);
+  border-bottom: var(--input-border-width) solid var(--color-border);
+  text-align: center;
+  vertical-align: middle;
+  width: 40px;
+  transition: all 0.2s ease;
+}
+
+.dragHandle {
+  color: var(--color-text-placeholder);
+  font-size: 18px;
+  line-height: 1;
+  cursor: grab;
+  user-select: none;
+  padding: var(--spacing-1);
+  display: inline-block;
+  transition: all 0.2s ease;
+  transform-origin: center;
+}
+
+.dragHandle:hover {
+  color: var(--color-primary);
+  transform: scale(1.2);
+}
+
+.row:active .dragHandle,
+.dragHandle:active {
+  cursor: grabbing;
+  transform: scale(0.9);
 }
 
 .cell {
   padding: 0;
   border-bottom: var(--input-border-width) solid var(--color-border);
+  transition: all 0.2s ease;
 }
 
 .cellDisplay {
@@ -76,12 +147,13 @@
   display: flex;
   align-items: center;
   color: var(--color-text-primary);
-  transition: background-color var(--transition-fast);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   box-sizing: border-box;
 }
 
-.cellDisplay:hover {
+.cellDisplay:hover:not(.rowDragging .cellDisplay) {
   background-color: var(--color-surface-hover);
+  transform: translateX(2px);
 }
 
 .cellInput {
@@ -107,6 +179,9 @@
   padding: var(--spacing-1);
   text-align: center;
   border-bottom: var(--input-border-width) solid var(--color-border);
+  vertical-align: middle;
+  width: 70px;
+  min-width: 70px;
 }
 
 .removeButton {

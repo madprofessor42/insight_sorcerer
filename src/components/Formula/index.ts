@@ -8,5 +8,5 @@ export { FormulaEditorModal } from './FormulaEditorModal';
 export type { FormulaEditorModalProps } from './FormulaEditorModal';
 
 export { DataPointsTableInput } from './DataPointsTableInput';
-export type { DataPointsTableInputProps, DataPoint } from './DataPointsTableInput';
+export type { DataPointsTableInputProps } from './DataPointsTableInput';
 

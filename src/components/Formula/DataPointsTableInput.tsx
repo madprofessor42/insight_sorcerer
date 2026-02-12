@@ -30,6 +30,7 @@ export function DataPointsTableInput({
   const [dataPoints, setDataPoints] = useState<DataPoint[]>(() => parseDataPoints(value));
   const [editingCell, setEditingCell] = useState<{ row: number; col: 'x' | 'y' } | null>(null);
   const [tempEditValue, setTempEditValue] = useState<string>('');
+  const [draggedRow, setDraggedRow] = useState<number | null>(null);
   const isInternalUpdateRef = useRef(false);
   const prevValueRef = useRef(value);
 
@@ -92,6 +93,56 @@ export function DataPointsTableInput({
     onChange(formatted);
   }, [dataPoints, onChange]);
 
+  const handleDragStart = useCallback((e: React.DragEvent, rowIndex: number) => {
+    setDraggedRow(rowIndex);
+    // Set drag image to be slightly transparent
+    if (e.currentTarget instanceof HTMLElement) {
+      e.dataTransfer.effectAllowed = 'move';
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent, rowIndex: number) => {
+    e.preventDefault();
+    
+    if (draggedRow === null || draggedRow === rowIndex) {
+      return;
+    }
+    
+    // Dynamically reorder items during drag
+    const updated = [...dataPoints];
+    const [draggedItem] = updated.splice(draggedRow, 1);
+    updated.splice(rowIndex, 0, draggedItem);
+    
+    setDataPoints(updated);
+    setDraggedRow(rowIndex); // Update dragged row index after reordering
+  }, [draggedRow, dataPoints]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    
+    // Save final state
+    if (draggedRow !== null) {
+      const formatted = formatDataPoints(dataPoints);
+      isInternalUpdateRef.current = true;
+      prevValueRef.current = formatted;
+      onChange(formatted);
+    }
+    
+    setDraggedRow(null);
+  }, [draggedRow, dataPoints, onChange]);
+
+  const handleDragEnd = useCallback(() => {
+    // Save final state on drag end (in case drop wasn't triggered)
+    if (draggedRow !== null) {
+      const formatted = formatDataPoints(dataPoints);
+      isInternalUpdateRef.current = true;
+      prevValueRef.current = formatted;
+      onChange(formatted);
+    }
+    
+    setDraggedRow(null);
+  }, [draggedRow, dataPoints, onChange]);
+
   const handleCellBlur = useCallback((rowIndex: number, col: 'x' | 'y') => {
     // If the temp value is empty or invalid, restore the previous value
     const numValue = parseFloat(tempEditValue);
@@ -145,6 +196,7 @@ export function DataPointsTableInput({
         <table className={styles.table}>
           <thead>
             <tr>
+              <th className={styles.headerCellDrag}></th>
               <th className={styles.headerCell}>X (Input)</th>
               <th className={styles.headerCell}>Y (Output)</th>
               <th className={styles.headerCellActions}>Actions</th>
@@ -152,7 +204,20 @@ export function DataPointsTableInput({
           </thead>
           <tbody>
             {dataPoints.map((point, rowIndex) => (
-              <tr key={rowIndex} className={styles.row}>
+              <tr 
+                key={`${point.x}-${point.y}-${rowIndex}`}
+                className={`${styles.row} ${draggedRow === rowIndex ? styles.rowDragging : ''}`}
+                draggable={editingCell === null}
+                onDragStart={(e) => handleDragStart(e, rowIndex)}
+                onDragOver={(e) => handleDragOver(e, rowIndex)}
+                onDrop={handleDrop}
+                onDragEnd={handleDragEnd}
+              >
+                <td className={styles.cellDrag}>
+                  <div className={styles.dragHandle} title="Drag to reorder">
+                    ⋮⋮
+                  </div>
+                </td>
                 <td className={styles.cell}>
                   {editingCell?.row === rowIndex && editingCell?.col === 'x' ? (
                     <input

@@ -10,9 +10,7 @@ import {
   getLinkDisplayName, 
   getLinkType, 
   getNodeDisplayName,
-  isLinkBidirectional,
-  makeNodeCompositeKey,
-  makeEdgeCompositeKey
+  isLinkBidirectional
 } from './core';
 
 // ============================================================================
@@ -25,24 +23,22 @@ import {
 function tryAddNodeReference(
   node: go.ObjectData,
   references: AvailableReference[],
-  addedKeys: Set<string>
+  addedKeys: Set<go.Key>
 ): boolean {
   if (!node) {
     return false;
   }
   
-  const compositeKey = makeNodeCompositeKey(node.key);
-  
   if (node.category !== 'Cloud' && 
       !isLinkLabelNodeData(node) && 
-      !addedKeys.has(compositeKey)) {
+      !addedKeys.has(node.key)) {
     const name = getNodeDisplayName(node);
     references.push({
       id: node.key,
       name: name,
       type: (node.category || 'Variable') as NodeType,
     });
-    addedKeys.add(compositeKey);
+    addedKeys.add(node.key);
     return true;
   }
   return false;
@@ -55,22 +51,20 @@ function tryAddEdgeReference(
   edge: go.ObjectData,
   edgeType: LinkType,
   references: AvailableReference[],
-  addedKeys: Set<string>
+  addedKeys: Set<go.Key>
 ): boolean {
   if (!edge) {
     return false;
   }
   
-  const compositeKey = makeEdgeCompositeKey(edge.key);
-  
-  if (!addedKeys.has(compositeKey)) {
+  if (!addedKeys.has(edge.key)) {
     const edgeName = getLinkDisplayName(edge);
     references.push({
       id: edge.key,
       name: edgeName,
       type: edgeType,
     });
-    addedKeys.add(compositeKey);
+    addedKeys.add(edge.key);
     return true;
   }
   return false;
@@ -140,7 +134,7 @@ export function getAvailableReferences(
   config: ReferenceConfig
 ): AvailableReference[] {
   const references: AvailableReference[] = [];
-  const addedKeys = new Set<string>();
+  const addedKeys = new Set<go.Key>();
 
   // Include incoming connections (both nodes and edges)
   // Config specifies which LINK TYPES to include (not node/edge types)
@@ -269,7 +263,7 @@ export function getAvailableReferencesForEdge(
   config: ReferenceConfig
 ): AvailableReference[] {
   const references: AvailableReference[] = [];
-  const addedKeys = new Set<string>();
+  const addedKeys = new Set<go.Key>();
 
   const sourceNodeKey = currentEdge.from;
   const targetNodeKey = currentEdge.to;

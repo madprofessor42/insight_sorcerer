@@ -7,6 +7,7 @@ import { NodePanel } from './NodePanel/NodePanel';
 import { EdgePanel } from './EdgePanel';
 import { DebugPanel } from './DebugPanel';
 import { SimulationPanel } from './SimulationPanel';
+import { FormulaListPanel } from './FormulaListPanel';
 import { LINK_CONFIGURATIONS, NODE_CONFIGURATIONS } from '../../config';
 import styles from './Sidebar.module.css';
 
@@ -128,6 +129,9 @@ export function Sidebar() {
 
         {/* Simulation Panel */}
         <SimulationPanel />
+
+        {/* Formula List Panel - shown when nothing is selected */}
+        <FormulaListPanel />
 
         {/* Debug Panel - shown when nothing is selected */}
         <DebugPanel />

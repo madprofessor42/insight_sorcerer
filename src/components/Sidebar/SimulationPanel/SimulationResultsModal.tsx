@@ -44,38 +44,34 @@ export interface SimulationResultsModalProps {
 }
 
 /**
- * Resolve display name for a prefixed simulation key.
+ * Resolve display name for a simulation key.
  * Uses diagram-data utilities for consistency with the rest of the app.
  * 
- * @param prefixedKey - Key with prefix (e.g., "node:-1" or "link:-1")
+ * @param key - Unique key (nanoid) for node or link
  * @param nodes - Node data array
  * @param links - Link data array
  * @returns Display name for the chart
  */
 function resolveSimulationKeyName(
-  prefixedKey: string,
+  key: go.Key,
   nodes: Array<go.ObjectData>,
   links: Array<go.ObjectData>
 ): string {
-  const [prefix, keyStr] = prefixedKey.split(':');
-  // Convert string to number if it's a numeric key (e.g., "-1" -> -1)
-  const key = isNaN(Number(keyStr)) ? keyStr : Number(keyStr);
-  
-  if (prefix === 'node') {
-    // Use diagram-data utility for node name resolution
+  // Try to find as node first
+  const node = nodes.find(n => n.key === key);
+  if (node) {
     const nodeInfo = resolveNodeInfo(key, nodes);
     return nodeInfo.name;
-  } else if (prefix === 'link') {
-    // Find link by key and get its display name
-    const link = links.find(l => l.key === key);
-    if (link) {
-      return getLinkDisplayName(link);
-    }
-    return `Link ${key}`;
   }
   
-  // Fallback for unknown prefix
-  return prefixedKey;
+  // Try to find as link
+  const link = links.find(l => l.key === key);
+  if (link) {
+    return getLinkDisplayName(link);
+  }
+  
+  // Fallback if not found
+  return String(key);
 }
 
 export function SimulationResultsModal({
@@ -91,9 +87,9 @@ export function SimulationResultsModal({
     }
 
     // Create datasets for each series - resolve names on-demand from series keys
-    const datasets = Object.entries(result.series).map(([prefixedKey, values], index) => {
+    const datasets = Object.entries(result.series).map(([key, values], index) => {
       // Use diagram-data utilities to resolve display name
-      const label = resolveSimulationKeyName(prefixedKey, nodeDataArray, linkDataArray);
+      const label = resolveSimulationKeyName(key, nodeDataArray, linkDataArray);
       
       return {
         label,

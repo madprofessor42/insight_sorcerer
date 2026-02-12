@@ -4,7 +4,7 @@
  * This module provides endpoint resolution functions specifically for the
  * simulation layer. These functions:
  * - Import core utilities for basic data access and type guards
- * - Return prefixed keys ('node:X', 'link:X') for primitiveMap lookup
+ * - Return keys for primitiveMap lookup
  * - Handle Cloud nodes (valid for flows as null, invalid for links)
  * - Handle LinkLabel nodes (resolve to parent edge for edge-to-edge connections)
  * 
@@ -14,9 +14,7 @@
 import type * as go from 'gojs';
 import { 
   isLinkLabelNodeData, 
-  findParentEdgeForLabelNode,
-  makeNodeCompositeKey,
-  makeEdgeCompositeKey
+  findParentEdgeForLabelNode
 } from './core';
 
 /**
@@ -73,25 +71,25 @@ export function resolveFlowEndpointKey(
  * 
  * Influence links connect primitives (Stocks, Variables, Flows, other Links).
  * This function reuses core diagram-data logic (`findParentEdgeForLabelNode`)
- * but returns prefixed keys suitable for primitiveMap lookup.
+ * but returns keys suitable for primitiveMap lookup.
  * 
  * Handles:
- * - LinkLabel nodes: resolves to parent edge (edge-to-edge connection) → 'link:X'
+ * - LinkLabel nodes: resolves to parent edge (edge-to-edge connection)
  * - Cloud nodes: error (influence links can't connect to clouds)
- * - Regular nodes: returns node key → 'node:X'
+ * - Regular nodes: returns node key
  * 
  * @param endpointKey - The endpoint key from link.from or link.to
  * @param nodeDataArray - Array of all nodes in the diagram
  * @param linkDataArray - Array of all links in the diagram (for parent edge lookup)
  * @param endpointLabel - Label for error messages ('source' or 'target')
- * @returns Object with either mapKey (prefixed key for primitiveMap) or error
+ * @returns Object with either mapKey (key for primitiveMap) or error
  */
 export function resolveLinkEndpoint(
   endpointKey: go.Key | null | undefined,
   nodeDataArray: Array<go.ObjectData>,
   linkDataArray: Array<go.ObjectData>,
   endpointLabel: string
-): { mapKey?: string; error?: SimulationConversionError } {
+): { mapKey?: go.Key; error?: SimulationConversionError } {
   if (endpointKey === null || endpointKey === undefined) {
     return {
       error: {
@@ -127,8 +125,8 @@ export function resolveLinkEndpoint(
     const parentEdge = findParentEdgeForLabelNode(endpointKey, linkDataArray);
     
     if (parentEdge) {
-      // Return prefixed key for parent edge (influence link connects to flow/link)
-      return { mapKey: makeEdgeCompositeKey(parentEdge.key) };
+      // Return parent edge key (influence link connects to flow/link)
+      return { mapKey: parentEdge.key };
     }
     
     return {
@@ -140,6 +138,6 @@ export function resolveLinkEndpoint(
   }
   
   // Regular node (Stock, Variable)
-  return { mapKey: makeNodeCompositeKey(endpointKey) };
+  return { mapKey: endpointKey };
 }
 

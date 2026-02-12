@@ -11,7 +11,6 @@ import type { Stock, Variable, Flow, Link } from 'simulation';
 import type * as go from 'gojs';
 import { DEFAULT_SIMULATION_CONFIG } from './constants';
 import type { SimulationConfig } from './types';
-import { makeNodeCompositeKey, makeEdgeCompositeKey } from '../diagram-data/core';
 import {
   createStockPrimitive,
   createVariablePrimitive,
@@ -27,7 +26,7 @@ type SimulationPrimitive = Stock | Variable | Flow | Link;
 interface ConversionResult {
   success: boolean;
   model?: Model;
-  primitiveMap?: Map<string, SimulationPrimitive>;
+  primitiveMap?: Map<go.Key, SimulationPrimitive>;
   error?: string;
   errorDetails?: ConversionError[];
 }
@@ -49,9 +48,9 @@ export function convertToSimulationModel(
     const finalConfig = { ...DEFAULT_SIMULATION_CONFIG, ...config };
     const model = new Model(finalConfig);
 
-    // 2. Create lookup map for primitives (prefixed key → simulation primitive)
-    // Use prefixes to avoid key collisions between nodes and links
-    const primitiveMap = new Map<string, SimulationPrimitive>();
+    // 2. Create lookup map for primitives (key → simulation primitive)
+    // nanoid ensures unique keys across nodes and links, no prefix needed
+    const primitiveMap = new Map<go.Key, SimulationPrimitive>();
 
     // 3. Create Stocks and Variables (Phase 1)
     for (const node of nodes) {
@@ -70,9 +69,7 @@ export function convertToSimulationModel(
       if (result.error) {
         errors.push(result.error);
       } else if (result.primitive) {
-        // Use composite key to avoid collisions with links
-        const mapKey = makeNodeCompositeKey(node.key);
-        primitiveMap.set(mapKey, result.primitive);
+        primitiveMap.set(node.key, result.primitive);
       }
     }
 
@@ -84,9 +81,7 @@ export function convertToSimulationModel(
       if (result.error) {
         errors.push(result.error);
       } else if (result.primitive) {
-        // Use composite key to avoid collisions with nodes
-        const mapKey = makeEdgeCompositeKey(link.key);
-        primitiveMap.set(mapKey, result.primitive);
+        primitiveMap.set(link.key, result.primitive);
       }
     }
 

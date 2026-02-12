@@ -4,6 +4,7 @@
 
 import { createContext, useContext, useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
+import { nanoid } from 'nanoid';
 import { ToastContainer, type ToastItem } from './ToastContainer';
 import type { ToastType } from './Toast';
 
@@ -16,10 +17,8 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
-let toastIdCounter = 0;
-
 function generateToastId(): string {
-  return `toast_${Date.now()}_${++toastIdCounter}`;
+  return nanoid();
 }
 
 export function ToastProvider({ children }: { children: ReactNode }) {

@@ -8,11 +8,10 @@
 // @ts-expect-error - simulation package has JS with JSDoc types
 import type { Model, Stock, Variable, Flow, Link } from 'simulation';
 import type * as go from 'gojs';
-// Core utilities - basic property getters and composite key generation
+// Core utilities - basic property getters
 import { 
   getNodeDisplayName, 
-  getLinkDisplayName,
-  makeNodeCompositeKey
+  getLinkDisplayName
 } from '../diagram-data/core';
 // Simulation utilities - endpoint resolution
 import { 
@@ -136,7 +135,7 @@ export function createVariablePrimitive(
 export function createFlowPrimitive(
   model: Model,
   link: go.ObjectData,
-  primitiveMap: Map<string, SimulationPrimitive>,
+  primitiveMap: Map<go.Key, SimulationPrimitive>,
   nodeDataArray: Array<go.ObjectData>
 ): PrimitiveCreationResult<Flow> {
   // Resolve source and target using diagram-data utilities
@@ -144,8 +143,8 @@ export function createFlowPrimitive(
   const targetKey = resolveFlowEndpointKey(link.to as go.Key | null | undefined, nodeDataArray);
   
   // Get Stock primitives from map (null is valid for Cloud nodes)
-  const source = sourceKey ? (primitiveMap.get(makeNodeCompositeKey(sourceKey)) as Stock | undefined) || null : null;
-  const target = targetKey ? (primitiveMap.get(makeNodeCompositeKey(targetKey)) as Stock | undefined) || null : null;
+  const source = sourceKey ? (primitiveMap.get(sourceKey) as Stock | undefined) || null : null;
+  const target = targetKey ? (primitiveMap.get(targetKey) as Stock | undefined) || null : null;
 
   // Use diagram-data utility for name resolution (handles defaults, etc.)
   const linkName = getLinkDisplayName(link);
@@ -168,7 +167,7 @@ export function createFlowPrimitive(
 export function createLinkPrimitive(
   model: Model,
   link: go.ObjectData,
-  primitiveMap: Map<string, SimulationPrimitive>,
+  primitiveMap: Map<go.Key, SimulationPrimitive>,
   nodeDataArray: Array<go.ObjectData>,
   linkDataArray: Array<go.ObjectData>
 ): PrimitiveCreationResult<Link> {

@@ -1,4 +1,5 @@
 import * as go from 'gojs';
+import { nanoid } from 'nanoid';
 import {
   createNodeTemplateMap,
   createLinkTemplateMap
@@ -28,9 +29,14 @@ export function initializeDiagram(): go.Diagram {
       // Enable label nodes on links for edge-to-edge connections
       // This property tells GoJS which field in link data stores the array of label node keys
       linkLabelKeysProperty: 'labelKeys',
-      // Let GoJS handle automatic key generation using its built-in mechanism
-      // Keys will be generated automatically when nodes/links are added without a key property
-      // GoJS will ensure uniqueness within the model
+      // Use nanoid for generating unique keys for nodes and links
+      // This ensures that nodes and links never have conflicting keys (e.g., both having -1)
+      makeUniqueKeyFunction: (_model: go.Model, _data: go.ObjectData) => {
+        return nanoid();
+      },
+      makeUniqueLinkKeyFunction: (_model: go.GraphLinksModel, _data: go.ObjectData) => {
+        return nanoid();
+      }
     })
   });
 

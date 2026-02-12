@@ -6,6 +6,7 @@
  */
 
 import * as go from 'gojs';
+import { nanoid } from 'nanoid';
 import type { SimulationConfig } from './simulation';
 
 /**
@@ -255,10 +256,10 @@ export async function deleteDiagram(id: string): Promise<void> {
 
 /**
  * Generate a unique ID for a new diagram
- * Uses timestamp and random string for uniqueness
+ * Uses nanoid for generating unique, URL-safe IDs
  */
 export function generateDiagramId(): string {
-  return `diagram_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return `diagram_${nanoid()}`;
 }
 
 /**

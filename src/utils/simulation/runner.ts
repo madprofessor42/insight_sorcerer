@@ -60,11 +60,11 @@ export async function runSimulation(
     const times = results.times();
     const series: Record<string, number[]> = {};
 
-    for (const [prefixedKey, primitive] of primitiveMap.entries()) {
+    for (const [key, primitive] of primitiveMap.entries()) {
       try {
         const data = results.series(primitive);
-        // Keep the prefixed key to avoid collisions
-        series[prefixedKey] = data;
+        // Use nanoid key (guaranteed unique across nodes and links)
+        series[String(key)] = data;
       } catch {
         // Some primitives (like Links) don't have series data
         // This is expected, just skip them

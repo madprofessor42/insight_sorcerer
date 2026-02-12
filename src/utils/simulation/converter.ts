@@ -19,6 +19,8 @@ import {
   createLinkPrimitive,
   type ConversionError,
 } from './primitiveFactory';
+import { getAvailableReferences } from '../diagram-data';
+import { getNodeReferenceConfig } from '../../config/diagram-references';
 
 // Primitive types from simulation library
 type SimulationPrimitive = Stock | Variable | Converter | Flow | Link;
@@ -66,7 +68,7 @@ export function convertToSimulationModel(
       } else if (category === 'Converter') {
         result = createConverterPrimitive(model, node);
         if (result.primitive) {
-          converterNodes.push(node); // Track for Phase 1.5
+          converterNodes.push(node); // Track for Phase 2.5
         }
       } else {
         // Skip other node types (Cloud, etc.)
@@ -80,32 +82,6 @@ export function convertToSimulationModel(
       }
     }
 
-    // 3.5. Set Converter inputs (Phase 1.5) - must happen after all primitives are created
-    for (const node of converterNodes) {
-      const converter = primitiveMap.get(node.key) as Converter;
-      const inputValue = node.input as string | undefined;
-      
-      if (inputValue && inputValue !== 'Time') {
-        // Try to find the referenced primitive
-        const inputNode = nodes.find(n => n.key === inputValue || (n.name as string) === inputValue);
-        if (inputNode) {
-          const inputPrimitive = primitiveMap.get(inputNode.key);
-          if (inputPrimitive) {
-            try {
-              converter.input = inputPrimitive as Stock | Variable | Converter;
-            } catch (error) {
-              errors.push({
-                type: 'invalid_formula',
-                message: `Failed to set Converter input: ${error instanceof Error ? error.message : String(error)}`,
-                nodeKey: node.key,
-              });
-            }
-          }
-        }
-        // If not found, input will stay as "Time" (default set in primitiveFactory)
-      }
-    }
-
     // 4. Create Flows (Phase 2)
     const flowLinks = links.filter(link => (link.category as string | undefined) === 'flow');
     for (const link of flowLinks) {
@@ -115,6 +91,51 @@ export function convertToSimulationModel(
         errors.push(result.error);
       } else if (result.primitive) {
         primitiveMap.set(link.key, result.primitive);
+      }
+    }
+
+    // 4.5. Set Converter inputs (Phase 2.5) - must happen after Flows are created
+    for (const node of converterNodes) {
+      const converter = primitiveMap.get(node.key) as Converter;
+      const inputValue = node.input as string | undefined;
+      
+      if (inputValue && inputValue !== 'Time') {
+        // Use diagram-data utilities to properly resolve the input source
+        // This handles LinkLabel nodes, bidirectional links, and all edge cases
+        const config = getNodeReferenceConfig('Converter', 'input');
+        
+        if (config) {
+          // Get all available references using the same logic as the UI
+          const availableReferences = getAvailableReferences(
+            node.key,
+            nodes,
+            links,
+            config
+          );
+          
+          // Find the reference that matches the inputValue
+          const matchingRef = availableReferences.find(
+            ref => String(ref.id) === inputValue || ref.name === inputValue
+          );
+          
+          if (matchingRef) {
+            // Get the primitive from the map using the resolved id
+            const inputPrimitive = primitiveMap.get(matchingRef.id);
+            
+            if (inputPrimitive) {
+              try {
+                converter.input = inputPrimitive as Stock | Variable | Converter | Flow;
+              } catch (error) {
+                errors.push({
+                  type: 'invalid_formula',
+                  message: `Failed to set Converter input: ${error instanceof Error ? error.message : String(error)}`,
+                  nodeKey: node.key,
+                });
+              }
+            }
+          }
+        }
+        // If not found, input will stay as "Time" (default set in primitiveFactory)
       }
     }
 

@@ -124,6 +124,94 @@ function analyzeValueType(value: string | undefined): 'string' | 'vector' | 'age
 }
 
 /**
+ * Creates method completions for a given context type
+ */
+function createMethodCompletions(
+  contextType: 'string' | 'vector' | 'agent' | null,
+  methodPrefix: string,
+  cursorPos: number
+): CompletionResult | null {
+  if (!contextType) {
+    return null;
+  }
+
+  let methods: typeof STRING_METHODS = [];
+  let contextName = '';
+
+  if (contextType === 'string') {
+    methods = STRING_METHODS;
+    contextName = 'String';
+  } else if (contextType === 'vector') {
+    methods = VECTOR_METHODS;
+    contextName = 'Vector';
+  } else if (contextType === 'agent') {
+    methods = AGENT_METHODS;
+    contextName = 'Agent/Population';
+  }
+
+  if (methods.length === 0) {
+    return null;
+  }
+
+  const completions = methods
+    .filter(method =>
+      methodPrefix === '' ||
+      method.name.toLowerCase().startsWith(methodPrefix.toLowerCase())
+    )
+    .map(method => ({
+      label: method.name,
+      type: 'method',
+      detail: method.signature.replace(method.name, '').trim(),
+      info: () => {
+        const node = document.createElement('div');
+        node.style.padding = '8px';
+        node.style.maxWidth = '400px';
+
+        const title = document.createElement('div');
+        title.style.fontWeight = 'bold';
+        title.style.marginBottom = '4px';
+        title.style.color = '#3db0ff';
+        title.textContent = `${contextName}.${method.signature}`;
+        node.appendChild(title);
+
+        const desc = document.createElement('div');
+        desc.style.marginBottom = '8px';
+        desc.style.color = '#94a3b8';
+        desc.textContent = method.description;
+        node.appendChild(desc);
+
+        if (method.example) {
+          const exampleLabel = document.createElement('div');
+          exampleLabel.style.fontWeight = '600';
+          exampleLabel.style.marginTop = '8px';
+          exampleLabel.style.marginBottom = '4px';
+          exampleLabel.textContent = 'Example:';
+          node.appendChild(exampleLabel);
+
+          const example = document.createElement('code');
+          example.style.display = 'block';
+          example.style.padding = '4px 8px';
+          example.style.backgroundColor = '#0f172a';
+          example.style.borderRadius = '4px';
+          example.style.fontFamily = 'monospace';
+          example.style.fontSize = '12px';
+          example.textContent = method.example;
+          node.appendChild(example);
+        }
+
+        return node;
+      },
+      apply: method.signature,
+    }));
+
+  return {
+    from: cursorPos - methodPrefix.length,
+    options: completions,
+    validFor: /^[\w]*$/,
+  };
+}
+
+/**
  * Determines the value type based on formula analysis
  * 
  * Analyzes the formula string to detect its type:
@@ -236,78 +324,10 @@ export function createFormulaAutocomplete(options: AutocompleteOptions) {
       const methodPrefix = afterDot[1];
       const textBeforeDot = beforeWord.slice(0, beforeWord.lastIndexOf('.'));
       const contextType = detectContextBeforeDot(textBeforeDot, options.availableReferences);
+      const result = createMethodCompletions(contextType, methodPrefix, context.pos);
       
-      let methods: typeof STRING_METHODS = [];
-      let contextName = '';
-      
-      if (contextType === 'string') {
-        methods = STRING_METHODS;
-        contextName = 'String';
-      } else if (contextType === 'vector') {
-        methods = VECTOR_METHODS;
-        contextName = 'Vector';
-      } else if (contextType === 'agent') {
-        methods = AGENT_METHODS;
-        contextName = 'Agent/Population';
-      }
-      
-      if (methods.length > 0) {
-        const completions = methods
-          .filter(method => 
-            methodPrefix === '' || 
-            method.name.toLowerCase().startsWith(methodPrefix.toLowerCase())
-          )
-          .map(method => ({
-            label: method.name,
-            type: 'method',
-            detail: method.signature.replace(method.name, '').trim(),
-            info: () => {
-              const node = document.createElement('div');
-              node.style.padding = '8px';
-              node.style.maxWidth = '400px';
-              
-              const title = document.createElement('div');
-              title.style.fontWeight = 'bold';
-              title.style.marginBottom = '4px';
-              title.style.color = '#3db0ff';
-              title.textContent = `${contextName}.${method.signature}`;
-              node.appendChild(title);
-              
-              const desc = document.createElement('div');
-              desc.style.marginBottom = '8px';
-              desc.style.color = '#94a3b8';
-              desc.textContent = method.description;
-              node.appendChild(desc);
-              
-              if (method.example) {
-                const exampleLabel = document.createElement('div');
-                exampleLabel.style.fontWeight = '600';
-                exampleLabel.style.marginTop = '8px';
-                exampleLabel.style.marginBottom = '4px';
-                exampleLabel.textContent = 'Example:';
-                node.appendChild(exampleLabel);
-                
-                const example = document.createElement('code');
-                example.style.display = 'block';
-                example.style.padding = '4px 8px';
-                example.style.backgroundColor = '#0f172a';
-                example.style.borderRadius = '4px';
-                example.style.fontFamily = 'monospace';
-                example.style.fontSize = '12px';
-                example.textContent = method.example;
-                node.appendChild(example);
-              }
-              
-              return node;
-            },
-            apply: method.signature,
-          }));
-        
-        return {
-          from: context.pos - methodPrefix.length,
-          options: completions,
-          validFor: /^[\w]*$/,
-        };
+      if (result) {
+        return result;
       }
     }
 
@@ -459,80 +479,10 @@ export function referenceCompletionSource(options: AutocompleteOptions) {
       const methodPrefix = afterRefDot[1];
       const textBeforeDot = beforeText.slice(0, beforeText.lastIndexOf('.'));
       const contextType = detectContextBeforeDot(textBeforeDot, options.availableReferences);
+      const result = createMethodCompletions(contextType, methodPrefix, context.pos);
       
-      // Determine which methods to show based on the actual type
-      let methods: typeof STRING_METHODS = [];
-      let contextName = '';
-      
-      if (contextType === 'string') {
-        methods = STRING_METHODS;
-        contextName = 'String';
-      } else if (contextType === 'vector') {
-        methods = VECTOR_METHODS;
-        contextName = 'Vector';
-      } else if (contextType === 'agent') {
-        methods = AGENT_METHODS;
-        contextName = 'Agent/Population';
-      }
-      
-      // Only show completions if we have methods for this type
-      if (methods.length > 0) {
-        const completions = methods
-          .filter(method => 
-            methodPrefix === '' || 
-            method.name.toLowerCase().startsWith(methodPrefix.toLowerCase())
-          )
-          .map(method => ({
-            label: method.name,
-            type: 'method',
-            detail: method.signature.replace(method.name, '').trim(),
-            info: () => {
-              const node = document.createElement('div');
-              node.style.padding = '8px';
-              node.style.maxWidth = '400px';
-              
-              const title = document.createElement('div');
-              title.style.fontWeight = 'bold';
-              title.style.marginBottom = '4px';
-              title.style.color = '#3db0ff';
-              title.textContent = `${contextName}.${method.signature}`;
-              node.appendChild(title);
-              
-              const desc = document.createElement('div');
-              desc.style.marginBottom = '8px';
-              desc.style.color = '#94a3b8';
-              desc.textContent = method.description;
-              node.appendChild(desc);
-              
-              if (method.example) {
-                const exampleLabel = document.createElement('div');
-                exampleLabel.style.fontWeight = '600';
-                exampleLabel.style.marginTop = '8px';
-                exampleLabel.style.marginBottom = '4px';
-                exampleLabel.textContent = 'Example:';
-                node.appendChild(exampleLabel);
-                
-                const example = document.createElement('code');
-                example.style.display = 'block';
-                example.style.padding = '4px 8px';
-                example.style.backgroundColor = '#0f172a';
-                example.style.borderRadius = '4px';
-                example.style.fontFamily = 'monospace';
-                example.style.fontSize = '12px';
-                example.textContent = method.example;
-                node.appendChild(example);
-              }
-              
-              return node;
-            },
-            apply: method.signature,
-          }));
-        
-        return {
-          from: context.pos - methodPrefix.length,
-          options: completions,
-          validFor: /^[\w]*$/,
-        };
+      if (result) {
+        return result;
       }
     }
     

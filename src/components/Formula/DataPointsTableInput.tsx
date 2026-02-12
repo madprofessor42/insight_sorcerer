@@ -6,12 +6,8 @@
  */
 
 import { useCallback, useState, useEffect, useRef } from 'react';
+import { parseDataPoints, formatDataPoints, type DataPoint } from '../../utils/simulation';
 import styles from './DataPointsTableInput.module.css';
-
-export interface DataPoint {
-  x: number;
-  y: number;
-}
 
 export interface DataPointsTableInputProps {
   id: string;
@@ -19,36 +15,6 @@ export interface DataPointsTableInputProps {
   value: string; // Format: "x1,y1;x2,y2;..."
   onChange: (value: string) => void;
   placeholder?: string;
-}
-
-/**
- * Parse string value to array of data points.
- */
-function parseDataPoints(value: string): DataPoint[] {
-  if (!value || typeof value !== 'string') {
-    return [{ x: 0, y: 0 }];
-  }
-  
-  try {
-    const points = value.split(';').map(pair => {
-      const [x, y] = pair.trim().split(',').map(v => parseFloat(v.trim()));
-      if (isNaN(x) || isNaN(y)) {
-        throw new Error(`Invalid data point: ${pair}`);
-      }
-      return { x, y };
-    });
-    return points.length > 0 ? points : [{ x: 0, y: 0 }];
-  } catch (error) {
-    console.warn('Failed to parse data points:', error);
-    return [{ x: 0, y: 0 }];
-  }
-}
-
-/**
- * Convert array of data points to string format.
- */
-function formatDataPoints(points: DataPoint[]): string {
-  return points.map(p => `${p.x},${p.y}`).join(';');
 }
 
 /**

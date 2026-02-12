@@ -7,6 +7,7 @@
 export type {
   NodeType,
   ManuallyCreatableNodeType,
+  LinkType,
   NodeShapeType,
   NodeVisualStyle,
   NodePropertyDisplay,
@@ -30,7 +31,6 @@ export {
 // Link configurations and utilities
 export {
   LINK_CONFIGURATIONS,
-  type LinkType,
   DEFAULT_LINK_TYPE,
   LINK_LABEL_CATEGORY,
   getLinkConfiguration,
@@ -51,12 +51,19 @@ export {
   getLinkReferenceConfig,
 } from './diagram-references';
 
-// Formula functions
+// Formula function types
 export type {
   FormulaFunction,
   FunctionCategory,
-} from './formula-functions';
+} from './formula-types';
+
+// Formula functions
 export {
   FORMULA_FUNCTIONS,
 } from './formula-functions';
+
+// Color utilities
+export {
+  getTypeColor,
+} from './diagram-colors';
 

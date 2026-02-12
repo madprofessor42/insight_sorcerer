@@ -2,7 +2,7 @@
  * Link configurations and utilities
  */
 
-import type { LinkConfiguration } from './diagram-types';
+import type { LinkConfiguration, LinkType } from './diagram-types';
 
 /**
  * ALL LINK CONFIGURATIONS
@@ -110,12 +110,6 @@ export const LINK_CONFIGURATIONS: LinkConfiguration[] = [
 ];
 
 /**
- * Generate LinkType from configurations
- * This makes LinkType dynamic - add new type to LINK_CONFIGURATIONS and it's automatically available
- */
-export type LinkType = typeof LINK_CONFIGURATIONS[number]['id'];
-
-/**
  * Default link type when category is not specified
  */
 export const DEFAULT_LINK_TYPE: LinkType = 'link';
@@ -137,7 +131,7 @@ export function getLinkConfiguration(linkType: LinkType): LinkConfiguration | un
  * Get all available link types (for UI, selectors, etc.)
  */
 export function getAllLinkTypes(): LinkType[] {
-  return LINK_CONFIGURATIONS.map(config => config.id);
+  return LINK_CONFIGURATIONS.map(config => config.id) as LinkType[];
 }
 
 /**

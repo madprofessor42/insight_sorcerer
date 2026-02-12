@@ -2,9 +2,7 @@
  * Reference configurations for formula input bubbles
  */
 
-import type { ReferenceConfig } from './diagram-types';
-import type { NodeType } from './diagram-types';
-import type { LinkType } from './diagram-links';
+import type { ReferenceConfig, NodeType, LinkType } from './diagram-types';
 
 /**
  * Reference configurations for formula fields.

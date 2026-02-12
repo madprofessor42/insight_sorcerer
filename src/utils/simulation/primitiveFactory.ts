@@ -19,6 +19,8 @@ import {
   resolveLinkEndpoint,
   type SimulationConversionError 
 } from '../diagram-data/simulation';
+// Converter data utilities
+import { parseDataPoints } from './converter-data';
 
 // Re-export for backward compatibility
 export type ConversionError = SimulationConversionError;
@@ -131,28 +133,6 @@ export function createVariablePrimitive(
 }
 
 /**
- * Parse converter data points from string format "x1,y1;x2,y2;..."
- */
-function parseConverterValues(valuesStr: string | undefined): Array<{ x: number; y: number }> {
-  if (!valuesStr || typeof valuesStr !== 'string') {
-    return [{ x: 0, y: 0 }]; // Default single point
-  }
-  
-  try {
-    return valuesStr.split(';').map(pair => {
-      const [x, y] = pair.trim().split(',').map(v => parseFloat(v.trim()));
-      if (isNaN(x) || isNaN(y)) {
-        throw new Error(`Invalid data point: ${pair}`);
-      }
-      return { x, y };
-    });
-  } catch (error) {
-    console.warn('Failed to parse converter values:', error);
-    return [{ x: 0, y: 0 }]; // Fallback
-  }
-}
-
-/**
  * Create Converter primitive from GoJS node data.
  * Uses core diagram-data utilities for consistent name resolution across the app.
  */
@@ -167,7 +147,7 @@ export function createConverterPrimitive(
       name: nodeName,
       interpolation: (node.interpolation as 'Discrete' | 'Linear' | undefined) || 'Linear',
       input: (node.input as string | undefined) || 'Time',
-      values: parseConverterValues(node.values as string | undefined),
+      values: parseDataPoints(node.values as string | undefined || ''),
     };
     
     if (node.units) {

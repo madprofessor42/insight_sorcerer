@@ -3,19 +3,7 @@
  * Based on the simulation package functions
  */
 
-export interface FormulaFunction {
-  name: string;
-  description: string;
-  signature: string;
-  displaySignature?: string; // Optional: for displaying shortened version in UI
-  example?: string;
-}
-
-export interface FunctionCategory {
-  name: string;
-  icon?: string;
-  functions: FormulaFunction[];
-}
+import type { FunctionCategory } from './formula-types';
 
 export const FORMULA_FUNCTIONS: FunctionCategory[] = [
   {

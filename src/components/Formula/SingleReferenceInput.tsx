@@ -7,6 +7,7 @@
 
 import { useCallback } from 'react';
 import type { AvailableReference } from '../../config';
+import { getTypeColor } from '../../config';
 import styles from './SingleReferenceInput.module.css';
 
 export interface SingleReferenceInputProps {
@@ -38,25 +39,6 @@ export function SingleReferenceInput({
     },
     [onChange]
   );
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'Stock':
-        return '#4A90E2';
-      case 'Variable':
-        return '#50C878';
-      case 'Converter':
-        return '#9FC5AB';
-      case 'Cloud':
-        return '#87CEEB';
-      case 'flow':
-        return '#4A90E2';
-      case 'link':
-        return '#666';
-      default:
-        return '#666';
-    }
-  };
 
   // Find current selection
   const currentSelection = availableReferences.find(ref => String(ref.id) === value);

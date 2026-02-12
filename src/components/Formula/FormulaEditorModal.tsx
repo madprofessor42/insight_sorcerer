@@ -5,11 +5,10 @@
  * Designed to be extensible for future features.
  */
 
-import { useCallback, useRef, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { AvailableReference } from '../../config';
-import { FORMULA_FUNCTIONS } from '../../config/formula-functions';
-import { FormulaEditor } from './FormulaEditor';
-import { EditorView } from '@codemirror/view';
+import { FORMULA_FUNCTIONS, getTypeColor } from '../../config';
+import { FormulaEditor, useFormulaEditorRef } from './FormulaEditor';
 import styles from './FormulaEditorModal.module.css';
 
 export interface FormulaEditorModalProps {
@@ -37,7 +36,7 @@ export function FormulaEditorModal({
   const [editedValue, setEditedValue] = useState(value);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['References']));
-  const editorViewRef = useRef<EditorView | null>(null);
+  const { editorViewRef, insertText, focus } = useFormulaEditorRef();
 
   // Update local state when modal opens with new value
   useEffect(() => {
@@ -45,37 +44,16 @@ export function FormulaEditorModal({
       setEditedValue(value);
       // Focus editor when modal opens
       setTimeout(() => {
-        if (editorViewRef.current) {
-          editorViewRef.current.focus();
-        }
+        focus();
       }, 100);
     }
-  }, [isOpen, value]);
+  }, [isOpen, value, focus]);
 
   const handleInputChange = useCallback(
     (newValue: string | number | undefined) => {
       setEditedValue(newValue);
     },
     []
-  );
-
-  const insertText = useCallback(
-    (text: string) => {
-      if (editorViewRef.current) {
-        const view = editorViewRef.current;
-        const { from, to } = view.state.selection.main;
-        
-        view.dispatch({
-          changes: { from, to, insert: text },
-          selection: { anchor: from + text.length },
-        });
-        
-        view.focus();
-      } else {
-        console.warn('EditorView not available yet');
-      }
-    },
-    [editorViewRef]
   );
 
   const insertReference = useCallback(
@@ -107,23 +85,6 @@ export function FormulaEditorModal({
   const handleApply = useCallback(() => {
     onApply(editedValue);
   }, [editedValue, onApply]);
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'Stock':
-        return '#4A90E2';
-      case 'Variable':
-        return '#50C878';
-      case 'Cloud':
-        return '#87CEEB';
-      case 'flow':
-        return '#4A90E2';
-      case 'link':
-        return '#666';
-      default:
-        return '#666';
-    }
-  };
 
   if (!isOpen) return null;
 

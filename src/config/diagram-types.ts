@@ -14,6 +14,11 @@ export type NodeType = 'Stock' | 'Variable' | 'Converter' | 'Cloud';
 export type ManuallyCreatableNodeType = 'Stock' | 'Variable' | 'Converter';
 
 /**
+ * Link types available in the diagram
+ */
+export type LinkType = 'link' | 'flow';
+
+/**
  * GoJS shape types for nodes
  */
 export type NodeShapeType = 'Rectangle' | 'Ellipse' | 'RoundedRectangle' | 'Hexagon' | 'FlowCloud';

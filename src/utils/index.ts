@@ -72,9 +72,12 @@ export {
   DEFAULT_SIMULATION_CONFIG,
   TIME_UNITS,
   generateChartColor,
-  getChartOptions
+  getChartOptions,
+  parseDataPoints,
+  formatDataPoints
 } from './simulation';
 export type {
   SimulationConfig,
-  SimulationRunResult
+  SimulationRunResult,
+  DataPoint
 } from './simulation';

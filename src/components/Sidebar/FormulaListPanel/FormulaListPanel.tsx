@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useAppSelector } from '../../../store/hooks';
-import { getNodeConfiguration, getLinkConfiguration, normalizeLinkType } from '../../../config';
+import { getNodeConfiguration, getLinkConfiguration, normalizeLinkType, getTypeColor } from '../../../config';
 import type { NodeType } from '../../../config';
 import { FormulaEditorModal } from '../../Formula/FormulaEditorModal';
 import { getAvailableReferences, getAvailableReferencesForEdge } from '../../../utils/diagram-data';
@@ -139,23 +139,6 @@ export function FormulaListPanel() {
 
   const handleCancelFormula = () => {
     setEditingItem(null);
-  };
-
-  const getTypeColor = (category: string) => {
-    switch (category) {
-      case 'Stock':
-        return '#4A90E2';
-      case 'Variable':
-        return '#50C878';
-      case 'Cloud':
-        return '#87CEEB';
-      case 'flow':
-        return '#4A90E2';
-      case 'link':
-        return '#666';
-      default:
-        return '#666';
-    }
   };
 
   // Don't show panel if both node and edge are selected

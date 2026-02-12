@@ -7,6 +7,7 @@
 
 import { useCallback, useRef, useEffect, useState } from 'react';
 import type { AvailableReference } from '../../config';
+import { getTypeColor } from '../../config';
 import styles from './FormulaInput.module.css';
 import { FormulaEditorModal } from './FormulaEditorModal';
 
@@ -104,23 +105,6 @@ export function FormulaInput({
     },
     [onChange]
   );
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'Stock':
-        return '#4A90E2';
-      case 'Variable':
-        return '#50C878';
-      case 'Cloud':
-        return '#87CEEB';
-      case 'flow':
-        return '#4A90E2';
-      case 'link':
-        return '#666';
-      default:
-        return '#666';
-    }
-  };
 
   return (
     <div className={styles.container}>

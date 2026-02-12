@@ -85,7 +85,20 @@ export function getChartOptions(): ChartOptions<'line'> {
           },
         },
         grid: {
-          color: CHART_COLORS.grid,
+          color: (context) => {
+            // Highlight zero line with white color
+            if (context.tick.value === 0) {
+              return '#ffffff';
+            }
+            return CHART_COLORS.grid;
+          },
+          lineWidth: (context) => {
+            // Make zero line thicker for better visibility
+            if (context.tick.value === 0) {
+              return 2;
+            }
+            return 1;
+          },
         },
       },
     },

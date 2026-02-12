@@ -4,8 +4,7 @@
 
 import { useState, useCallback } from 'react';
 import { useAppDispatch } from '../../store/hooks';
-import { clearDiagram, setSimulationConfig } from '../../store/diagramSlice';
-import { DEFAULT_SIMULATION_CONFIG } from '../../utils/simulation';
+import { clearDiagram } from '../../store/diagramSlice';
 import { useDiagramPersistence } from '../../hooks/diagram/useDiagramPersistence';
 import { saveLastOpenedDiagramId } from '../../utils/database';
 import type { DiagramMetadata } from '../../utils/database';
@@ -47,8 +46,7 @@ export function DiagramToolbar({
   // Handle New button click
   const handleNew = useCallback(async () => {
     if (confirm('Создать новую диаграмму? Несохранённые изменения будут потеряны.')) {
-      dispatch(clearDiagram());
-      dispatch(setSimulationConfig(DEFAULT_SIMULATION_CONFIG));
+      dispatch(clearDiagram()); // Clears all data and resets configs to defaults
       onDiagramChanged(null, '');
       await saveLastOpenedDiagramId(null);
       toast.showInfo('Создана новая диаграмма');

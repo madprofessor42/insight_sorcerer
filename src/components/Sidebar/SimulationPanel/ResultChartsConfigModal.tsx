@@ -5,7 +5,7 @@
  * Future: Scatter Plot and Table views.
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Modal, ModalActions } from '../../ui';
 import { useAppSelector } from '../../../store/hooks';
 import { resolveNodeInfo, getLinkDisplayName, isLinkLabelNodeData } from '../../../utils/diagram-data';
@@ -48,6 +48,13 @@ export function ResultChartsConfigModal({
   // Local state for editing
   const [localCharts, setLocalCharts] = useState<ResultChartConfig[]>(charts);
   const [editingChart, setEditingChart] = useState<EditingChart | null>(null);
+
+  // Sync localCharts with incoming charts prop when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setLocalCharts(charts);
+    }
+  }, [isOpen, charts]);
 
   // Get all available nodes and edges as selectable items
   // Only include types that produce simulation series data for visualization

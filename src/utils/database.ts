@@ -7,7 +7,7 @@
 
 import * as go from 'gojs';
 import { nanoid } from 'nanoid';
-import type { SimulationConfig } from './simulation';
+import type { SimulationConfig, ResultChartConfig } from './simulation';
 
 /**
  * IndexedDB-based storage for diagrams
@@ -34,6 +34,7 @@ export interface DiagramData {
   linkDataArray: Array<go.ObjectData>;
   modelData: go.ObjectData;
   simulationConfig: SimulationConfig;
+  resultCharts: ResultChartConfig[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -95,6 +96,7 @@ function openDatabase(): Promise<IDBDatabase> {
  * @param linkDataArray - Array of link data
  * @param modelData - Model metadata
  * @param simulationConfig - Simulation configuration
+ * @param resultCharts - Result charts configuration
  * @returns Promise that resolves when save is complete
  */
 export async function saveDiagram(
@@ -103,7 +105,8 @@ export async function saveDiagram(
   nodeDataArray: Array<go.ObjectData>,
   linkDataArray: Array<go.ObjectData>,
   modelData: go.ObjectData,
-  simulationConfig: SimulationConfig
+  simulationConfig: SimulationConfig,
+  resultCharts: ResultChartConfig[]
 ): Promise<void> {
   const db = await openDatabase();
 
@@ -124,6 +127,7 @@ export async function saveDiagram(
         linkDataArray,
         modelData,
         simulationConfig,
+        resultCharts,
         createdAt: existingDiagram?.createdAt || new Date(),
         updatedAt: new Date(),
       };

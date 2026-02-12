@@ -93,12 +93,14 @@ export const diagramSlice = createSlice({
       state.skipsDiagramUpdate = action.payload;
     },
 
-    // Clear all diagram data
+    // Clear all diagram data and reset to defaults
     clearDiagram: (state) => {
       state.nodeDataArray = [];
       state.linkDataArray = [];
       state.modelData = {};
       state.skipsDiagramUpdate = false;
+      state.simulationConfig = DEFAULT_SIMULATION_CONFIG;
+      state.resultCharts = [];
     },
 
     // Load diagram from saved data (e.g., from IndexedDB)

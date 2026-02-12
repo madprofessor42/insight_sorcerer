@@ -7,7 +7,11 @@
 import { useCallback, useState } from 'react';
 import { useAppDispatch } from '../../store/hooks';
 import { store } from '../../store/store';
-import { loadDiagram as loadDiagramAction, setSimulationConfig } from '../../store/diagramSlice';
+import { 
+  loadDiagram as loadDiagramAction, 
+  setSimulationConfig,
+  setResultCharts 
+} from '../../store/diagramSlice';
 import {
   saveDiagram as saveDiagramToDB,
   loadDiagram as loadDiagramFromDB,
@@ -75,8 +79,10 @@ export function useDiagramPersistence(): UseDiagramPersistenceReturn {
 
         const diagramId = id || generateDiagramId();
         
-        // Read simulationConfig directly from store to avoid stale closure
-        const currentSimulationConfig = store.getState().diagram.simulationConfig;
+        // Read simulationConfig and resultCharts directly from store to avoid stale closure
+        const currentState = store.getState().diagram;
+        const currentSimulationConfig = currentState.simulationConfig;
+        const currentResultCharts = currentState.resultCharts;
         
         await saveDiagramToDB(
           diagramId,
@@ -84,7 +90,8 @@ export function useDiagramPersistence(): UseDiagramPersistenceReturn {
           modelObj.nodeDataArray || [],
           modelObj.linkDataArray || [],
           modelObj.modelData || {},
-          currentSimulationConfig
+          currentSimulationConfig,
+          currentResultCharts
         );
 
         // Save this as the last opened diagram
@@ -118,6 +125,9 @@ export function useDiagramPersistence(): UseDiagramPersistenceReturn {
         if (diagram.simulationConfig) {
           dispatch(setSimulationConfig(diagram.simulationConfig));
         }
+
+        // Load result charts configuration
+        dispatch(setResultCharts(diagram.resultCharts));
 
         // Then load diagram
         dispatch(

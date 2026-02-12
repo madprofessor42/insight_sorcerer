@@ -7,20 +7,21 @@
 // @ts-expect-error - simulation package has JS with JSDoc types
 import { Model } from 'simulation';
 // @ts-expect-error - simulation package has JS with JSDoc types
-import type { Stock, Variable, Flow, Link } from 'simulation';
+import type { Stock, Variable, Converter, Flow, Link } from 'simulation';
 import type * as go from 'gojs';
 import { DEFAULT_SIMULATION_CONFIG } from './constants';
 import type { SimulationConfig } from './types';
 import {
   createStockPrimitive,
   createVariablePrimitive,
+  createConverterPrimitive,
   createFlowPrimitive,
   createLinkPrimitive,
   type ConversionError,
 } from './primitiveFactory';
 
 // Primitive types from simulation library
-type SimulationPrimitive = Stock | Variable | Flow | Link;
+type SimulationPrimitive = Stock | Variable | Converter | Flow | Link;
 
 // Internal types (not exported)
 interface ConversionResult {
@@ -52,7 +53,8 @@ export function convertToSimulationModel(
     // nanoid ensures unique keys across nodes and links, no prefix needed
     const primitiveMap = new Map<go.Key, SimulationPrimitive>();
 
-    // 3. Create Stocks and Variables (Phase 1)
+    // 3. Create Stocks, Variables, and Converters (Phase 1)
+    const converterNodes: Array<go.ObjectData> = [];
     for (const node of nodes) {
       const category = node.category as string | undefined;
       let result;
@@ -61,6 +63,11 @@ export function convertToSimulationModel(
         result = createStockPrimitive(model, node);
       } else if (category === 'Variable') {
         result = createVariablePrimitive(model, node);
+      } else if (category === 'Converter') {
+        result = createConverterPrimitive(model, node);
+        if (result.primitive) {
+          converterNodes.push(node); // Track for Phase 1.5
+        }
       } else {
         // Skip other node types (Cloud, etc.)
         continue;
@@ -70,6 +77,32 @@ export function convertToSimulationModel(
         errors.push(result.error);
       } else if (result.primitive) {
         primitiveMap.set(node.key, result.primitive);
+      }
+    }
+
+    // 3.5. Set Converter inputs (Phase 1.5) - must happen after all primitives are created
+    for (const node of converterNodes) {
+      const converter = primitiveMap.get(node.key) as Converter;
+      const inputValue = node.input as string | undefined;
+      
+      if (inputValue && inputValue !== 'Time') {
+        // Try to find the referenced primitive
+        const inputNode = nodes.find(n => n.key === inputValue || (n.name as string) === inputValue);
+        if (inputNode) {
+          const inputPrimitive = primitiveMap.get(inputNode.key);
+          if (inputPrimitive) {
+            try {
+              converter.input = inputPrimitive as Stock | Variable | Converter;
+            } catch (error) {
+              errors.push({
+                type: 'invalid_formula',
+                message: `Failed to set Converter input: ${error instanceof Error ? error.message : String(error)}`,
+                nodeKey: node.key,
+              });
+            }
+          }
+        }
+        // If not found, input will stay as "Time" (default set in primitiveFactory)
       }
     }
 

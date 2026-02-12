@@ -5,18 +5,18 @@
 /**
  * Node types available in the diagram
  */
-export type NodeType = 'Stock' | 'Variable' | 'Cloud';
+export type NodeType = 'Stock' | 'Variable' | 'Converter' | 'Cloud';
 
 /**
  * Node types that can be created manually by user
  * Cloud nodes are created automatically only when linking to canvas
  */
-export type ManuallyCreatableNodeType = 'Stock' | 'Variable';
+export type ManuallyCreatableNodeType = 'Stock' | 'Variable' | 'Converter';
 
 /**
  * GoJS shape types for nodes
  */
-export type NodeShapeType = 'Rectangle' | 'Ellipse' | 'RoundedRectangle' | 'FlowCloud';
+export type NodeShapeType = 'Rectangle' | 'Ellipse' | 'RoundedRectangle' | 'Hexagon' | 'FlowCloud';
 
 /**
  * GoJS visual styles for a node

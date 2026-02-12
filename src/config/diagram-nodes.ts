@@ -123,6 +123,78 @@ export const NODE_CONFIGURATIONS: NodeConfiguration[] = [
     manuallyCreatable: true
   },
   {
+    id: 'Converter',
+    label: 'Converter',
+    description: 'Converter node - lookup table that converts input to output values',
+    
+    style: {
+      shape: 'Hexagon',
+      fill: '#9FC5AB',
+      stroke: '#6B9080',
+      strokeWidth: 2,
+      width: 140,
+      height: 70,
+      textColor: 'black',
+      font: 'bold 14px sans-serif',
+      textEditable: true,
+      defaultText: 'Converter'
+    },
+    
+    port: {
+      showCenterPort: true,
+      centerPortFill: '#6B9080',
+      centerPortStroke: '#4A6F5F',
+      centerPortSize: 20,
+      fromLinkable: true,
+      toLinkable: true
+    },
+    
+    displayProperties: [
+      {
+        dataKey: 'name',
+        label: 'Name',
+        editable: true,
+        defaultValue: 'Converter',
+        showAsMainLabel: true, // Show as main text on node
+        editorType: 'text'
+      },
+      {
+        dataKey: 'interpolation',
+        label: 'Interpolation',
+        editable: true,
+        defaultValue: 'Linear',
+        showAsTooltip: true,
+        editorType: 'text'
+      },
+      {
+        dataKey: 'input',
+        label: 'Input Source',
+        editable: true,
+        defaultValue: 'Time',
+        showAsTooltip: true,
+        editorType: 'text'
+      },
+      {
+        dataKey: 'values',
+        label: 'Data Points',
+        editable: true,
+        defaultValue: '0,0;1,1;2,2',
+        showAsTooltip: true,
+        editorType: 'text'
+      },
+      {
+        dataKey: 'note',
+        label: 'Note',
+        editable: true,
+        defaultValue: '',
+        showAsTooltip: true,
+        editorType: 'text'
+      }
+    ],
+    
+    manuallyCreatable: true
+  },
+  {
     id: 'Cloud',
     label: 'Cloud',
     description: 'Cloud node - automatically created endpoint for flows',

@@ -10,6 +10,7 @@
  * These types correspond to simulation primitives that generate time series data:
  * - Stock: accumulation nodes (have initialValue)
  * - Variable: calculated values (have value formula)
+ * - Converter: lookup table converters (have input/output values)
  * - flow: rate connections between stocks (have flowRate)
  * 
  * Types NOT included:
@@ -19,7 +20,7 @@
  */
 export const VISUALIZABLE_TYPES = {
   /** Node types that have simulation series data */
-  nodes: ['Stock', 'Variable'] as const,
+  nodes: ['Stock', 'Variable', 'Converter'] as const,
   /** Link types that have simulation series data */
   links: ['flow'] as const,
 } as const;

@@ -101,8 +101,33 @@ function defineCloudShape() {
   });
 }
 
-// Initialize cloud shape definition
+/**
+ * Define custom hexagon shape for Converter nodes
+ * This creates a horizontal hexagon (elongated diamond) shape
+ */
+function defineHexagonShape() {
+  go.Shape.defineFigureGenerator('Hexagon', (_shape, w, h) => {
+    const geo = new go.Geometry();
+    const fig = new go.PathFigure(0.25 * w, 0, true); // Start at top left point
+    
+    // Create hexagon shape (horizontal orientation)
+    fig.add(new go.PathSegment(go.SegmentType.Line, 0.75 * w, 0)); // Top right
+    fig.add(new go.PathSegment(go.SegmentType.Line, w, 0.5 * h)); // Right point
+    fig.add(new go.PathSegment(go.SegmentType.Line, 0.75 * w, h)); // Bottom right
+    fig.add(new go.PathSegment(go.SegmentType.Line, 0.25 * w, h)); // Bottom left
+    fig.add(new go.PathSegment(go.SegmentType.Line, 0, 0.5 * h)); // Left point
+    fig.add(new go.PathSegment(go.SegmentType.Line, 0.25 * w, 0).close()); // Back to start
+    
+    geo.add(fig);
+    geo.spot1 = new go.Spot(0.25, 0.25);
+    geo.spot2 = new go.Spot(0.75, 0.75);
+    return geo;
+  });
+}
+
+// Initialize custom shape definitions
 defineCloudShape();
+defineHexagonShape();
 
 
 /**

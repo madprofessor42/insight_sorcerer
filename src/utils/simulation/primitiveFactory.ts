@@ -6,7 +6,7 @@
  */
 
 // @ts-expect-error - simulation package has JS with JSDoc types
-import type { Model, Stock, Variable, Flow, Link } from 'simulation';
+import type { Model, Stock, Variable, Converter, Flow, Link } from 'simulation';
 import type * as go from 'gojs';
 // Core utilities - basic property getters
 import { 
@@ -24,7 +24,7 @@ import {
 export type ConversionError = SimulationConversionError;
 
 // Primitive types from simulation library
-type SimulationPrimitive = Stock | Variable | Flow | Link;
+type SimulationPrimitive = Stock | Variable | Converter | Flow | Link;
 
 // Config object type for primitives
 interface PrimitiveConfig {
@@ -33,6 +33,9 @@ interface PrimitiveConfig {
   value?: string | number;
   rate?: string | number;
   units?: string;
+  interpolation?: 'Discrete' | 'Linear';
+  input?: string | SimulationPrimitive;
+  values?: Array<{ x: number; y: number }>;
 }
 
 /**
@@ -124,6 +127,54 @@ export function createVariablePrimitive(
       node.units as string | undefined
     );
     return model.Variable(config);
+  });
+}
+
+/**
+ * Parse converter data points from string format "x1,y1;x2,y2;..."
+ */
+function parseConverterValues(valuesStr: string | undefined): Array<{ x: number; y: number }> {
+  if (!valuesStr || typeof valuesStr !== 'string') {
+    return [{ x: 0, y: 0 }]; // Default single point
+  }
+  
+  try {
+    return valuesStr.split(';').map(pair => {
+      const [x, y] = pair.trim().split(',').map(v => parseFloat(v.trim()));
+      if (isNaN(x) || isNaN(y)) {
+        throw new Error(`Invalid data point: ${pair}`);
+      }
+      return { x, y };
+    });
+  } catch (error) {
+    console.warn('Failed to parse converter values:', error);
+    return [{ x: 0, y: 0 }]; // Fallback
+  }
+}
+
+/**
+ * Create Converter primitive from GoJS node data.
+ * Uses core diagram-data utilities for consistent name resolution across the app.
+ */
+export function createConverterPrimitive(
+  model: Model,
+  node: go.ObjectData
+): PrimitiveCreationResult<Converter> {
+  // Use core utility for name resolution (handles defaults)
+  const nodeName = getNodeDisplayName(node);
+  return createPrimitive<Converter>(nodeName, 'converter', node.key, () => {
+    const config: PrimitiveConfig = {
+      name: nodeName,
+      interpolation: (node.interpolation as 'Discrete' | 'Linear' | undefined) || 'Linear',
+      input: (node.input as string | undefined) || 'Time',
+      values: parseConverterValues(node.values as string | undefined),
+    };
+    
+    if (node.units) {
+      config.units = node.units as string;
+    }
+    
+    return model.Converter(config);
   });
 }
 

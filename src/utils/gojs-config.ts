@@ -42,10 +42,7 @@ export function initializeDiagram(): go.Diagram {
 
   // Configure DragSelectingTool for Shift + drag selection
   // DragSelectingTool is built-in and allows selecting multiple elements by dragging a box
-  // - delay: time to wait before starting drag selection (default: 175ms)
-  //   This allows quick drag = panning, delayed drag = box selection
-  // - isPartialInclusion: true = select elements that are partially in the box
-  diagram.toolManager.dragSelectingTool.delay = 175;
+  diagram.toolManager.dragSelectingTool.delay = 0;
   diagram.toolManager.dragSelectingTool.isPartialInclusion = true;
 
   // Set up node and link templates from configuration

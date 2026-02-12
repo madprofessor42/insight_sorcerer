@@ -51,8 +51,9 @@
 }
 
 /* Hide GoJS license watermark completely in both diagram and palette */
-.diagram-component > div > div[style*="position: absolute"],
-.palette-component > div > div[style*="position: absolute"] {
+/* Use more specific selector to avoid hiding other GoJS UI elements */
+.diagram-component > div > div[style*="position: absolute"][style*="z-index: 300"],
+.palette-component > div > div[style*="position: absolute"][style*="z-index: 300"] {
   display: none !important;
 }
 

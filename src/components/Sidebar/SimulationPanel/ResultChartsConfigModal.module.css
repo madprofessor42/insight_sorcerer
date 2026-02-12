@@ -5,26 +5,73 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  padding: 1.5rem;
-  min-height: 400px;
+  height: 100%;
+  max-height: 70vh;
+}
+
+/* Header with Add Button */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+}
+
+.headerTitle {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.addButton {
+  padding: var(--spacing-xs) var(--spacing-md);
+  background-color: transparent;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.addButton:hover {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+/* Content Area - Scrollable */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-md);
 }
 
 /* Chart List */
 .chartsList {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--spacing-sm);
 }
 
 .chartItem {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 6px;
-  padding: 1rem;
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-md);
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--spacing-sm);
+  transition: var(--transition-fast);
+}
+
+.chartItem:hover {
+  background-color: var(--color-surface-hover);
 }
 
 .chartHeader {
@@ -34,30 +81,31 @@
 }
 
 .chartTitle {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
   color: var(--color-text-primary);
 }
 
 .chartType {
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
   text-transform: capitalize;
 }
 
 .chartActions {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--spacing-xs);
 }
 
 .editButton,
 .deleteButton {
-  padding: 0.25rem 0.5rem;
-  font-size: 12px;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-xs);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--border-radius-sm);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--transition-fast);
+  font-weight: var(--font-weight-medium);
 }
 
 .editButton {
@@ -70,16 +118,16 @@
 }
 
 .deleteButton {
-  background-color: var(--color-error);
+  background-color: var(--color-danger);
   color: white;
 }
 
 .deleteButton:hover {
-  background-color: var(--color-error-hover);
+  background-color: var(--color-danger-hover);
 }
 
 .chartInfo {
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
 }
 
@@ -89,74 +137,67 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 3rem 1rem;
+  padding: var(--spacing-xl) var(--spacing-md);
   text-align: center;
   color: var(--color-text-secondary);
 }
 
 .emptyStateTitle {
-  font-size: 16px;
-  font-weight: 500;
-  margin-bottom: 0.5rem;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--spacing-xs);
 }
 
 .emptyStateText {
-  font-size: 14px;
-}
-
-/* Add Chart Button */
-.addButton {
-  padding: 0.75rem 1.5rem;
-  background-color: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  align-self: flex-start;
-}
-
-.addButton:hover {
-  background-color: var(--color-primary-hover);
+  font-size: var(--font-size-sm);
 }
 
 /* Chart Editor Form */
 .editorSection {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.editorHeader {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
   background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  padding: 1.5rem;
 }
 
 .editorTitle {
-  font-size: 16px;
-  font-weight: 500;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
-  margin-bottom: 1rem;
+}
+
+.editorContent {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-md);
 }
 
 .formField {
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-md);
 }
 
 .label {
   display: block;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
   color: var(--color-text-primary);
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--spacing-xs);
 }
 
 .input {
   width: 100%;
-  padding: 0.5rem;
+  padding: var(--spacing-sm);
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border-radius: var(--border-radius-sm);
   color: var(--color-text-primary);
-  font-size: 14px;
+  font-size: var(--font-size-sm);
+  transition: var(--transition-fast);
 }
 
 .input:focus {
@@ -166,59 +207,60 @@
 
 /* Bubble Selector */
 .selectorSection {
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-md);
 }
 
 .selectorHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--spacing-xs);
 }
 
 .selectorLabel {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
   color: var(--color-text-primary);
 }
 
 .selectAllButton {
-  padding: 0.25rem 0.5rem;
-  font-size: 11px;
-  background-color: var(--color-surface);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  background-color: transparent;
   border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border-radius: var(--border-radius-sm);
   color: var(--color-text-secondary);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--transition-fast);
 }
 
 .selectAllButton:hover {
-  background-color: var(--color-background);
+  background-color: var(--color-surface-hover);
   color: var(--color-text-primary);
+  border-color: var(--color-text-secondary);
 }
 
 .availableBubbles {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  padding: 0.75rem;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm);
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
-  border-radius: 4px;
-  max-height: 200px;
+  border-radius: var(--border-radius-sm);
+  max-height: 150px;
   overflow-y: auto;
 }
 
 .bubble {
-  padding: 0.375rem 0.75rem;
+  padding: var(--spacing-xs) var(--spacing-sm);
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 16px;
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   color: var(--color-text-primary);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--transition-fast);
   user-select: none;
 }
 
@@ -237,33 +279,35 @@
 .selectedBubbles {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  padding: 0.75rem;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm);
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
-  border-radius: 4px;
-  min-height: 60px;
+  border-radius: var(--border-radius-sm);
+  min-height: 50px;
+  max-height: 100px;
+  overflow-y: auto;
 }
 
 .selectedBubble {
-  padding: 0.375rem 0.75rem;
+  padding: var(--spacing-xs) var(--spacing-sm);
   background-color: var(--color-primary);
   border: 1px solid var(--color-primary);
   border-radius: 16px;
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   color: white;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--spacing-xs);
   user-select: none;
 }
 
 .removeIcon {
   cursor: pointer;
-  font-weight: bold;
-  font-size: 14px;
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
   opacity: 0.8;
-  transition: opacity 0.2s;
+  transition: var(--transition-fast);
 }
 
 .removeIcon:hover {
@@ -272,38 +316,40 @@
 
 .emptySelection {
   color: var(--color-text-placeholder);
-  font-size: 12px;
-  padding: 0.5rem;
+  font-size: var(--font-size-xs);
+  padding: var(--spacing-xs);
 }
 
 /* Editor Actions */
 .editorActions {
   display: flex;
-  gap: 0.5rem;
-  margin-top: 1rem;
-  padding-top: 1rem;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
   border-top: 1px solid var(--color-border);
+  background-color: var(--color-surface);
 }
 
 .cancelButton,
 .saveButton {
-  padding: 0.5rem 1rem;
+  padding: var(--spacing-sm) var(--spacing-md);
   border: none;
-  border-radius: 4px;
-  font-size: 13px;
-  font-weight: 500;
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--transition-fast);
 }
 
 .cancelButton {
-  background-color: var(--color-surface);
-  color: var(--color-text-primary);
+  background-color: transparent;
+  color: var(--color-text-secondary);
   border: 1px solid var(--color-border);
 }
 
 .cancelButton:hover {
-  background-color: var(--color-background);
+  background-color: var(--color-surface-hover);
+  color: var(--color-text-primary);
+  border-color: var(--color-text-secondary);
 }
 
 .saveButton {
@@ -318,5 +364,12 @@
 .saveButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Footer Actions (for main modal) */
+.footer {
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-surface);
 }
 

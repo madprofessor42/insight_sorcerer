@@ -8,7 +8,8 @@
 import { useState, useCallback, useMemo } from 'react';
 import { Modal, ModalActions } from '../../ui';
 import { useAppSelector } from '../../../store/hooks';
-import { resolveNodeInfo, getLinkDisplayName } from '../../../utils/diagram-data';
+import { resolveNodeInfo, getLinkDisplayName, isLinkLabelNodeData } from '../../../utils/diagram-data';
+import { VISUALIZABLE_TYPES } from '../../../utils/simulation';
 import type { ResultChartConfig } from '../../../utils/simulation';
 import { nanoid } from 'nanoid';
 import styles from './ResultChartsConfigModal.module.css';
@@ -49,11 +50,24 @@ export function ResultChartsConfigModal({
   const [editingChart, setEditingChart] = useState<EditingChart | null>(null);
 
   // Get all available nodes and edges as selectable items
+  // Only include types that produce simulation series data for visualization
   const availableItems = useMemo<SelectableItem[]>(() => {
     const items: SelectableItem[] = [];
 
-    // Add nodes
+    // Add nodes (only those that have simulation series data)
+    // Stock and Variable nodes create simulation primitives with time series
     for (const node of nodeDataArray) {
+      // Skip LinkLabel nodes - they are invisible connection points on edges
+      if (isLinkLabelNodeData(node)) {
+        continue;
+      }
+      
+      // Only include nodes that produce simulation series data
+      // Excludes: Cloud (auto-created endpoints), LinkLabel (connection points)
+      if (!VISUALIZABLE_TYPES.nodes.includes(node.category as any)) {
+        continue;
+      }
+      
       const nodeInfo = resolveNodeInfo(node.key, nodeDataArray);
       items.push({
         key: String(node.key),
@@ -62,8 +76,15 @@ export function ResultChartsConfigModal({
       });
     }
 
-    // Add edges (links)
+    // Add edges (only those that have simulation series data)
+    // Currently only 'flow' links produce time series data
     for (const link of linkDataArray) {
+      // Only include links that produce simulation series data
+      // Excludes: 'link' type (dependency connections without flow rate)
+      if (!VISUALIZABLE_TYPES.links.includes(link.category as any)) {
+        continue;
+      }
+      
       items.push({
         key: String(link.key),
         displayName: getLinkDisplayName(link),
@@ -189,97 +210,103 @@ export function ResultChartsConfigModal({
         {/* Editor Section - shown when editing */}
         {editingChart && (
           <section className={styles.editorSection}>
-            <h3 className={styles.editorTitle}>
-              {localCharts.find(c => c.id === editingChart.id) ? 'Edit Chart' : 'Add New Chart'}
-            </h3>
-
-            {/* Title Input */}
-            <div className={styles.formField}>
-              <label className={styles.label} htmlFor="chart-title">
-                Chart Title
-              </label>
-              <input
-                id="chart-title"
-                type="text"
-                className={styles.input}
-                value={editingChart.title}
-                onChange={(e) => setEditingChart(prev => prev ? { ...prev, title: e.target.value } : prev)}
-                placeholder="Enter chart title..."
-              />
+            {/* Editor Header */}
+            <div className={styles.editorHeader}>
+              <h3 className={styles.editorTitle}>
+                {localCharts.find(c => c.id === editingChart.id) ? 'Edit Chart' : 'Add New Chart'}
+              </h3>
             </div>
 
-            {/* Selected Items Display */}
-            <div className={styles.selectorSection}>
-              <div className={styles.selectorHeader}>
-                <span className={styles.selectorLabel}>
-                  Selected Items ({editingChart.selectedKeys.size})
-                </span>
-                {editingChart.selectedKeys.size > 0 && (
+            {/* Editor Content - Scrollable */}
+            <div className={styles.editorContent}>
+              {/* Title Input */}
+              <div className={styles.formField}>
+                <label className={styles.label} htmlFor="chart-title">
+                  Chart Title
+                </label>
+                <input
+                  id="chart-title"
+                  type="text"
+                  className={styles.input}
+                  value={editingChart.title}
+                  onChange={(e) => setEditingChart(prev => prev ? { ...prev, title: e.target.value } : prev)}
+                  placeholder="Enter chart title..."
+                />
+              </div>
+
+              {/* Selected Items Display */}
+              <div className={styles.selectorSection}>
+                <div className={styles.selectorHeader}>
+                  <span className={styles.selectorLabel}>
+                    Selected ({editingChart.selectedKeys.size})
+                  </span>
+                  {editingChart.selectedKeys.size > 0 && (
+                    <button
+                      type="button"
+                      className={styles.selectAllButton}
+                      onClick={handleClearAll}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <div className={styles.selectedBubbles}>
+                  {editingChart.selectedKeys.size === 0 ? (
+                    <span className={styles.emptySelection}>
+                      Click on items below to add
+                    </span>
+                  ) : (
+                    Array.from(editingChart.selectedKeys).map(key => {
+                      const item = availableItems.find(i => i.key === key);
+                      return (
+                        <div key={key} className={styles.selectedBubble}>
+                          {item?.displayName || key}
+                          <span
+                            className={styles.removeIcon}
+                            onClick={() => handleToggleItem(key)}
+                          >
+                            ×
+                          </span>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              {/* Available Items Selector */}
+              <div className={styles.selectorSection}>
+                <div className={styles.selectorHeader}>
+                  <span className={styles.selectorLabel}>
+                    Available Items
+                  </span>
                   <button
                     type="button"
                     className={styles.selectAllButton}
-                    onClick={handleClearAll}
+                    onClick={handleSelectAll}
                   >
-                    Clear All
+                    Select All
                   </button>
-                )}
-              </div>
-              <div className={styles.selectedBubbles}>
-                {editingChart.selectedKeys.size === 0 ? (
-                  <span className={styles.emptySelection}>
-                    No items selected. Click on bubbles below to add.
-                  </span>
-                ) : (
-                  Array.from(editingChart.selectedKeys).map(key => {
-                    const item = availableItems.find(i => i.key === key);
-                    return (
-                      <div key={key} className={styles.selectedBubble}>
-                        {item?.displayName || key}
-                        <span
-                          className={styles.removeIcon}
-                          onClick={() => handleToggleItem(key)}
-                        >
-                          ×
-                        </span>
+                </div>
+                <div className={styles.availableBubbles}>
+                  {availableItems.length === 0 ? (
+                    <span className={styles.emptySelection}>
+                      No items available
+                    </span>
+                  ) : (
+                    availableItems.map(item => (
+                      <div
+                        key={item.key}
+                        className={`${styles.bubble} ${
+                          editingChart.selectedKeys.has(item.key) ? styles.selected : ''
+                        }`}
+                        onClick={() => handleToggleItem(item.key)}
+                      >
+                        {item.displayName}
                       </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-
-            {/* Available Items Selector */}
-            <div className={styles.selectorSection}>
-              <div className={styles.selectorHeader}>
-                <span className={styles.selectorLabel}>
-                  Available Nodes & Edges
-                </span>
-                <button
-                  type="button"
-                  className={styles.selectAllButton}
-                  onClick={handleSelectAll}
-                >
-                  Select All
-                </button>
-              </div>
-              <div className={styles.availableBubbles}>
-                {availableItems.length === 0 ? (
-                  <span className={styles.emptySelection}>
-                    No nodes or edges available in diagram
-                  </span>
-                ) : (
-                  availableItems.map(item => (
-                    <div
-                      key={item.key}
-                      className={`${styles.bubble} ${
-                        editingChart.selectedKeys.has(item.key) ? styles.selected : ''
-                      }`}
-                      onClick={() => handleToggleItem(item.key)}
-                    >
-                      {item.displayName}
-                    </div>
-                  ))
-                )}
+                    ))
+                  )}
+                </div>
               </div>
             </div>
 
@@ -298,7 +325,7 @@ export function ResultChartsConfigModal({
                 onClick={handleSaveEdit}
                 disabled={!editingChart.title.trim() || editingChart.selectedKeys.size === 0}
               >
-                {localCharts.find(c => c.id === editingChart.id) ? 'Update' : 'Add'} Chart
+                {localCharts.find(c => c.id === editingChart.id) ? 'Update' : 'Add'}
               </button>
             </div>
           </section>
@@ -307,66 +334,74 @@ export function ResultChartsConfigModal({
         {/* Charts List - shown when not editing */}
         {!editingChart && (
           <>
-            {localCharts.length === 0 ? (
-              <div className={styles.emptyState}>
-                <h3 className={styles.emptyStateTitle}>No charts configured</h3>
-                <p className={styles.emptyStateText}>
-                  Add a chart to visualize simulation results
-                </p>
-              </div>
-            ) : (
-              <div className={styles.chartsList}>
-                {localCharts.map(chart => (
-                  <div key={chart.id} className={styles.chartItem}>
-                    <div className={styles.chartHeader}>
-                      <div>
-                        <div className={styles.chartTitle}>{chart.title}</div>
-                        <div className={styles.chartType}>Time Series</div>
-                      </div>
-                      <div className={styles.chartActions}>
-                        <button
-                          type="button"
-                          className={styles.editButton}
-                          onClick={() => handleEditChart(chart)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.deleteButton}
-                          onClick={() => handleDeleteChart(chart.id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                    <div className={styles.chartInfo}>
-                      {chart.selectedKeys.length} item{chart.selectedKeys.length !== 1 ? 's' : ''} selected
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            {/* Header with Add Button */}
+            <div className={styles.header}>
+              <h3 className={styles.headerTitle}>Configured Charts</h3>
+              <button
+                type="button"
+                className={styles.addButton}
+                onClick={handleAddChart}
+              >
+                + Time Series
+              </button>
+            </div>
 
-            <button
-              type="button"
-              className={styles.addButton}
-              onClick={handleAddChart}
-            >
-              + Add Time Series Chart
-            </button>
+            {/* Content */}
+            <div className={styles.content}>
+              {localCharts.length === 0 ? (
+                <div className={styles.emptyState}>
+                  <h3 className={styles.emptyStateTitle}>No charts configured</h3>
+                  <p className={styles.emptyStateText}>
+                    Click "+ Time Series" to add a chart
+                  </p>
+                </div>
+              ) : (
+                <div className={styles.chartsList}>
+                  {localCharts.map(chart => (
+                    <div key={chart.id} className={styles.chartItem}>
+                      <div className={styles.chartHeader}>
+                        <div>
+                          <div className={styles.chartTitle}>{chart.title}</div>
+                          <div className={styles.chartType}>
+                            {chart.selectedKeys.length} item{chart.selectedKeys.length !== 1 ? 's' : ''}
+                          </div>
+                        </div>
+                        <div className={styles.chartActions}>
+                          <button
+                            type="button"
+                            className={styles.editButton}
+                            onClick={() => handleEditChart(chart)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.deleteButton}
+                            onClick={() => handleDeleteChart(chart.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </>
         )}
 
         {/* Modal Actions - shown when not editing */}
         {!editingChart && (
-          <ModalActions
-            cancelLabel="CANCEL"
-            confirmLabel="APPLY"
-            onCancel={handleCancel}
-            onConfirm={handleApply}
-            confirmVariant="primary"
-          />
+          <div className={styles.footer}>
+            <ModalActions
+              cancelLabel="CANCEL"
+              confirmLabel="APPLY"
+              onCancel={handleCancel}
+              onConfirm={handleApply}
+              confirmVariant="primary"
+            />
+          </div>
         )}
       </div>
     </Modal>

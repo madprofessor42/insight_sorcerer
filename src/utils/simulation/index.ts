@@ -12,6 +12,9 @@ export {
   CHART_DIMENSIONS
 } from './constants';
 export { getChartOptions } from './chartConfig';
+export { 
+  VISUALIZABLE_TYPES
+} from './types';
 export type { 
   SimulationConfig, 
   SimulationRunResult,

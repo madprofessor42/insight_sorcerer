@@ -5,6 +5,26 @@
  */
 
 /**
+ * Node and link types that produce simulation series data for visualization.
+ * 
+ * These types correspond to simulation primitives that generate time series data:
+ * - Stock: accumulation nodes (have initialValue)
+ * - Variable: calculated values (have value formula)
+ * - flow: rate connections between stocks (have flowRate)
+ * 
+ * Types NOT included:
+ * - Cloud: automatic endpoints, no data
+ * - link: dependency connections, no time series
+ * - LinkLabel: invisible connection points on edges
+ */
+export const VISUALIZABLE_TYPES = {
+  /** Node types that have simulation series data */
+  nodes: ['Stock', 'Variable'] as const,
+  /** Link types that have simulation series data */
+  links: ['flow'] as const,
+} as const;
+
+/**
  * Configuration for simulation run
  */
 export interface SimulationConfig {

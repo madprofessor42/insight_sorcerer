@@ -72,9 +72,118 @@ const AGENT_METHODS = [
 ];
 
 /**
- * Detects the context before the dot to determine what methods to suggest
+ * Extracts reference name from [Name] pattern
  */
-function detectContextBeforeDot(textBefore: string): 'string' | 'vector' | 'agent' | null {
+function extractReferenceName(textBefore: string): string | null {
+  const match = textBefore.match(/\[([^\]]+)\]$/);
+  return match ? match[1] : null;
+}
+
+/**
+ * Analyzes the formula string to determine its runtime type
+ */
+function analyzeValueType(value: string | undefined): 'string' | 'vector' | 'agent' | 'number' | null {
+  if (!value) {
+    return null;
+  }
+  
+  const valueStr = value.trim();
+  
+  // Check for string literals
+  if (/^["'].*["']$/.test(valueStr)) {
+    return 'string';
+  }
+  
+  // Check for vector literals
+  if (/^\{.*\}$/.test(valueStr)) {
+    return 'vector';
+  }
+  
+  // Check for agent/population references or methods
+  if (/\.(Add|Remove|FindAll|PopulationSize|FindIndex|FindState|FindNearest|Connected)\(/.test(valueStr)) {
+    return 'agent';
+  }
+  
+  // Check for string methods
+  if (/\.(Parse|Split|Trim|Length|IndexOf|Contains|LowerCase|UpperCase)\(/.test(valueStr)) {
+    return 'string';
+  }
+  
+  // Check for vector methods
+  if (/\.(Sort|Reverse|Map|Filter|Flatten|Union|Intersection)\(/.test(valueStr)) {
+    return 'vector';
+  }
+  
+  // Check for numeric value
+  if (/^-?\d+(\.\d+)?$/.test(valueStr)) {
+    return 'number';
+  }
+  
+  // Default: assume it's a number (most common for Stock/Variable)
+  return 'number';
+}
+
+/**
+ * Determines the value type based on formula analysis
+ * 
+ * Analyzes the formula string to detect its type:
+ * - value: "hello" → 'string'
+ * - value: {1,2,3} → 'vector'
+ * - value: [Population].FindAll() → 'agent'
+ * - no value/empty → fall back to reference type
+ */
+function getValueTypeFromReference(ref: AvailableReference): 'string' | 'vector' | 'agent' | 'number' | null {
+  // Try to analyze the formula string
+  if (ref.value) {
+    const analyzedType = analyzeValueType(ref.value);
+    if (analyzedType) {
+      return analyzedType;
+    }
+  }
+  
+  // Fall back to reference type (for nodes without formulas)
+  const typeLower = ref.type.toLowerCase();
+  
+  // Check for agent/population types
+  if (typeLower.includes('agent') || typeLower.includes('population') || typeLower.includes('state')) {
+    return 'agent';
+  }
+  
+  // Check for string types  
+  if (typeLower.includes('string') || typeLower.includes('text')) {
+    return 'string';
+  }
+  
+  // Check for vector/array types
+  if (typeLower.includes('vector') || typeLower.includes('array') || typeLower.includes('list')) {
+    return 'vector';
+  }
+  
+  // Check for numeric types (Stock, Variable are typically numbers)
+  if (typeLower.includes('stock') || typeLower.includes('variable') || typeLower.includes('number') || typeLower.includes('flow')) {
+    return 'number';
+  }
+  
+  return null;
+}
+
+/**
+ * Detects the context before the dot to determine what methods to suggest
+ * 
+ * Logic:
+ * 1. "string". → string methods (Parse, Split, Trim, etc.)
+ * 2. {1,2,3}. → vector methods (Length, Sort, Map, etc.)
+ * 3. [Reference]. → depends on reference type:
+ *    - If [Population] type contains "Agent" → agent methods (Add, FindAll, etc.)
+ *    - If [Name] type contains "String" → string methods
+ *    - If [Data] type contains "Vector" → vector methods
+ *    - If [Value] type is "Stock"/"Variable" → no special methods (it's a number)
+ * 4. variable. → no suggestions (unknown type)
+ */
+function detectContextBeforeDot(
+  textBefore: string,
+  availableReferences: AvailableReference[]
+): 'string' | 'vector' | 'agent' | null {
   // Match string literals: "..." or '...'
   if (/["'][^"']*$/.test(textBefore)) {
     return 'string';
@@ -85,15 +194,28 @@ function detectContextBeforeDot(textBefore: string): 'string' | 'vector' | 'agen
     return 'vector';
   }
   
-  // Match references (agents/populations): [Name]
-  if (/\[[^\]]+\]$/.test(textBefore)) {
-    return 'agent';
+  // Match references: [Name]
+  const refName = extractReferenceName(textBefore);
+  if (refName) {
+    // Find the reference to determine its type
+    const ref = availableReferences.find(r => r.name === refName);
+    if (ref) {
+      const valueType = getValueTypeFromReference(ref);
+      
+      // Only return agent, string, or vector types
+      // Numbers don't have special methods
+      if (valueType === 'agent' || valueType === 'string' || valueType === 'vector') {
+        return valueType;
+      }
+    }
+    
+    // If reference not found or type is number, return null (no special methods)
+    return null;
   }
   
   // Match identifiers that could be variables
   if (/[\w]+$/.test(textBefore)) {
-    // Could be a variable - we'll return null and let default behavior handle it
-    // In future, we could track variable types
+    // Could be a variable - we don't know its type
     return null;
   }
   
@@ -113,7 +235,7 @@ export function createFormulaAutocomplete(options: AutocompleteOptions) {
     if (afterDot) {
       const methodPrefix = afterDot[1];
       const textBeforeDot = beforeWord.slice(0, beforeWord.lastIndexOf('.'));
-      const contextType = detectContextBeforeDot(textBeforeDot);
+      const contextType = detectContextBeforeDot(textBeforeDot, options.availableReferences);
       
       let methods: typeof STRING_METHODS = [];
       let contextName = '';
@@ -335,64 +457,83 @@ export function referenceCompletionSource(options: AutocompleteOptions) {
     const afterRefDot = /\[[\w\s]+\]\.(\w*)$/.exec(beforeText);
     if (afterRefDot) {
       const methodPrefix = afterRefDot[1];
+      const textBeforeDot = beforeText.slice(0, beforeText.lastIndexOf('.'));
+      const contextType = detectContextBeforeDot(textBeforeDot, options.availableReferences);
       
-      // Show agent methods for references
-      const completions = AGENT_METHODS
-        .filter(method => 
-          methodPrefix === '' || 
-          method.name.toLowerCase().startsWith(methodPrefix.toLowerCase())
-        )
-        .map(method => ({
-          label: method.name,
-          type: 'method',
-          detail: method.signature.replace(method.name, '').trim(),
-          info: () => {
-            const node = document.createElement('div');
-            node.style.padding = '8px';
-            node.style.maxWidth = '400px';
-            
-            const title = document.createElement('div');
-            title.style.fontWeight = 'bold';
-            title.style.marginBottom = '4px';
-            title.style.color = '#3db0ff';
-            title.textContent = `[Reference].${method.signature}`;
-            node.appendChild(title);
-            
-            const desc = document.createElement('div');
-            desc.style.marginBottom = '8px';
-            desc.style.color = '#94a3b8';
-            desc.textContent = method.description;
-            node.appendChild(desc);
-            
-            if (method.example) {
-              const exampleLabel = document.createElement('div');
-              exampleLabel.style.fontWeight = '600';
-              exampleLabel.style.marginTop = '8px';
-              exampleLabel.style.marginBottom = '4px';
-              exampleLabel.textContent = 'Example:';
-              node.appendChild(exampleLabel);
+      // Determine which methods to show based on the actual type
+      let methods: typeof STRING_METHODS = [];
+      let contextName = '';
+      
+      if (contextType === 'string') {
+        methods = STRING_METHODS;
+        contextName = 'String';
+      } else if (contextType === 'vector') {
+        methods = VECTOR_METHODS;
+        contextName = 'Vector';
+      } else if (contextType === 'agent') {
+        methods = AGENT_METHODS;
+        contextName = 'Agent/Population';
+      }
+      
+      // Only show completions if we have methods for this type
+      if (methods.length > 0) {
+        const completions = methods
+          .filter(method => 
+            methodPrefix === '' || 
+            method.name.toLowerCase().startsWith(methodPrefix.toLowerCase())
+          )
+          .map(method => ({
+            label: method.name,
+            type: 'method',
+            detail: method.signature.replace(method.name, '').trim(),
+            info: () => {
+              const node = document.createElement('div');
+              node.style.padding = '8px';
+              node.style.maxWidth = '400px';
               
-              const example = document.createElement('code');
-              example.style.display = 'block';
-              example.style.padding = '4px 8px';
-              example.style.backgroundColor = '#0f172a';
-              example.style.borderRadius = '4px';
-              example.style.fontFamily = 'monospace';
-              example.style.fontSize = '12px';
-              example.textContent = method.example;
-              node.appendChild(example);
-            }
-            
-            return node;
-          },
-          apply: method.signature,
-        }));
-      
-      return {
-        from: context.pos - methodPrefix.length,
-        options: completions,
-        validFor: /^[\w]*$/,
-      };
+              const title = document.createElement('div');
+              title.style.fontWeight = 'bold';
+              title.style.marginBottom = '4px';
+              title.style.color = '#3db0ff';
+              title.textContent = `${contextName}.${method.signature}`;
+              node.appendChild(title);
+              
+              const desc = document.createElement('div');
+              desc.style.marginBottom = '8px';
+              desc.style.color = '#94a3b8';
+              desc.textContent = method.description;
+              node.appendChild(desc);
+              
+              if (method.example) {
+                const exampleLabel = document.createElement('div');
+                exampleLabel.style.fontWeight = '600';
+                exampleLabel.style.marginTop = '8px';
+                exampleLabel.style.marginBottom = '4px';
+                exampleLabel.textContent = 'Example:';
+                node.appendChild(exampleLabel);
+                
+                const example = document.createElement('code');
+                example.style.display = 'block';
+                example.style.padding = '4px 8px';
+                example.style.backgroundColor = '#0f172a';
+                example.style.borderRadius = '4px';
+                example.style.fontFamily = 'monospace';
+                example.style.fontSize = '12px';
+                example.textContent = method.example;
+                node.appendChild(example);
+              }
+              
+              return node;
+            },
+            apply: method.signature,
+          }));
+        
+        return {
+          from: context.pos - methodPrefix.length,
+          options: completions,
+          validFor: /^[\w]*$/,
+        };
+      }
     }
     
     // Check if we're inside a reference bracket [

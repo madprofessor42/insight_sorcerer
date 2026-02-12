@@ -4,6 +4,8 @@
 
 import * as go from 'gojs';
 import type { AvailableReference, NodeType, LinkType, ReferenceConfig } from '../../config';
+import { NODE_CONFIGURATIONS } from '../../config/diagram-nodes';
+import { LINK_CONFIGURATIONS } from '../../config/diagram-links';
 import { 
   isLinkLabelNodeData, 
   findParentEdgeForLabelNode, 
@@ -16,6 +18,67 @@ import {
 // ============================================================================
 // HELPER FUNCTIONS - Internal utilities for building reference lists
 // ============================================================================
+
+/**
+ * Gets the formula field keys for a given node type
+ * Returns all displayProperties that have editorType: 'formula'
+ */
+function getNodeFormulaFields(nodeType: NodeType): string[] {
+  const config = NODE_CONFIGURATIONS.find(c => c.id === nodeType);
+  if (!config) return [];
+  
+  return config.displayProperties
+    .filter(prop => prop.editorType === 'formula')
+    .map(prop => prop.dataKey);
+}
+
+/**
+ * Gets the formula field keys for a given link type
+ * Returns all displayProperties that have editorType: 'formula'
+ */
+function getLinkFormulaFields(linkType: string): string[] {
+  const config = LINK_CONFIGURATIONS.find(c => c.id === linkType);
+  if (!config) return [];
+  
+  return config.displayProperties
+    .filter(prop => prop.editorType === 'formula')
+    .map(prop => prop.dataKey);
+}
+
+/**
+ * Extracts the formula value from a node based on its configuration
+ */
+function getNodeFormulaValue(node: go.ObjectData): string | undefined {
+  const nodeType = (node.category || 'Variable') as NodeType;
+  const formulaFields = getNodeFormulaFields(nodeType);
+  
+  // Try each formula field in order until we find a non-empty value
+  for (const field of formulaFields) {
+    const value = node[field];
+    if (value !== undefined && value !== null && value !== '') {
+      return String(value); // Always return as string
+    }
+  }
+  
+  return undefined;
+}
+
+/**
+ * Extracts the formula value from a link based on its configuration
+ */
+function getLinkFormulaValue(link: go.ObjectData, linkType: string): string | undefined {
+  const formulaFields = getLinkFormulaFields(linkType);
+  
+  // Try each formula field in order until we find a non-empty value
+  for (const field of formulaFields) {
+    const value = link[field];
+    if (value !== undefined && value !== null && value !== '') {
+      return String(value); // Always return as string
+    }
+  }
+  
+  return undefined;
+}
 
 /**
  * Helper: Try to add a node to references if it meets criteria
@@ -33,10 +96,15 @@ function tryAddNodeReference(
       !isLinkLabelNodeData(node) && 
       !addedKeys.has(node.key)) {
     const name = getNodeDisplayName(node);
+    
+    // Dynamically extract formula value based on node configuration
+    const formulaValue = getNodeFormulaValue(node);
+    
     references.push({
       id: node.key,
       name: name,
       type: (node.category || 'Variable') as NodeType,
+      value: formulaValue,
     });
     addedKeys.add(node.key);
     return true;
@@ -59,10 +127,15 @@ function tryAddEdgeReference(
   
   if (!addedKeys.has(edge.key)) {
     const edgeName = getLinkDisplayName(edge);
+    
+    // Dynamically extract formula value based on link configuration
+    const formulaValue = getLinkFormulaValue(edge, edgeType);
+    
     references.push({
       id: edge.key,
       name: edgeName,
       type: edgeType,
+      value: formulaValue,
     });
     addedKeys.add(edge.key);
     return true;

@@ -220,6 +220,8 @@ export interface AvailableReference {
   name: string;
   /** Type of the reference (node type or link type) */
   type: NodeType | string;
+  /** The actual formula stored in this reference (optional) */
+  value?: string;
 }
 
 /**

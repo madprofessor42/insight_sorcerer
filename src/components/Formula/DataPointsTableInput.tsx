@@ -63,6 +63,7 @@ export function DataPointsTableInput({
 }: DataPointsTableInputProps) {
   const [dataPoints, setDataPoints] = useState<DataPoint[]>(() => parseDataPoints(value));
   const [editingCell, setEditingCell] = useState<{ row: number; col: 'x' | 'y' } | null>(null);
+  const [tempEditValue, setTempEditValue] = useState<string>('');
   const isInternalUpdateRef = useRef(false);
   const prevValueRef = useRef(value);
 
@@ -78,8 +79,11 @@ export function DataPointsTableInput({
   }, [value]);
 
   const handleCellChange = useCallback((rowIndex: number, col: 'x' | 'y', newValue: string) => {
+    // Allow empty input during editing
+    setTempEditValue(newValue);
+    
     const numValue = parseFloat(newValue);
-    if (isNaN(numValue)) return;
+    if (isNaN(numValue)) return; // Don't update dataPoints yet if invalid
 
     const updated = [...dataPoints];
     updated[rowIndex] = { ...updated[rowIndex], [col]: numValue };
@@ -122,13 +126,48 @@ export function DataPointsTableInput({
     onChange(formatted);
   }, [dataPoints, onChange]);
 
-  const handleCellBlur = useCallback(() => {
+  const handleCellBlur = useCallback((rowIndex: number, col: 'x' | 'y') => {
+    // If the temp value is empty or invalid, restore the previous value
+    const numValue = parseFloat(tempEditValue);
+    if (tempEditValue === '' || isNaN(numValue)) {
+      // Value was cleared or invalid - dataPoints already has the correct value
+      // Just close the editor
+      setEditingCell(null);
+      setTempEditValue('');
+      return;
+    }
+    
+    // Valid value - make sure it's committed
+    const updated = [...dataPoints];
+    updated[rowIndex] = { ...updated[rowIndex], [col]: numValue };
+    setDataPoints(updated);
+    
+    const formatted = formatDataPoints(updated);
+    isInternalUpdateRef.current = true;
+    prevValueRef.current = formatted;
+    onChange(formatted);
+    
     setEditingCell(null);
-  }, []);
+    setTempEditValue('');
+  }, [tempEditValue, dataPoints, onChange]);
 
   const handleCellClick = useCallback((rowIndex: number, col: 'x' | 'y') => {
     setEditingCell({ row: rowIndex, col });
-  }, []);
+    // Set initial temp value
+    setTempEditValue(String(dataPoints[rowIndex][col]));
+  }, [dataPoints]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>, rowIndex: number, col: 'x' | 'y') => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleCellBlur(rowIndex, col);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      // Cancel editing and restore original value
+      setEditingCell(null);
+      setTempEditValue('');
+    }
+  }, [handleCellBlur]);
 
   return (
     <div className={styles.container}>
@@ -151,13 +190,13 @@ export function DataPointsTableInput({
                 <td className={styles.cell}>
                   {editingCell?.row === rowIndex && editingCell?.col === 'x' ? (
                     <input
-                      type="number"
+                      type="text"
                       className={styles.cellInput}
-                      value={point.x}
+                      value={tempEditValue}
                       onChange={(e) => handleCellChange(rowIndex, 'x', e.target.value)}
-                      onBlur={handleCellBlur}
+                      onBlur={() => handleCellBlur(rowIndex, 'x')}
+                      onKeyDown={(e) => handleKeyDown(e, rowIndex, 'x')}
                       autoFocus
-                      step="any"
                     />
                   ) : (
                     <div
@@ -171,13 +210,13 @@ export function DataPointsTableInput({
                 <td className={styles.cell}>
                   {editingCell?.row === rowIndex && editingCell?.col === 'y' ? (
                     <input
-                      type="number"
+                      type="text"
                       className={styles.cellInput}
-                      value={point.y}
+                      value={tempEditValue}
                       onChange={(e) => handleCellChange(rowIndex, 'y', e.target.value)}
-                      onBlur={handleCellBlur}
+                      onBlur={() => handleCellBlur(rowIndex, 'y')}
+                      onKeyDown={(e) => handleKeyDown(e, rowIndex, 'y')}
                       autoFocus
-                      step="any"
                     />
                   ) : (
                     <div

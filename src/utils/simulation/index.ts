@@ -47,3 +47,14 @@ export {
   type SelectableItem
 } from './selectableItems';
 
+// Form validation utilities
+export {
+  configToFormState,
+  formStateToConfig,
+  validateSimulationConfig,
+  getFormValidationError,
+  type SettingsFormState,
+  type TimeUnit,
+  type Algorithm
+} from './formValidation';
+

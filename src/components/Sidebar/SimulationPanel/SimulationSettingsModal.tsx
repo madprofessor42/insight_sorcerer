@@ -7,8 +7,15 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { Modal, FormField, ModalActions } from '../../ui';
-import type { SimulationConfig } from '../../../utils/simulation';
-import { DEFAULT_SIMULATION_CONFIG, TIME_UNITS } from '../../../utils/simulation';
+import { 
+  type SimulationConfig,
+  type SettingsFormState,
+  type TimeUnit,
+  type Algorithm,
+  TIME_UNITS,
+  configToFormState,
+  formStateToConfig
+} from '../../../utils/simulation';
 import styles from './SimulationSettingsModal.module.css';
 
 export interface SimulationSettingsModalProps {
@@ -16,61 +23,6 @@ export interface SimulationSettingsModalProps {
   onClose: () => void;
   initialConfig: SimulationConfig;
   onApply: (config: SimulationConfig) => void;
-}
-
-type TimeUnit = 'Seconds' | 'Minutes' | 'Hours' | 'Days' | 'Weeks' | 'Months' | 'Years';
-type Algorithm = 'Euler' | 'RK4';
-
-/**
- * Local form state for settings modal.
- * Uses strings for numbers to allow empty input during editing.
- */
-interface SettingsFormState {
-  timeStart: string;
-  timeLength: string;
-  timeStep: string;
-  timeUnits: TimeUnit;
-  algorithm: Algorithm;
-}
-
-/**
- * Convert SimulationConfig to form state with defaults.
- */
-function configToFormState(config: SimulationConfig): SettingsFormState {
-  return {
-    timeStart: String(config.timeStart ?? DEFAULT_SIMULATION_CONFIG.timeStart),
-    timeLength: String(config.timeLength ?? DEFAULT_SIMULATION_CONFIG.timeLength),
-    timeStep: String(config.timeStep ?? DEFAULT_SIMULATION_CONFIG.timeStep),
-    timeUnits: config.timeUnits ?? DEFAULT_SIMULATION_CONFIG.timeUnits,
-    algorithm: config.algorithm ?? DEFAULT_SIMULATION_CONFIG.algorithm,
-  };
-}
-
-/**
- * Validate form and convert to SimulationConfig.
- * Returns null if form is invalid.
- */
-function formStateToConfig(form: SettingsFormState): SimulationConfig | null {
-  const timeStart = parseFloat(form.timeStart);
-  const timeLength = parseFloat(form.timeLength);
-  const timeStep = parseFloat(form.timeStep);
-
-  // Validate all fields
-  if (isNaN(timeStart) || isNaN(timeLength) || isNaN(timeStep)) {
-    return null;
-  }
-
-  if (timeLength <= 0 || timeStep <= 0) {
-    return null;
-  }
-
-  return {
-    timeStart,
-    timeLength,
-    timeStep,
-    timeUnits: form.timeUnits,
-    algorithm: form.algorithm,
-  };
 }
 
 export function SimulationSettingsModal({

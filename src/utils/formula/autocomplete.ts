@@ -331,32 +331,8 @@ export function createFormulaAutocomplete(options: AutocompleteOptions) {
       }
     }
 
-    // Check if we're inside a reference bracket [
-    const inReference = beforeWord.lastIndexOf('[') > beforeWord.lastIndexOf(']');
-
-    if (inReference) {
-      // Autocomplete references
-      const refWord = beforeWord.slice(beforeWord.lastIndexOf('[') + 1);
-      
-      const completions = options.availableReferences
-        .filter(ref => 
-          refWord === '' || 
-          ref.name.toLowerCase().includes(refWord.toLowerCase())
-        )
-        .map(ref => ({
-          label: ref.name,
-          type: 'variable',
-          detail: ref.type,
-          info: `${ref.type}: ${ref.name}`,
-          apply: ref.name,
-        }));
-
-      return {
-        from: context.pos - refWord.length,
-        options: completions,
-        validFor: /^[\w\s]*$/,
-      };
-    }
+    // Skip reference autocomplete here - it's handled by referenceCompletionSource
+    // to avoid duplicates and ensure proper bracket insertion
 
     // Autocomplete functions and keywords
     if (word) {
@@ -494,6 +470,10 @@ export function referenceCompletionSource(options: AutocompleteOptions) {
     }
 
     const searchText = before.text.slice(1); // Remove the '['
+    
+    // Check if there's already a closing bracket after the cursor
+    const afterText = context.state.doc.sliceString(context.pos, context.pos + 1);
+    const hasClosingBracket = afterText === ']';
 
     const completions = options.availableReferences
       .filter(ref => 
@@ -505,7 +485,8 @@ export function referenceCompletionSource(options: AutocompleteOptions) {
         type: 'variable',
         detail: ref.type,
         info: `${ref.type}: ${ref.name}`,
-        apply: `[${ref.name}]`,
+        // If there's already a closing bracket, don't add another one
+        apply: hasClosingBracket ? `[${ref.name}` : `[${ref.name}]`,
       }));
 
     return {

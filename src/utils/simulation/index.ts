@@ -9,7 +9,8 @@ export {
   DEFAULT_SIMULATION_CONFIG, 
   TIME_UNITS,
   generateChartColor,
-  CHART_DIMENSIONS
+  CHART_DIMENSIONS,
+  CHART_COLORS
 } from './constants';
 export { getChartOptions } from './chartConfig';
 export { 
@@ -24,4 +25,25 @@ export type {
   ScatterPlotChartConfig,
   TableChartConfig
 } from './types';
+
+// Chart data generation utilities
+export {
+  resolveSimulationKeyName,
+  generateTimeSeriesChartData,
+  generateScatterPlotChartData,
+  generateTableChartData,
+  generateDefaultChart,
+  generateChartDataFromConfig,
+  generateAllChartsData,
+  type ChartInfo,
+  type TimeSeriesChartInfo,
+  type ScatterPlotChartInfo,
+  type TableChartInfo
+} from './chartDataGenerator';
+
+// Selectable items utilities
+export {
+  getSelectableItems,
+  type SelectableItem
+} from './selectableItems';
 

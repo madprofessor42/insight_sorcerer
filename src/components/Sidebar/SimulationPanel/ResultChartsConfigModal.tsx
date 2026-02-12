@@ -7,9 +7,13 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Modal, ModalActions } from '../../ui';
 import { useAppSelector } from '../../../store/hooks';
-import { resolveNodeInfo, getLinkDisplayName, isLinkLabelNodeData } from '../../../utils/diagram-data';
-import { VISUALIZABLE_TYPES } from '../../../utils/simulation';
-import type { ResultChartConfig, ChartType } from '../../../utils/simulation';
+import { 
+  type ResultChartConfig, 
+  type ChartType,
+  type SelectableItem,
+  getSelectableItems,
+  resolveSimulationKeyName
+} from '../../../utils/simulation';
 import { nanoid } from 'nanoid';
 import styles from './ResultChartsConfigModal.module.css';
 
@@ -27,42 +31,6 @@ interface EditingChart {
   selectedKeys: Set<string>;
   xAxisKey?: string;  // For scatter plot
   yAxisKey?: string;  // For scatter plot
-}
-
-/**
- * Available node/edge item for selection
- */
-interface SelectableItem {
-  key: string;
-  displayName: string;
-  type: 'node' | 'edge';
-}
-
-/**
- * Resolve display name for a simulation key.
- */
-function resolveSimulationKeyName(
-  key: string | undefined,
-  nodes: Array<any>,
-  links: Array<any>
-): string {
-  if (!key) return 'Not set';
-  
-  // Try to find as node first
-  const node = nodes.find(n => String(n.key) === String(key));
-  if (node) {
-    const nodeInfo = resolveNodeInfo(key, nodes);
-    return nodeInfo.name;
-  }
-  
-  // Try to find as link
-  const link = links.find(l => String(l.key) === String(key));
-  if (link) {
-    return getLinkDisplayName(link);
-  }
-  
-  // Fallback if not found
-  return String(key);
 }
 
 export function ResultChartsConfigModal({
@@ -85,50 +53,9 @@ export function ResultChartsConfigModal({
     }
   }, [isOpen, charts]);
 
-  // Get all available nodes and edges as selectable items
-  // Only include types that produce simulation series data for visualization
+  // Get all available nodes and edges as selectable items using utility
   const availableItems = useMemo<SelectableItem[]>(() => {
-    const items: SelectableItem[] = [];
-
-    // Add nodes (only those that have simulation series data)
-    // Stock and Variable nodes create simulation primitives with time series
-    for (const node of nodeDataArray) {
-      // Skip LinkLabel nodes - they are invisible connection points on edges
-      if (isLinkLabelNodeData(node)) {
-        continue;
-      }
-      
-      // Only include nodes that produce simulation series data
-      // Excludes: Cloud (auto-created endpoints), LinkLabel (connection points)
-      if (!VISUALIZABLE_TYPES.nodes.includes(node.category as any)) {
-        continue;
-      }
-      
-      const nodeInfo = resolveNodeInfo(node.key, nodeDataArray);
-      items.push({
-        key: String(node.key),
-        displayName: nodeInfo.name,
-        type: 'node',
-      });
-    }
-
-    // Add edges (only those that have simulation series data)
-    // Currently only 'flow' links produce time series data
-    for (const link of linkDataArray) {
-      // Only include links that produce simulation series data
-      // Excludes: 'link' type (dependency connections without flow rate)
-      if (!VISUALIZABLE_TYPES.links.includes(link.category as any)) {
-        continue;
-      }
-      
-      items.push({
-        key: String(link.key),
-        displayName: getLinkDisplayName(link),
-        type: 'edge',
-      });
-    }
-
-    return items;
+    return getSelectableItems(nodeDataArray, linkDataArray);
   }, [nodeDataArray, linkDataArray]);
 
   // Start editing a new chart

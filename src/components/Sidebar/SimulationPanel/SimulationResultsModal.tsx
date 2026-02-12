@@ -19,9 +19,8 @@ import {
 import { Line, Scatter } from 'react-chartjs-2';
 import { Modal } from '../../ui';
 import type { SimulationRunResult, ResultChartConfig } from '../../../utils/simulation';
-import { generateChartColor, CHART_COLORS, CHART_DIMENSIONS } from '../../../utils/simulation/constants';
+import { CHART_COLORS, CHART_DIMENSIONS, generateAllChartsData } from '../../../utils/simulation';
 import { getChartOptions } from '../../../utils/simulation/chartConfig';
-import { resolveNodeInfo, getLinkDisplayName } from '../../../utils/diagram-data';
 import type * as go from 'gojs';
 import styles from './SimulationResultsModal.module.css';
 
@@ -45,37 +44,6 @@ export interface SimulationResultsModalProps {
   charts: ResultChartConfig[];
 }
 
-/**
- * Resolve display name for a simulation key.
- * Uses diagram-data utilities for consistency with the rest of the app.
- * 
- * @param key - Unique key (nanoid) for node or link
- * @param nodes - Node data array
- * @param links - Link data array
- * @returns Display name for the chart
- */
-function resolveSimulationKeyName(
-  key: go.Key,
-  nodes: Array<go.ObjectData>,
-  links: Array<go.ObjectData>
-): string {
-  // Try to find as node first
-  const node = nodes.find(n => n.key === key);
-  if (node) {
-    const nodeInfo = resolveNodeInfo(key, nodes);
-    return nodeInfo.name;
-  }
-  
-  // Try to find as link
-  const link = links.find(l => l.key === key);
-  if (link) {
-    return getLinkDisplayName(link);
-  }
-  
-  // Fallback if not found
-  return String(key);
-}
-
 export function SimulationResultsModal({
   isOpen,
   onClose,
@@ -84,124 +52,10 @@ export function SimulationResultsModal({
   linkDataArray,
   charts,
 }: SimulationResultsModalProps) {
-  // Generate chart data for each configured chart
+  // Generate chart data for each configured chart using utility
   const chartsData = useMemo(() => {
-    if (!result?.success || !result.times || !result.series) {
-      return [];
-    }
-
-    // If no charts configured, show all series in a default time series chart
-    if (charts.length === 0) {
-      const datasets = Object.entries(result.series).map(([key, values], index) => {
-        const label = resolveSimulationKeyName(key, nodeDataArray, linkDataArray);
-        
-        return {
-          label,
-          data: values,
-          borderColor: generateChartColor(index),
-          backgroundColor: generateChartColor(index),
-          borderWidth: 2,
-          pointRadius: 0,
-          pointHoverRadius: 4,
-          tension: 0.1,
-        };
-      });
-
-      return [{
-        type: 'timeSeries' as const,
-        title: 'All Results',
-        data: {
-          labels: result.times.map(t => t.toString()),
-          datasets,
-        },
-      }];
-    }
-
-    // Generate data for each configured chart
-    return charts.map(chart => {
-      if (chart.type === 'timeSeries') {
-        const datasets = chart.selectedKeys
-          .filter(key => result.series?.[key]) // Only include keys that have data
-          .map((key, index) => {
-            const label = resolveSimulationKeyName(key, nodeDataArray, linkDataArray);
-            const values = result.series![key];
-            
-            return {
-              label,
-              data: values,
-              borderColor: generateChartColor(index),
-              backgroundColor: generateChartColor(index),
-              borderWidth: 2,
-              pointRadius: 0,
-              pointHoverRadius: 4,
-              tension: 0.1,
-            };
-          });
-
-        return {
-          type: 'timeSeries' as const,
-          title: chart.title,
-          data: {
-            labels: result.times!.map(t => t.toString()),
-            datasets,
-          },
-        };
-      } else if (chart.type === 'scatterPlot') {
-        const xKey = (chart as any).xAxisKey;
-        const yKey = (chart as any).yAxisKey;
-        
-        if (!xKey || !yKey || !result.series?.[xKey] || !result.series?.[yKey]) {
-          return {
-            type: 'scatterPlot' as const,
-            title: chart.title,
-            data: { datasets: [] },
-            error: 'Invalid axis configuration',
-          };
-        }
-        
-        const xValues = result.series![xKey];
-        const yValues = result.series![yKey];
-        const scatterData = xValues.map((x, i) => ({ x, y: yValues[i] }));
-        
-        return {
-          type: 'scatterPlot' as const,
-          title: chart.title,
-          xLabel: resolveSimulationKeyName(xKey, nodeDataArray, linkDataArray),
-          yLabel: resolveSimulationKeyName(yKey, nodeDataArray, linkDataArray),
-          data: {
-            datasets: [{
-              label: `${resolveSimulationKeyName(xKey, nodeDataArray, linkDataArray)} vs ${resolveSimulationKeyName(yKey, nodeDataArray, linkDataArray)}`,
-              data: scatterData,
-              borderColor: generateChartColor(0),
-              backgroundColor: generateChartColor(0),
-              pointRadius: 3,
-              pointHoverRadius: 5,
-            }],
-          },
-        };
-      } else if (chart.type === 'table') {
-        const selectedData = chart.selectedKeys
-          .filter(key => result.series?.[key])
-          .map(key => ({
-            key,
-            label: resolveSimulationKeyName(key, nodeDataArray, linkDataArray),
-            values: result.series![key],
-          }));
-        
-        return {
-          type: 'table' as const,
-          title: chart.title,
-          times: result.times!,
-          series: selectedData,
-        };
-      }
-      
-      return {
-        type: 'timeSeries' as const,
-        title: chart.title,
-        data: { datasets: [] },
-      };
-    });
+    if (!result) return [];
+    return generateAllChartsData(charts, result, nodeDataArray, linkDataArray);
   }, [result, nodeDataArray, linkDataArray, charts]);
 
   const getScatterChartOptions = useCallback((xLabel: string, yLabel: string) => {

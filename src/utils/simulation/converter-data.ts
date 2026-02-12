@@ -78,8 +78,8 @@ export function generateDefaultConverterValues(timeStart: number, timeLength: nu
   const end = timeStart + timeLength;
   
   return formatDataPoints([
-    { x: start, y: 30 },
-    { x: middle, y: 10 },
+    { x: start, y: 10 },
+    { x: middle, y: 30 },
     { x: end, y: 100 }
   ]);
 }

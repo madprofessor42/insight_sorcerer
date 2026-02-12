@@ -1,0 +1,156 @@
+/**
+ * SingleReferenceInput styles
+ */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+
+.label {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* Current Selection Display */
+.currentSelection {
+  padding: var(--spacing-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--border-radius-sm);
+  background: var(--surface-input);
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+}
+
+.placeholder {
+  color: var(--text-placeholder);
+  font-size: var(--font-size-sm);
+}
+
+.selectedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: 4px 8px;
+  background: var(--color-selection-light);
+  border: 1px solid var(--color-selection);
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.selectedType {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.selectedName {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* Available References (Bubbles) */
+.suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  padding: var(--spacing-2);
+  background: var(--color-background);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--border-radius-sm);
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.suggestionsHeader {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: var(--spacing-1);
+  margin-bottom: var(--spacing-1);
+}
+
+.suggestionsHeader:first-child {
+  margin-top: 0;
+}
+
+.suggestion {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: 6px 8px;
+  background: var(--surface-input);
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 13px;
+  text-align: left;
+}
+
+.suggestion:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-selection);
+  transform: translateX(2px);
+}
+
+.suggestionActive {
+  background: var(--color-selection-light);
+  border-color: var(--color-selection);
+  font-weight: 500;
+  box-shadow: 0 0 0 1px var(--color-selection);
+}
+
+.suggestionType {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.suggestionName {
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.noSuggestions {
+  padding: var(--spacing-3);
+  text-align: center;
+  color: var(--text-placeholder);
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* Scrollbar styling */
+.suggestions::-webkit-scrollbar {
+  width: 6px;
+}
+
+.suggestions::-webkit-scrollbar-track {
+  background: var(--color-surface);
+}
+
+.suggestions::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: 3px;
+}
+
+.suggestions::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+

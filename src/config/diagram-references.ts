@@ -42,6 +42,11 @@ export const REFERENCE_CONFIGURATIONS: Record<string, ReferenceConfig> = {
     includeTargetNode: true,                        // Show the Stock flow goes to
     incoming: ['link'],                             // Show nodes connected TO flow via 'link' (Variable -> Link -> Flow)
   },
+  
+  // Converter.input - show incoming connections via 'link' type (Stock/Variable/Converter connected to this Converter)
+  'Converter.input': {
+    incoming: ['link'],                             // Show nodes/edges connected via 'link'
+  },
 };
 
 /**

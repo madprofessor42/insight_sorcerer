@@ -90,6 +90,27 @@
   cursor: not-allowed;
 }
 
+.propertySelect {
+  padding: var(--spacing-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  background: var(--surface-input);
+  transition: border-color 0.2s ease;
+  cursor: pointer;
+}
+
+.propertySelect:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.propertySelect:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .actions {
   margin-top: var(--spacing-3);
   padding-top: var(--spacing-3);

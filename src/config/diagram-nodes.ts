@@ -164,7 +164,11 @@ export const NODE_CONFIGURATIONS: NodeConfiguration[] = [
         editable: true,
         defaultValue: 'Linear',
         showAsTooltip: true,
-        editorType: 'text'
+        editorType: 'singleReference',
+        defaultOptions: [
+          { value: 'Linear', label: 'Linear' },
+          { value: 'Discrete', label: 'Discrete' }
+        ]
       },
       {
         dataKey: 'input',
@@ -172,7 +176,11 @@ export const NODE_CONFIGURATIONS: NodeConfiguration[] = [
         editable: true,
         defaultValue: 'Time',
         showAsTooltip: true,
-        editorType: 'text'
+        editorType: 'singleReference',
+        dynamicOptions: 'references',
+        defaultOptions: [
+          { value: 'Time', label: 'Time' }
+        ]
       },
       {
         dataKey: 'values',

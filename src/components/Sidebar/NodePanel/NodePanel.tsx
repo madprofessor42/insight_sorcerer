@@ -4,7 +4,7 @@ import { useAppSelector } from '../../../store/hooks';
 import { getNodeConfiguration, getNodeReferenceConfig } from '../../../config';
 import { useNodeOperations } from '../../../hooks/node/useNodeOperations';
 import type { NodeType } from '../../../config';
-import { FormulaInput } from '../../Formula';
+import { FormulaInput, SingleReferenceInput } from '../../Formula';
 import { getAvailableReferences } from '../../../utils/diagram-data';
 import styles from './NodePanel.module.css';
 
@@ -20,7 +20,7 @@ export function NodePanel() {
   const [propertyValues, setPropertyValues] = useState<Record<string, string>>({});
   const [previousNodeKey, setPreviousNodeKey] = useState<go.Key | null>(null);
 
-  // Get available references for formula inputs
+  // Get available references for formula inputs and select dropdowns with dynamic options
   // Create a map of dataKey -> references for each property
   const availableReferencesMap = useMemo(() => {
     if (!selectedNodeKey || !selectedNode) return {};
@@ -33,7 +33,12 @@ export function NodePanel() {
     const referencesMap: Record<string, ReturnType<typeof getAvailableReferences>> = {};
     
     config.displayProperties.forEach(prop => {
-      if (prop.editorType === 'formula') {
+      // Get references for formula fields OR fields with dynamic options (select/singleReference)
+      if (
+        prop.editorType === 'formula' || 
+        (prop.editorType === 'select' && prop.dynamicOptions === 'references') ||
+        (prop.editorType === 'singleReference' && prop.dynamicOptions === 'references')
+      ) {
         const refConfig = getNodeReferenceConfig(nodeType, prop.dataKey);
         if (refConfig) {
           referencesMap[prop.dataKey] = getAvailableReferences(
@@ -147,6 +152,60 @@ export function NodePanel() {
                   availableReferences={availableReferencesMap[prop.dataKey] || []}
                   placeholder={prop.defaultValue || `Введите ${prop.label.toLowerCase()}...`}
                 />
+              </div>
+            );
+          }
+          
+          // Use SingleReferenceInput for singleReference type fields
+          if (prop.editorType === 'singleReference') {
+            return (
+              <div key={prop.dataKey} className={styles.fieldGroup}>
+                <SingleReferenceInput
+                  id={`prop-${prop.dataKey}`}
+                  label={prop.label}
+                  value={propertyValues[prop.dataKey] || ''}
+                  onChange={(value) => handlePropertyChange(prop.dataKey, String(value || ''))}
+                  availableReferences={availableReferencesMap[prop.dataKey] || []}
+                  defaultOptions={prop.defaultOptions || []}
+                  placeholder={prop.defaultValue || `Select ${prop.label.toLowerCase()}...`}
+                />
+              </div>
+            );
+          }
+          
+          // Use select dropdown for select type fields
+          if (prop.editorType === 'select') {
+            // Start with static options
+            let options = prop.selectOptions || [];
+            
+            // Add dynamic options from references if configured
+            if (prop.dynamicOptions === 'references') {
+              const references = availableReferencesMap[prop.dataKey] || [];
+              const dynamicOptions = references.map(ref => ({
+                value: String(ref.id),
+                label: ref.name
+              }));
+              options = [...options, ...dynamicOptions];
+            }
+            
+            return (
+              <div key={prop.dataKey} className={styles.fieldGroup}>
+                <label className={styles.propertyLabel} htmlFor={`prop-${prop.dataKey}`}>
+                  {prop.label}
+                </label>
+                <select
+                  id={`prop-${prop.dataKey}`}
+                  className={styles.propertySelect}
+                  value={propertyValues[prop.dataKey] || prop.defaultValue || ''}
+                  onChange={(e) => handlePropertyChange(prop.dataKey, e.target.value)}
+                  disabled={!prop.editable}
+                >
+                  {options.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             );
           }

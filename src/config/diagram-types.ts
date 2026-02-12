@@ -61,7 +61,13 @@ export interface NodePropertyDisplay {
   /** Show this property as the main text label on the node */
   showAsMainLabel?: boolean;
   /** Input type for the editor */
-  editorType?: 'text' | 'formula';
+  editorType?: 'text' | 'formula' | 'select' | 'singleReference';
+  /** Options for select dropdown (only used when editorType is 'select') */
+  selectOptions?: Array<{ value: string; label: string }>;
+  /** Whether to populate select options dynamically using reference system (for 'select' and 'singleReference' types) */
+  dynamicOptions?: 'references';
+  /** Default options for singleReference type (e.g., 'Time' for Converter input) */
+  defaultOptions?: Array<{ value: string; label: string }>;
 }
 
 /**
@@ -163,7 +169,9 @@ export interface LinkPropertyDisplay {
   /** Segment fraction (0.0 to 1.0, where along the segment to place the label) */
   segmentFraction?: number;
   /** Input type for the editor */
-  editorType?: 'text' | 'formula';
+  editorType?: 'text' | 'formula' | 'select';
+  /** Options for select dropdown (only used when editorType is 'select') */
+  selectOptions?: Array<{ value: string; label: string }>;
 }
 
 /**

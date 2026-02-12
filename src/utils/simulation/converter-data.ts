@@ -54,3 +54,33 @@ export function formatDataPoints(points: DataPoint[]): string {
   return points.map(p => `${p.x},${p.y}`).join(';');
 }
 
+/**
+ * Generate default converter values based on simulation time settings.
+ * Creates 3 data points:
+ * - Start: timeStart
+ * - Middle: timeStart + timeLength/2
+ * - End: timeStart + timeLength
+ * 
+ * Output values are placeholder values (30, 10, 100).
+ * 
+ * @param timeStart - Simulation start time
+ * @param timeLength - Simulation length
+ * @returns String representation of default data points
+ * 
+ * @example
+ * generateDefaultConverterValues(2000, 100) // => "2000,30;2050,10;2100,100"
+ * generateDefaultConverterValues(2000, 1) // => "2000,30;2000.5,10;2001,100"
+ * generateDefaultConverterValues(2000, 0.1) // => "2000,30;2000.05,10;2000.1,100"
+ */
+export function generateDefaultConverterValues(timeStart: number, timeLength: number): string {
+  const start = timeStart;
+  const middle = timeStart + timeLength / 2;
+  const end = timeStart + timeLength;
+  
+  return formatDataPoints([
+    { x: start, y: 30 },
+    { x: middle, y: 10 },
+    { x: end, y: 100 }
+  ]);
+}
+

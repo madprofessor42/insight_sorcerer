@@ -2,13 +2,15 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { setLinkType } from '../../store/diagramSlice';
 import { usePaletteDragDrop } from '../../hooks/palette/usePaletteDragDrop';
-import { getDefaultNodeName } from '../../utils/diagram-data';
+import { getNodeDataWithDefaults } from '../../utils/diagram-data';
+import { DEFAULT_SIMULATION_CONFIG } from '../../utils/simulation';
 import { NodePanel } from './NodePanel/NodePanel';
 import { EdgePanel } from './EdgePanel';
 import { DebugPanel } from './DebugPanel';
 import { SimulationPanel } from './SimulationPanel';
 import { FormulaListPanel } from './FormulaListPanel';
 import { LINK_CONFIGURATIONS, NODE_CONFIGURATIONS } from '../../config';
+import type { LinkType } from '../../config';
 import styles from './Sidebar.module.css';
 
 const MIN_WIDTH = 220;
@@ -18,6 +20,7 @@ const DEFAULT_WIDTH = 385;
 export function Sidebar() {
   const dispatch = useAppDispatch();
   const selectedLinkType = useAppSelector((state) => state.diagram.selectedLinkType);
+  const simulationConfig = useAppSelector((state) => state.diagram.simulationConfig);
   const { handleDragStart } = usePaletteDragDrop();
 
   const [width, setWidth] = useState(DEFAULT_WIDTH);
@@ -72,16 +75,25 @@ export function Sidebar() {
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Primitives</h2>
           <div className={styles.nodeList}>
-            {NODE_CONFIGURATIONS.filter(config => config.manuallyCreatable).map((config) => (
-              <div
-                key={config.id}
-                className={styles.nodeCard}
-                draggable
-                onDragStart={(e) => handleDragStart(e, config.id, { 
-                  category: config.id, 
-                  name: getDefaultNodeName(config.id)
-                })}
-              >
+            {NODE_CONFIGURATIONS.filter(config => config.manuallyCreatable).map((config) => {
+              // Get node data with all default values from configuration
+              // This automatically handles both static defaults and dynamic generators
+              const nodeData = getNodeDataWithDefaults(config.id, {
+                simulationConfig: {
+                  timeStart: simulationConfig.timeStart ?? DEFAULT_SIMULATION_CONFIG.timeStart,
+                  timeLength: simulationConfig.timeLength ?? DEFAULT_SIMULATION_CONFIG.timeLength,
+                  timeStep: simulationConfig.timeStep ?? DEFAULT_SIMULATION_CONFIG.timeStep,
+                  timeUnits: simulationConfig.timeUnits ?? DEFAULT_SIMULATION_CONFIG.timeUnits,
+                }
+              }) as { category: string; name: string; [key: string]: any };
+              
+              return (
+                <div
+                  key={config.id}
+                  className={styles.nodeCard}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, config.id, nodeData)}
+                >
                 <div className={styles.nodeIcon}>
                   <div 
                     className={styles[`${config.id.toLowerCase()}Icon`]} 
@@ -96,7 +108,8 @@ export function Sidebar() {
                   <p className={styles.nodeDescription}>{config.description || ''}</p>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 
@@ -108,7 +121,7 @@ export function Sidebar() {
               <button
                 key={config.id}
                 className={`${styles.linkTypeButton} ${selectedLinkType === config.id ? styles.active : ''}`}
-                onClick={() => dispatch(setLinkType(config.id))}
+                onClick={() => dispatch(setLinkType(config.id as LinkType))}
                 title={config.ui.description}
               >
                 <div className={`${styles.linkPreview} ${styles[config.ui.previewClassName]}`}>

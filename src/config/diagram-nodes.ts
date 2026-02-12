@@ -3,6 +3,7 @@
  */
 
 import type { NodeConfiguration, NodeType, ManuallyCreatableNodeType } from './diagram-types';
+import { generateDefaultConverterValues } from '../utils/simulation/converter-data';
 
 /**
  * ALL NODE CONFIGURATIONS
@@ -186,7 +187,12 @@ export const NODE_CONFIGURATIONS: NodeConfiguration[] = [
         dataKey: 'values',
         label: 'Data Points',
         editable: true,
-        defaultValue: '0,0;1,1;2,2',
+        defaultValueGenerator: (context) => {
+          return generateDefaultConverterValues(
+            context.simulationConfig.timeStart,
+            context.simulationConfig.timeLength
+          );
+        },
         showAsTooltip: true,
         editorType: 'table'
       },

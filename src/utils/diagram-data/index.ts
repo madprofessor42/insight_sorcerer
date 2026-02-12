@@ -18,6 +18,7 @@ export {
   getDefaultLinkPropertyValue,
   getDefaultNodeName,
   getDefaultLinkText,
+  getNodeDataWithDefaults,
   
   // Type guards and checks
   isLinkLabelNodeData,

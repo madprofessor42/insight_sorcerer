@@ -50,6 +50,19 @@ export interface NodeVisualStyle {
 }
 
 /**
+ * Context passed to defaultValueGenerator functions
+ */
+export interface DefaultValueContext {
+  /** Current simulation configuration */
+  simulationConfig: {
+    timeStart: number;
+    timeLength: number;
+    timeStep: number;
+    timeUnits: string;
+  };
+}
+
+/**
  * Configuration for a single property to display on a node
  */
 export interface NodePropertyDisplay {
@@ -59,8 +72,10 @@ export interface NodePropertyDisplay {
   label: string;
   /** Whether this property should be editable inline */
   editable?: boolean;
-  /** Default value if property is not set */
+  /** Default value if property is not set (static) */
   defaultValue?: string;
+  /** Dynamic default value generator (takes precedence over defaultValue if provided) */
+  defaultValueGenerator?: (context: DefaultValueContext) => string;
   /** Show this property as tooltip on hover (instead of visible on node) */
   showAsTooltip?: boolean;
   /** Show this property as the main text label on the node */

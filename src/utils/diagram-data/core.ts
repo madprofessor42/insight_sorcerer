@@ -18,7 +18,7 @@ import {
   getNodeConfiguration,
   LINK_LABEL_CATEGORY 
 } from '../../config';
-import type { LinkType, NodeType } from '../../config';
+import type { LinkType, NodeType, DefaultValueContext } from '../../config';
 
 // ============================================================================
 // DEFAULT VALUE UTILITIES
@@ -85,6 +85,42 @@ export function getDefaultNodeName(nodeType: NodeType | undefined): string {
  */
 export function getDefaultLinkText(linkType: LinkType | undefined): string {
   return getDefaultLinkPropertyValue(linkType, 'text');
+}
+
+/**
+ * Create node data object with all default values from configuration.
+ * Supports both static defaultValue and dynamic defaultValueGenerator.
+ * 
+ * @param nodeType - The node category (e.g., 'Stock', 'Variable', 'Converter')
+ * @param context - Context for dynamic value generation (simulation config, etc.)
+ * @returns Object with all default property values from configuration
+ * 
+ * @example
+ * const nodeData = getNodeDataWithDefaults('Converter', { simulationConfig });
+ * // Returns: { name: 'Converter', values: '2000,30;2050,10;2100,100', ... }
+ */
+export function getNodeDataWithDefaults(
+  nodeType: NodeType,
+  context: DefaultValueContext
+): Record<string, any> {
+  const config = getNodeConfiguration(nodeType);
+  if (!config) return { category: nodeType };
+  
+  const nodeData: Record<string, any> = {
+    category: nodeType
+  };
+  
+  // Populate all properties with their default values
+  for (const property of config.displayProperties) {
+    // Use generator if available, otherwise use static default
+    if (property.defaultValueGenerator) {
+      nodeData[property.dataKey] = property.defaultValueGenerator(context);
+    } else if (property.defaultValue !== undefined) {
+      nodeData[property.dataKey] = property.defaultValue;
+    }
+  }
+  
+  return nodeData;
 }
 
 // ============================================================================

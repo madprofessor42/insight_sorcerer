@@ -19,6 +19,7 @@ export type {
   LinkConfiguration,
   AvailableReference,
   ReferenceConfig,
+  DefaultValueContext,
 } from './diagram-types';
 
 // Node configurations and utilities

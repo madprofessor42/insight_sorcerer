@@ -44,6 +44,8 @@ export {
 // Selectable items utilities
 export {
   getSelectableItems,
+  getSelectableItemsFromResults,
+  getSelectableItemsFromSeriesKeys,
   type SelectableItem
 } from './selectableItems';
 
@@ -64,4 +66,9 @@ export {
   formatDataPoints,
   type DataPoint
 } from './converter-data';
+
+// Chart configuration expander
+export {
+  expandVectorKeysInCharts
+} from './chartConfigExpander';
 

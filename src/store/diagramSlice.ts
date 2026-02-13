@@ -24,6 +24,8 @@ interface DiagramState {
   simulationConfig: SimulationConfig;
   // Result charts configuration
   resultCharts: ResultChartConfig[];
+  // Last simulation result series keys (for preserving vector elements across reloads)
+  lastSimulationSeriesKeys: string[];
 }
 
 const initialState: DiagramState = {
@@ -36,6 +38,7 @@ const initialState: DiagramState = {
   selectedEdgeKey: null,
   simulationConfig: DEFAULT_SIMULATION_CONFIG,
   resultCharts: [],
+  lastSimulationSeriesKeys: [],
 };
 
 // Helper functions for immutable array updates
@@ -101,6 +104,7 @@ export const diagramSlice = createSlice({
       state.skipsDiagramUpdate = false;
       state.simulationConfig = DEFAULT_SIMULATION_CONFIG;
       state.resultCharts = [];
+      state.lastSimulationSeriesKeys = [];
     },
 
     // Load diagram from saved data (e.g., from IndexedDB)
@@ -165,6 +169,11 @@ export const diagramSlice = createSlice({
     setResultCharts: (state, action: PayloadAction<ResultChartConfig[]>) => {
       state.resultCharts = action.payload;
     },
+    
+    // Save series keys from last simulation (for preserving vector elements)
+    setLastSimulationSeriesKeys: (state, action: PayloadAction<string[]>) => {
+      state.lastSimulationSeriesKeys = action.payload;
+    },
   },
 });
 
@@ -188,7 +197,8 @@ export const {
   addResultChart,
   updateResultChart,
   removeResultChart,
-  setResultCharts
+  setResultCharts,
+  setLastSimulationSeriesKeys
 } = diagramSlice.actions;
 
 export default diagramSlice.reducer;

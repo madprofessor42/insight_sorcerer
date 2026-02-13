@@ -42,7 +42,7 @@ export interface SimulationConfig {
 export interface SimulationRunResult {
   success: boolean;
   times?: number[];
-  series?: Record<string, number[]>; // unique key (nanoid) → values
+  series?: Record<string, number[]>; // unique key (nanoid or nanoid.vectorElement) → values
   error?: string;
   errorPrimitiveId?: string;
   errorPrimitiveName?: string;

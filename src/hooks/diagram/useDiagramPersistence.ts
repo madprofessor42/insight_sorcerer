@@ -10,7 +10,8 @@ import { store } from '../../store/store';
 import { 
   loadDiagram as loadDiagramAction, 
   setSimulationConfig,
-  setResultCharts 
+  setResultCharts,
+  setLastSimulationSeriesKeys
 } from '../../store/diagramSlice';
 import {
   saveDiagram as saveDiagramToDB,
@@ -79,10 +80,11 @@ export function useDiagramPersistence(): UseDiagramPersistenceReturn {
 
         const diagramId = id || generateDiagramId();
         
-        // Read simulationConfig and resultCharts directly from store to avoid stale closure
+        // Read simulationConfig, resultCharts and lastSimulationSeriesKeys directly from store to avoid stale closure
         const currentState = store.getState().diagram;
         const currentSimulationConfig = currentState.simulationConfig;
         const currentResultCharts = currentState.resultCharts;
+        const currentLastSimulationSeriesKeys = currentState.lastSimulationSeriesKeys;
         
         await saveDiagramToDB(
           diagramId,
@@ -91,7 +93,8 @@ export function useDiagramPersistence(): UseDiagramPersistenceReturn {
           modelObj.linkDataArray || [],
           modelObj.modelData || {},
           currentSimulationConfig,
-          currentResultCharts
+          currentResultCharts,
+          currentLastSimulationSeriesKeys
         );
 
         // Save this as the last opened diagram
@@ -128,6 +131,9 @@ export function useDiagramPersistence(): UseDiagramPersistenceReturn {
 
         // Load result charts configuration
         dispatch(setResultCharts(diagram.resultCharts));
+        
+        // Load last simulation series keys (for vector elements)
+        dispatch(setLastSimulationSeriesKeys(diagram.lastSimulationSeriesKeys || []));
 
         // Then load diagram
         dispatch(

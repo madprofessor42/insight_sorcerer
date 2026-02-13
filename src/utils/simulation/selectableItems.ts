@@ -6,6 +6,7 @@
 
 import type * as go from 'gojs';
 import { VISUALIZABLE_TYPES } from './types';
+import type { SimulationRunResult } from './types';
 import { isLinkLabelNodeData, resolveNodeInfo, getLinkDisplayName } from '../diagram-data';
 
 /**
@@ -15,6 +16,9 @@ export interface SelectableItem {
   key: string;
   displayName: string;
   type: 'node' | 'edge';
+  isVectorElement?: boolean;
+  parentKey?: string;
+  vectorElement?: string;
 }
 
 /**
@@ -72,3 +76,161 @@ export function getSelectableItems(
   return items;
 }
 
+/**
+ * Get selectable items from simulation results.
+ * This includes vector elements that were expanded during simulation.
+ * 
+ * @param result - Simulation results
+ * @param nodeDataArray - Array of node data from diagram
+ * @param linkDataArray - Array of link data from diagram
+ * @returns Array of selectable items including vector elements
+ */
+export function getSelectableItemsFromResults(
+  result: SimulationRunResult | null,
+  nodeDataArray: Array<go.ObjectData>,
+  linkDataArray: Array<go.ObjectData>
+): SelectableItem[] {
+  if (!result?.success || !result.series) {
+    // Fallback to basic items if no results
+    return getSelectableItems(nodeDataArray, linkDataArray);
+  }
+
+  const items: SelectableItem[] = [];
+  const processedParents = new Set<string>();
+
+  // Process all series keys from results
+  for (const seriesKey of Object.keys(result.series)) {
+    // Check if this is a vector element (format: key.vectorElement)
+    const dotIndex = seriesKey.lastIndexOf('.');
+    
+    if (dotIndex > 0) {
+      // This is a vector element
+      const parentKey = seriesKey.substring(0, dotIndex);
+      const vectorElement = seriesKey.substring(dotIndex + 1);
+      
+      // Find the parent node or link
+      const node = nodeDataArray.find(n => String(n.key) === parentKey);
+      const link = linkDataArray.find(l => String(l.key) === parentKey);
+      
+      if (node && !isLinkLabelNodeData(node)) {
+        const nodeInfo = resolveNodeInfo(node.key, nodeDataArray);
+        items.push({
+          key: seriesKey,
+          displayName: `${nodeInfo.name}.${vectorElement}`,
+          type: 'node',
+          isVectorElement: true,
+          parentKey: parentKey,
+          vectorElement: vectorElement,
+        });
+        processedParents.add(parentKey);
+      } else if (link) {
+        const linkName = getLinkDisplayName(link);
+        items.push({
+          key: seriesKey,
+          displayName: `${linkName}.${vectorElement}`,
+          type: 'edge',
+          isVectorElement: true,
+          parentKey: parentKey,
+          vectorElement: vectorElement,
+        });
+        processedParents.add(parentKey);
+      }
+    } else {
+      // This is a regular scalar value
+      const node = nodeDataArray.find(n => String(n.key) === seriesKey);
+      const link = linkDataArray.find(l => String(l.key) === seriesKey);
+      
+      if (node && !isLinkLabelNodeData(node)) {
+        const nodeInfo = resolveNodeInfo(node.key, nodeDataArray);
+        items.push({
+          key: seriesKey,
+          displayName: nodeInfo.name,
+          type: 'node',
+        });
+      } else if (link) {
+        items.push({
+          key: seriesKey,
+          displayName: getLinkDisplayName(link),
+          type: 'edge',
+        });
+      }
+    }
+  }
+
+  return items;
+}
+
+/**
+ * Get selectable items from saved series keys.
+ * This is used to restore vector elements after page reload when no simulation results exist yet.
+ * 
+ * @param seriesKeys - Array of series keys from last simulation
+ * @param nodeDataArray - Array of node data from diagram
+ * @param linkDataArray - Array of link data from diagram
+ * @returns Array of selectable items
+ */
+export function getSelectableItemsFromSeriesKeys(
+  seriesKeys: string[],
+  nodeDataArray: Array<go.ObjectData>,
+  linkDataArray: Array<go.ObjectData>
+): SelectableItem[] {
+  const items: SelectableItem[] = [];
+
+  for (const seriesKey of seriesKeys) {
+    // Check if this is a vector element (format: key.vectorElement)
+    const dotIndex = seriesKey.lastIndexOf('.');
+    
+    if (dotIndex > 0) {
+      // This is a vector element
+      const parentKey = seriesKey.substring(0, dotIndex);
+      const vectorElement = seriesKey.substring(dotIndex + 1);
+      
+      // Find the parent node or link
+      const node = nodeDataArray.find(n => String(n.key) === parentKey);
+      const link = linkDataArray.find(l => String(l.key) === parentKey);
+      
+      if (node && !isLinkLabelNodeData(node)) {
+        const nodeInfo = resolveNodeInfo(node.key, nodeDataArray);
+        items.push({
+          key: seriesKey,
+          displayName: `${nodeInfo.name}.${vectorElement}`,
+          type: 'node',
+          isVectorElement: true,
+          parentKey: parentKey,
+          vectorElement: vectorElement,
+        });
+      } else if (link) {
+        const linkName = getLinkDisplayName(link);
+        items.push({
+          key: seriesKey,
+          displayName: `${linkName}.${vectorElement}`,
+          type: 'edge',
+          isVectorElement: true,
+          parentKey: parentKey,
+          vectorElement: vectorElement,
+        });
+      }
+    } else {
+      // This is a regular scalar value
+      const node = nodeDataArray.find(n => String(n.key) === seriesKey);
+      const link = linkDataArray.find(l => String(l.key) === seriesKey);
+      
+      if (node && !isLinkLabelNodeData(node)) {
+        const nodeInfo = resolveNodeInfo(node.key, nodeDataArray);
+        items.push({
+          key: seriesKey,
+          displayName: nodeInfo.name,
+          type: 'node',
+        });
+      } else if (link) {
+        items.push({
+          key: seriesKey,
+          displayName: getLinkDisplayName(link),
+          type: 'edge',
+        });
+      }
+    }
+  }
+
+  return items;
+}

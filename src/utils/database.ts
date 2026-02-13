@@ -35,6 +35,7 @@ export interface DiagramData {
   modelData: go.ObjectData;
   simulationConfig: SimulationConfig;
   resultCharts: ResultChartConfig[];
+  lastSimulationSeriesKeys: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -97,6 +98,7 @@ function openDatabase(): Promise<IDBDatabase> {
  * @param modelData - Model metadata
  * @param simulationConfig - Simulation configuration
  * @param resultCharts - Result charts configuration
+ * @param lastSimulationSeriesKeys - Series keys from last simulation (for vector elements)
  * @returns Promise that resolves when save is complete
  */
 export async function saveDiagram(
@@ -106,7 +108,8 @@ export async function saveDiagram(
   linkDataArray: Array<go.ObjectData>,
   modelData: go.ObjectData,
   simulationConfig: SimulationConfig,
-  resultCharts: ResultChartConfig[]
+  resultCharts: ResultChartConfig[],
+  lastSimulationSeriesKeys: string[]
 ): Promise<void> {
   const db = await openDatabase();
 
@@ -128,6 +131,7 @@ export async function saveDiagram(
         modelData,
         simulationConfig,
         resultCharts,
+        lastSimulationSeriesKeys,
         createdAt: existingDiagram?.createdAt || new Date(),
         updatedAt: new Date(),
       };

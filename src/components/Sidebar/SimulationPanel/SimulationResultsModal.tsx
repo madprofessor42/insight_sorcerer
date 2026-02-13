@@ -5,7 +5,7 @@
  * Supports multiple configured charts.
  */
 
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useState } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -18,8 +18,8 @@ import {
 } from 'chart.js';
 import { Line, Scatter } from 'react-chartjs-2';
 import { Modal } from '../../ui';
-import type { SimulationRunResult, ResultChartConfig } from '../../../utils/simulation';
-import { CHART_COLORS, CHART_DIMENSIONS, generateAllChartsData } from '../../../utils/simulation';
+import type { SimulationRunResult, ResultChartConfig, SelectableItem } from '../../../utils/simulation';
+import { CHART_COLORS, CHART_DIMENSIONS, generateAllChartsData, getSelectableItemsFromResults } from '../../../utils/simulation';
 import { getChartOptions } from '../../../utils/simulation/chartConfig';
 import type * as go from 'gojs';
 import styles from './SimulationResultsModal.module.css';
@@ -42,6 +42,7 @@ export interface SimulationResultsModalProps {
   nodeDataArray: Array<go.ObjectData>;
   linkDataArray: Array<go.ObjectData>;
   charts: ResultChartConfig[];
+  onChartsUpdate?: (charts: ResultChartConfig[]) => void;
 }
 
 export function SimulationResultsModal({
@@ -51,12 +52,97 @@ export function SimulationResultsModal({
   nodeDataArray,
   linkDataArray,
   charts,
+  onChartsUpdate,
 }: SimulationResultsModalProps) {
+  const [showSeriesSelector, setShowSeriesSelector] = useState(false);
+  
+  // Get available items from results (includes vector elements)
+  const availableItems = useMemo<SelectableItem[]>(() => {
+    if (!result?.success) return [];
+    return getSelectableItemsFromResults(result, nodeDataArray, linkDataArray);
+  }, [result, nodeDataArray, linkDataArray]);
+  
+  // Get currently selected keys from first time series chart (or create one if none exists)
+  const activeChart = useMemo(() => {
+    const timeSeriesChart = charts.find(c => c.type === 'timeSeries');
+    if (timeSeriesChart) return timeSeriesChart;
+    
+    // Create a default chart if none exists
+    return {
+      id: 'default',
+      type: 'timeSeries' as const,
+      title: 'Simulation Results',
+      selectedKeys: [],
+    };
+  }, [charts]);
+  
+  // Track selected keys locally
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(
+    new Set(activeChart.selectedKeys)
+  );
+  
+  // Update selected keys when charts change
+  useMemo(() => {
+    setSelectedKeys(new Set(activeChart.selectedKeys));
+  }, [activeChart.selectedKeys]);
+  
   // Generate chart data for each configured chart using utility
   const chartsData = useMemo(() => {
     if (!result) return [];
-    return generateAllChartsData(charts, result, nodeDataArray, linkDataArray);
-  }, [result, nodeDataArray, linkDataArray, charts]);
+    
+    // Use updated charts with current selections
+    const updatedCharts = charts.map(c => 
+      c.id === activeChart.id ? { ...c, selectedKeys: Array.from(selectedKeys) } : c
+    );
+    
+    // If no charts exist, create default with selections
+    if (updatedCharts.length === 0 && selectedKeys.size > 0) {
+      updatedCharts.push({
+        ...activeChart,
+        selectedKeys: Array.from(selectedKeys),
+      });
+    }
+    
+    return generateAllChartsData(updatedCharts, result, nodeDataArray, linkDataArray);
+  }, [result, nodeDataArray, linkDataArray, charts, activeChart, selectedKeys]);
+  
+  // Toggle series selection
+  const handleToggleSeries = useCallback((key: string) => {
+    setSelectedKeys(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(key)) {
+        newSet.delete(key);
+      } else {
+        newSet.add(key);
+      }
+      return newSet;
+    });
+  }, []);
+  
+  // Apply changes to charts config
+  const handleApplySelection = useCallback(() => {
+    if (!onChartsUpdate) return;
+    
+    const updatedCharts = [...charts];
+    const chartIndex = updatedCharts.findIndex(c => c.id === activeChart.id);
+    
+    if (chartIndex >= 0) {
+      // Update existing chart
+      updatedCharts[chartIndex] = {
+        ...updatedCharts[chartIndex],
+        selectedKeys: Array.from(selectedKeys),
+      };
+    } else if (selectedKeys.size > 0) {
+      // Add new default chart
+      updatedCharts.push({
+        ...activeChart,
+        selectedKeys: Array.from(selectedKeys),
+      });
+    }
+    
+    onChartsUpdate(updatedCharts);
+    setShowSeriesSelector(false);
+  }, [charts, activeChart, selectedKeys, onChartsUpdate]);
 
   const getScatterChartOptions = useCallback((xLabel: string, yLabel: string) => {
     return {
@@ -155,8 +241,73 @@ export function SimulationResultsModal({
           </div>
         )}
 
-        {result && result.success && chartsData.length > 0 && (
+        {result && result.success && (
           <>
+            {/* Series Selector Button */}
+            <div className={styles.toolbar}>
+              <button 
+                onClick={() => setShowSeriesSelector(!showSeriesSelector)}
+                className={styles.toggleSelectorButton}
+              >
+                {showSeriesSelector ? '✕ Hide' : '⚙️ Select Series'}
+              </button>
+              {selectedKeys.size > 0 && (
+                <span className={styles.selectedCount}>
+                  {selectedKeys.size} selected
+                </span>
+              )}
+            </div>
+            
+            {/* Series Selector Panel */}
+            {showSeriesSelector && (
+              <div className={styles.seriesSelector}>
+                <div className={styles.selectorHeader}>
+                  <h4 className={styles.selectorTitle}>Select Series to Display</h4>
+                  <div className={styles.selectorActions}>
+                    <button 
+                      onClick={() => setSelectedKeys(new Set(availableItems.map(i => i.key)))}
+                      className={styles.selectAllBtn}
+                    >
+                      Select All
+                    </button>
+                    <button 
+                      onClick={() => setSelectedKeys(new Set())}
+                      className={styles.clearAllBtn}
+                    >
+                      Clear
+                    </button>
+                    <button 
+                      onClick={handleApplySelection}
+                      className={styles.applyBtn}
+                      disabled={!onChartsUpdate}
+                    >
+                      Apply & Save
+                    </button>
+                  </div>
+                </div>
+                <div className={styles.seriesList}>
+                  {availableItems.map(item => (
+                    <label key={item.key} className={styles.seriesItem}>
+                      <input
+                        type="checkbox"
+                        checked={selectedKeys.has(item.key)}
+                        onChange={() => handleToggleSeries(item.key)}
+                        className={styles.seriesCheckbox}
+                      />
+                      <span className={styles.seriesName}>
+                        {item.displayName}
+                        {item.isVectorElement && (
+                          <span className={styles.vectorBadge}>vector</span>
+                        )}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Charts Display */}
+            {chartsData.length > 0 && (
             <div className={styles.chartsGrid}>
               {chartsData.map((chartInfo, index) => (
                 <div key={index} className={styles.chartWrapper}>
@@ -214,6 +365,7 @@ export function SimulationResultsModal({
                 </div>
               ))}
             </div>
+            )}
             
             <div className={styles.stats}>
               <div className={styles.stat}>

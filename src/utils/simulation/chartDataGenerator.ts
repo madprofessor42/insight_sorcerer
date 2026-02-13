@@ -12,8 +12,9 @@ import { resolveNodeInfo, getLinkDisplayName } from '../diagram-data';
 /**
  * Resolve display name for a simulation key.
  * Uses diagram-data utilities for consistency with the rest of the app.
+ * Supports vector elements (key.vectorElement format).
  * 
- * @param key - Unique key (nanoid) for node or link
+ * @param key - Unique key (nanoid or nanoid.vectorElement) for node or link
  * @param nodes - Node data array
  * @param links - Link data array
  * @returns Display name for the chart
@@ -25,21 +26,48 @@ export function resolveSimulationKeyName(
 ): string {
   if (!key) return 'Not set';
   
+  const keyStr = String(key);
+  
+  // Check if this is a vector element (format: key.vectorElement)
+  const dotIndex = keyStr.lastIndexOf('.');
+  if (dotIndex > 0) {
+    const parentKey = keyStr.substring(0, dotIndex);
+    const vectorElement = keyStr.substring(dotIndex + 1);
+    
+    // Try to find parent node
+    const node = nodes.find(n => String(n.key) === parentKey);
+    if (node) {
+      const nodeInfo = resolveNodeInfo(parentKey, nodes);
+      return `${nodeInfo.name}.${vectorElement}`;
+    }
+    
+    // Try to find parent link
+    const link = links.find(l => String(l.key) === parentKey);
+    if (link) {
+      return `${getLinkDisplayName(link)}.${vectorElement}`;
+    }
+    
+    // Parent not found - this can happen if the diagram changed since the config was saved
+    // Return a readable name anyway (just show the vector element part)
+    return `[Unknown].${vectorElement}`;
+  }
+  
   // Try to find as node first
-  const node = nodes.find(n => String(n.key) === String(key));
+  const node = nodes.find(n => String(n.key) === keyStr);
   if (node) {
-    const nodeInfo = resolveNodeInfo(key, nodes);
+    const nodeInfo = resolveNodeInfo(keyStr, nodes);
     return nodeInfo.name;
   }
   
   // Try to find as link
-  const link = links.find(l => String(l.key) === String(key));
+  const link = links.find(l => String(l.key) === keyStr);
   if (link) {
     return getLinkDisplayName(link);
   }
   
-  // Fallback if not found
-  return String(key);
+  // Fallback if not found - this can happen if the diagram changed
+  // Show a meaningful fallback instead of just the key
+  return `[Unknown: ${keyStr.substring(0, 8)}...]`;
 }
 
 /**

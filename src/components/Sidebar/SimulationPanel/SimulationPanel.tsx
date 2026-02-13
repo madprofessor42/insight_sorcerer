@@ -6,9 +6,9 @@
 
 import { useState, useCallback } from 'react';
 import { useAppSelector, useAppDispatch } from '../../../store/hooks';
-import { setSimulationConfig, setResultCharts } from '../../../store/diagramSlice';
+import { setSimulationConfig, setResultCharts, setLastSimulationSeriesKeys } from '../../../store/diagramSlice';
 import type { SimulationConfig } from '../../../utils/simulation';
-import { DEFAULT_SIMULATION_CONFIG } from '../../../utils/simulation';
+import { DEFAULT_SIMULATION_CONFIG, expandVectorKeysInCharts } from '../../../utils/simulation';
 import { BugIcon, ChartIcon } from '../../ui';
 import { SimulationSettingsModal } from './SimulationSettingsModal';
 import { SimulationResultsModal } from './SimulationResultsModal';
@@ -49,6 +49,19 @@ export function SimulationPanel() {
     try {
       const result = await runSimulation(nodeDataArray, linkDataArray, config);
       setSimulationResult(result);
+      
+      // Save series keys to Redux store (for preserving vector elements across reloads)
+      if (result.success && result.series) {
+        dispatch(setLastSimulationSeriesKeys(Object.keys(result.series)));
+        
+        // Auto-expand vector keys in chart configurations
+        // If a selected primitive turned out to be a vector, replace it with its elements
+        const expandedCharts = expandVectorKeysInCharts(resultCharts, result);
+        if (JSON.stringify(expandedCharts) !== JSON.stringify(resultCharts)) {
+          dispatch(setResultCharts(expandedCharts));
+        }
+      }
+      
       setShowResults(true);
     } catch (error) {
       const errorResult: SimulationRunResult = {
@@ -60,7 +73,7 @@ export function SimulationPanel() {
     } finally {
       setIsRunning(false);
     }
-  }, [nodeDataArray, linkDataArray, config]);
+  }, [nodeDataArray, linkDataArray, config, resultCharts, dispatch]);
 
   // Only show when nothing is selected
   if (selectedNodeKey !== null || selectedEdgeKey !== null) {
@@ -139,6 +152,7 @@ export function SimulationPanel() {
         onClose={() => setShowChartsConfig(false)}
         charts={resultCharts}
         onSave={handleApplyChartsConfig}
+        simulationResult={simulationResult}
       />
 
       {/* Results Modal */}
@@ -149,6 +163,7 @@ export function SimulationPanel() {
         nodeDataArray={nodeDataArray}
         linkDataArray={linkDataArray}
         charts={resultCharts}
+        onChartsUpdate={handleApplyChartsConfig}
       />
     </section>
   );

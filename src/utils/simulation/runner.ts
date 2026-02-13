@@ -63,8 +63,25 @@ export async function runSimulation(
     for (const [key, primitive] of primitiveMap.entries()) {
       try {
         const data = results.series(primitive);
-        // Use nanoid key (guaranteed unique across nodes and links)
-        series[String(key)] = data;
+        
+        // Check if the first value is an object (vector/dictionary)
+        if (data.length > 0 && typeof data[0] === 'object' && data[0] !== null && !Array.isArray(data[0])) {
+          // This is a vector result - expand each element into a separate series
+          const vectorKeys = Object.keys(data[0]);
+          
+          for (const vectorKey of vectorKeys) {
+            const vectorSeries: number[] = [];
+            for (const timePoint of data) {
+              vectorSeries.push(timePoint[vectorKey]);
+            }
+            // Use key format: primitiveKey.vectorElement
+            series[`${String(key)}.${vectorKey}`] = vectorSeries;
+          }
+        } else {
+          // Regular scalar series
+          // Use nanoid key (guaranteed unique across nodes and links)
+          series[String(key)] = data;
+        }
       } catch {
         // Some primitives (like Links) don't have series data
         // This is expected, just skip them

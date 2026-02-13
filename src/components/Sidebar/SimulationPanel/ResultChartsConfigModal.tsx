@@ -11,7 +11,10 @@ import {
   type ResultChartConfig, 
   type ChartType,
   type SelectableItem,
+  type SimulationRunResult,
   getSelectableItems,
+  getSelectableItemsFromResults,
+  getSelectableItemsFromSeriesKeys,
   resolveSimulationKeyName
 } from '../../../utils/simulation';
 import { nanoid } from 'nanoid';
@@ -22,6 +25,7 @@ export interface ResultChartsConfigModalProps {
   onClose: () => void;
   charts: ResultChartConfig[];
   onSave: (charts: ResultChartConfig[]) => void;
+  simulationResult?: SimulationRunResult | null;
 }
 
 interface EditingChart {
@@ -38,9 +42,11 @@ export function ResultChartsConfigModal({
   onClose,
   charts,
   onSave,
+  simulationResult,
 }: ResultChartsConfigModalProps) {
   const nodeDataArray = useAppSelector((state) => state.diagram.nodeDataArray);
   const linkDataArray = useAppSelector((state) => state.diagram.linkDataArray);
+  const lastSimulationSeriesKeys = useAppSelector((state) => state.diagram.lastSimulationSeriesKeys);
 
   // Local state for editing
   const [localCharts, setLocalCharts] = useState<ResultChartConfig[]>(charts);
@@ -54,9 +60,49 @@ export function ResultChartsConfigModal({
   }, [isOpen, charts]);
 
   // Get all available nodes and edges as selectable items using utility
+  // Always show base items (for pre-simulation configuration)
+  // If simulation has run and vectors exist, also show vector elements
+  // If no simulation but we have saved series keys, use those to restore vector elements
   const availableItems = useMemo<SelectableItem[]>(() => {
-    return getSelectableItems(nodeDataArray, linkDataArray);
-  }, [nodeDataArray, linkDataArray]);
+    const baseItems = getSelectableItems(nodeDataArray, linkDataArray);
+    const itemsMap = new Map<string, SelectableItem>();
+    
+    // Add base items
+    baseItems.forEach(item => itemsMap.set(item.key, item));
+    
+    // If we have simulation results, add vector elements as additional options
+    if (simulationResult?.success) {
+      const vectorItems = getSelectableItemsFromResults(simulationResult, nodeDataArray, linkDataArray)
+        .filter(item => item.isVectorElement); // Only vector elements, not base items
+      
+      vectorItems.forEach(item => itemsMap.set(item.key, item));
+    } else if (lastSimulationSeriesKeys.length > 0) {
+      // No current simulation results, but we have saved series keys from last run
+      // Use them to restore vector elements
+      const savedItems = getSelectableItemsFromSeriesKeys(lastSimulationSeriesKeys, nodeDataArray, linkDataArray);
+      savedItems.forEach(item => {
+        if (!itemsMap.has(item.key)) {
+          itemsMap.set(item.key, item);
+        }
+      });
+    }
+    
+    // Remove base items that have vector elements (to avoid showing both Population and Population.USA)
+    const allItems = Array.from(itemsMap.values());
+    const vectorElementParents = new Set(
+      allItems
+        .filter(item => item.isVectorElement)
+        .map(item => item.parentKey)
+        .filter(Boolean) as string[]
+    );
+    
+    const filteredItems = allItems.filter(item => 
+      // Keep item if it's a vector element OR if it's a base item without vector expansions
+      item.isVectorElement || !vectorElementParents.has(item.key)
+    );
+    
+    return filteredItems;
+  }, [simulationResult, lastSimulationSeriesKeys, nodeDataArray, linkDataArray]);
 
   // Start editing a new chart
   const handleAddChart = useCallback((type: ChartType) => {

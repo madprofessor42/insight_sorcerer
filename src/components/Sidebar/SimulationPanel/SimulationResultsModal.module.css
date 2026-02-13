@@ -20,11 +20,36 @@
   padding: var(--spacing-lg);
 }
 
+.chartWrapperHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
 .chartWrapperTitle {
   font-size: var(--font-size-md);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
-  margin-bottom: var(--spacing-md);
+  margin: 0;
+}
+
+.chartEditBtn {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  line-height: 1;
+}
+
+.chartEditBtn:hover {
+  background: var(--color-primary);
+  color: var(--text-on-primary);
+  border-color: var(--color-primary);
 }
 
 .placeholder {
@@ -184,47 +209,26 @@
   color: var(--color-text-secondary);
 }
 
-/* Toolbar */
-.toolbar {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-  padding: var(--spacing-sm) 0;
-  border-bottom: 1px solid var(--color-border);
-  margin-bottom: var(--spacing-md);
-}
+/* ─── Inline Editor (per-chart) ─────────────────────────────────────────── */
 
-.toggleSelectorButton {
-  padding: var(--spacing-xs) var(--spacing-md);
-  background: var(--color-surface);
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-md);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  transition: var(--transition-normal);
-}
-
-.toggleSelectorButton:hover {
-  background: var(--color-surface-hover);
-  border-color: var(--color-primary);
-}
-
-.selectedCount {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
-  font-weight: var(--font-weight-medium);
-}
-
-/* Series Selector */
-.seriesSelector {
-  background: var(--color-surface);
+.inlineEditor {
+  background: var(--color-background);
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius-md);
   padding: var(--spacing-md);
   margin-bottom: var(--spacing-md);
 }
+
+.inlineEditorActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--color-border);
+}
+
+/* ─── Series Selector (timeSeries / table) ──────────────────────────────── */
 
 .selectorHeader {
   display: flex;
@@ -237,7 +241,7 @@
 
 .selectorTitle {
   margin: 0;
-  font-size: var(--font-size-md);
+  font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
 }
@@ -352,3 +356,89 @@
   flex-shrink: 0;
 }
 
+/* ─── Scatter Axis Selector (bubble rows) ───────────────────────────────── */
+
+.axisRow {
+  margin-bottom: var(--spacing-md);
+}
+
+.axisRow:last-of-type {
+  margin-bottom: 0;
+}
+
+.axisLabel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xs);
+}
+
+.axisLabelText {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.axisClearBtn {
+  padding: 2px var(--spacing-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.axisClearBtn:hover {
+  background: var(--color-danger);
+  color: white;
+  border-color: var(--color-danger);
+}
+
+.axisBubbles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.axisBubble {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background-color: var(--color-surface-hover);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-xl);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.axisBubble:hover {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+.axisBubbleSelected {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+.emptyHint {
+  color: var(--color-text-placeholder);
+  font-size: var(--font-size-xs);
+  padding: var(--spacing-xs);
+}

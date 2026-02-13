@@ -20,6 +20,9 @@ export type {
   SimulationConfig, 
   SimulationRunResult,
   ResultChartConfig,
+  TimeSeriesChartConfig,
+  ScatterPlotChartConfig,
+  TableChartConfig,
   ChartType
 } from './types';
 

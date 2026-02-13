@@ -260,7 +260,8 @@ export function generateDefaultChart(
 }
 
 /**
- * Generate chart data for a single configured chart
+ * Generate chart data for a single configured chart.
+ * Uses discriminated union to safely access type-specific fields.
  */
 export function generateChartDataFromConfig(
   chart: ResultChartConfig,
@@ -268,35 +269,35 @@ export function generateChartDataFromConfig(
   nodeDataArray: Array<go.ObjectData>,
   linkDataArray: Array<go.ObjectData>
 ): ChartInfo {
-  if (chart.type === 'timeSeries') {
-    return generateTimeSeriesChartData(
-      chart.title,
-      chart.selectedKeys,
-      result,
-      nodeDataArray,
-      linkDataArray
-    );
-  } else if (chart.type === 'scatterPlot') {
-    return generateScatterPlotChartData(
-      chart.title,
-      (chart as any).xAxisKey,
-      (chart as any).yAxisKey,
-      result,
-      nodeDataArray,
-      linkDataArray
-    );
-  } else if (chart.type === 'table') {
-    return generateTableChartData(
-      chart.title,
-      chart.selectedKeys,
-      result,
-      nodeDataArray,
-      linkDataArray
-    );
+  switch (chart.type) {
+    case 'timeSeries':
+      return generateTimeSeriesChartData(
+        chart.title,
+        chart.selectedKeys,
+        result,
+        nodeDataArray,
+        linkDataArray
+      );
+
+    case 'scatterPlot':
+      return generateScatterPlotChartData(
+        chart.title,
+        chart.xAxisKey,
+        chart.yAxisKey,
+        result,
+        nodeDataArray,
+        linkDataArray
+      );
+
+    case 'table':
+      return generateTableChartData(
+        chart.title,
+        chart.selectedKeys,
+        result,
+        nodeDataArray,
+        linkDataArray
+      );
   }
-  
-  // Fallback
-  return generateDefaultChart(result, nodeDataArray, linkDataArray);
 }
 
 /**
@@ -322,4 +323,3 @@ export function generateAllChartsData(
     generateChartDataFromConfig(chart, result, nodeDataArray, linkDataArray)
   );
 }
-

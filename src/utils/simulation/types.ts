@@ -54,35 +54,39 @@ export interface SimulationRunResult {
 export type ChartType = 'timeSeries' | 'scatterPlot' | 'table';
 
 /**
- * Configuration for a single result chart
+ * Base fields shared by all chart configurations (internal use only)
  */
-export interface ResultChartConfig {
-  id: string; // unique chart ID
-  type: ChartType;
+interface BaseChartConfig {
+  id: string;
   title: string;
   selectedKeys: string[]; // node/edge keys to display
 }
 
 /**
- * Time series specific configuration
+ * Time series chart configuration
  */
-export interface TimeSeriesChartConfig extends ResultChartConfig {
+export interface TimeSeriesChartConfig extends BaseChartConfig {
   type: 'timeSeries';
 }
 
 /**
- * Scatter plot specific configuration (placeholder for future)
+ * Scatter plot chart configuration
  */
-export interface ScatterPlotChartConfig extends ResultChartConfig {
+export interface ScatterPlotChartConfig extends BaseChartConfig {
   type: 'scatterPlot';
   xAxisKey?: string;
   yAxisKey?: string;
 }
 
 /**
- * Table specific configuration (placeholder for future)
+ * Table chart configuration
  */
-export interface TableChartConfig extends ResultChartConfig {
+export interface TableChartConfig extends BaseChartConfig {
   type: 'table';
 }
 
+/**
+ * Discriminated union of all chart configuration types.
+ * Use `chart.type` to narrow the type and access type-specific fields.
+ */
+export type ResultChartConfig = TimeSeriesChartConfig | ScatterPlotChartConfig | TableChartConfig;

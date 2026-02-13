@@ -35,33 +35,28 @@ export function expandVectorKeysInCharts(
   const seriesKeysSet = new Set(seriesKeys);
 
   return charts.map(chart => {
-    if (chart.type === 'timeSeries' || chart.type === 'table') {
-      // Process selectedKeys
-      const expandedKeys = expandKeys(chart.selectedKeys, seriesKeysSet, seriesKeys);
-      
-      if (expandedKeys.length !== chart.selectedKeys.length || 
-          !expandedKeys.every((key, i) => key === chart.selectedKeys[i])) {
-        return {
-          ...chart,
-          selectedKeys: expandedKeys,
-        };
+    switch (chart.type) {
+      case 'timeSeries':
+      case 'table': {
+        const expandedKeys = expandKeys(chart.selectedKeys, seriesKeysSet, seriesKeys);
+        
+        if (expandedKeys.length !== chart.selectedKeys.length || 
+            !expandedKeys.every((key, i) => key === chart.selectedKeys[i])) {
+          return { ...chart, selectedKeys: expandedKeys };
+        }
+        return chart;
       }
-    } else if (chart.type === 'scatterPlot') {
-      // Process xAxisKey and yAxisKey
-      const scatterChart = chart as any;
-      const newXKey = expandSingleKey(scatterChart.xAxisKey, seriesKeysSet, seriesKeys);
-      const newYKey = expandSingleKey(scatterChart.yAxisKey, seriesKeysSet, seriesKeys);
-      
-      if (newXKey !== scatterChart.xAxisKey || newYKey !== scatterChart.yAxisKey) {
-        return {
-          ...chart,
-          xAxisKey: newXKey,
-          yAxisKey: newYKey,
-        } as any;
+
+      case 'scatterPlot': {
+        const newXKey = expandSingleKey(chart.xAxisKey, seriesKeysSet, seriesKeys);
+        const newYKey = expandSingleKey(chart.yAxisKey, seriesKeysSet, seriesKeys);
+        
+        if (newXKey !== chart.xAxisKey || newYKey !== chart.yAxisKey) {
+          return { ...chart, xAxisKey: newXKey, yAxisKey: newYKey };
+        }
+        return chart;
       }
     }
-
-    return chart;
   });
 }
 
@@ -127,4 +122,3 @@ function expandSingleKey(
   // Keep the original key
   return key;
 }
-

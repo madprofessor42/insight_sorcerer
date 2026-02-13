@@ -1,12 +1,13 @@
 import * as go from 'gojs';
 import { ReactDiagram } from 'gojs-react';
-import { useRef, forwardRef, useImperativeHandle } from 'react';
+import { useRef, forwardRef, useImperativeHandle, useEffect } from 'react';
 import type { LinkType } from '../../config';
 import { initializeDiagram } from '../../utils/gojs-config';
 import { useDiagramEvents } from '../../hooks/diagram/useDiagramEvents';
 import { useLinkManagement } from '../../hooks/edge/useLinkManagement';
 import { useDiagramDragDrop } from '../../hooks/diagram/useDiagramDragDrop';
-import { useAppSelector } from '../../store/hooks';
+import { useAppSelector, useAppDispatch } from '../../store/hooks';
+import { setSkips, clearSelectedNode, clearSelectedEdge } from '../../store/diagramSlice';
 
 interface DiagramProps {
   selectedLinkType: LinkType;
@@ -20,6 +21,7 @@ export interface DiagramHandle {
 
 export const Diagram = forwardRef<DiagramHandle, DiagramProps>((props, ref) => {
   const diagramRef = useRef<ReactDiagram>(null);
+  const dispatch = useAppDispatch();
   
   // Expose getDiagram method to parent components
   useImperativeHandle(ref, () => ({
@@ -27,9 +29,48 @@ export const Diagram = forwardRef<DiagramHandle, DiagramProps>((props, ref) => {
   }));
   
   // Get diagram data from Redux (GoJS best practice: pass data to ReactDiagram)
-  const { nodeDataArray, linkDataArray, modelData, skipsDiagramUpdate } = useAppSelector(
-    (state) => state.diagram
-  );
+  const { 
+    nodeDataArray, 
+    linkDataArray, 
+    modelData, 
+    skipsDiagramUpdate,
+    selectedNodeKey,
+    selectedEdgeKey
+  } = useAppSelector((state) => state.diagram);
+
+  // Reset skipsDiagramUpdate after ReactDiagram processes the update
+  // This ensures the flag is only true during the render cycle to prevent circular updates
+  useEffect(() => {
+    if (skipsDiagramUpdate) {
+      // Use requestAnimationFrame to ensure ReactDiagram has processed the update
+      // This delays the reset until after the browser has painted
+      const rafId = requestAnimationFrame(() => {
+        dispatch(setSkips(false));
+      });
+      
+      return () => cancelAnimationFrame(rafId);
+    }
+  }, [skipsDiagramUpdate, dispatch]);
+
+  // Validate selection state - clear if selected element no longer exists
+  // This prevents stale selection references after nodes/edges are modified or removed
+  useEffect(() => {
+    if (selectedNodeKey !== null) {
+      const nodeExists = nodeDataArray.some(node => node.key === selectedNodeKey);
+      if (!nodeExists) {
+        dispatch(clearSelectedNode());
+      }
+    }
+  }, [selectedNodeKey, nodeDataArray, dispatch]);
+
+  useEffect(() => {
+    if (selectedEdgeKey !== null) {
+      const edgeExists = linkDataArray.some(link => link.key === selectedEdgeKey);
+      if (!edgeExists) {
+        dispatch(clearSelectedEdge());
+      }
+    }
+  }, [selectedEdgeKey, linkDataArray, dispatch]);
 
   // Setup diagram event listeners
   useDiagramEvents(diagramRef, props.onDiagramEvent);

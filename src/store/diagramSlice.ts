@@ -69,6 +69,10 @@ export const diagramSlice = createSlice({
     
     removeNodes: (state, action: PayloadAction<Array<go.Key>>) => {
       state.nodeDataArray = removeItems(state.nodeDataArray, action.payload);
+      // Clear selection if the selected node was removed
+      if (state.selectedNodeKey !== null && action.payload.includes(state.selectedNodeKey)) {
+        state.selectedNodeKey = null;
+      }
     },
 
     // Link operations - incremental updates
@@ -82,6 +86,10 @@ export const diagramSlice = createSlice({
     
     removeLinks: (state, action: PayloadAction<Array<go.Key>>) => {
       state.linkDataArray = removeItems(state.linkDataArray, action.payload);
+      // Clear selection if the selected edge was removed
+      if (state.selectedEdgeKey !== null && action.payload.includes(state.selectedEdgeKey)) {
+        state.selectedEdgeKey = null;
+      }
     },
 
     // Model data operations

@@ -86,14 +86,23 @@ export function useDiagramModelSync() {
     const removedLinkKeys = changes.removedLinkKeys;
     const modifiedModelData = changes.modelData;
 
-    console.log('🔄 Model changes:', {
-      insertedNodes: insertedNodeKeys?.length || 0,
-      modifiedNodes: modifiedNodeData?.length || 0,
-      removedNodes: removedNodeKeys?.length || 0,
-      insertedLinks: insertedLinkKeys?.length || 0,
-      modifiedLinks: modifiedLinkData?.length || 0,
-      removedLinks: removedLinkKeys?.length || 0,
-    });
+    // Log significant changes for debugging
+    const hasSignificantChanges = 
+      (insertedNodeKeys?.length || 0) > 0 ||
+      (removedNodeKeys?.length || 0) > 0 ||
+      (insertedLinkKeys?.length || 0) > 0 ||
+      (removedLinkKeys?.length || 0) > 0;
+    
+    if (hasSignificantChanges) {
+      console.log('🔄 GoJS → Redux sync:', {
+        insertedNodes: insertedNodeKeys?.length || 0,
+        modifiedNodes: modifiedNodeData?.length || 0,
+        removedNodes: removedNodeKeys?.length || 0,
+        insertedLinks: insertedLinkKeys?.length || 0,
+        modifiedLinks: modifiedLinkData?.length || 0,
+        removedLinks: removedLinkKeys?.length || 0,
+      });
+    }
 
     // Maintain maps of modified data so insertions don't need slow lookups
     const modifiedNodeMap = new Map<go.Key, go.ObjectData>();
@@ -108,18 +117,38 @@ export function useDiagramModelSync() {
         if (idx !== undefined && idx >= 0) {
           dispatch(modifyNode({ index: idx, data: nd }));
         }
+        // Note: If idx is undefined, node will be handled by insertedNodeKeys
       });
     }
 
     // Process node insertions
     if (insertedNodeKeys) {
+      // Track how many nodes we've inserted in this batch for correct indexing
+      let insertedCount = 0;
+      
       insertedNodeKeys.forEach((key: go.Key) => {
-        const nd = modifiedNodeMap.get(key);
         const idx = mapNodeKeyIdx.current.get(key);
-        if (nd && idx === undefined) {
-          // Update our index map
-          mapNodeKeyIdx.current.set(nd.key, nodeDataArray.length);
-          dispatch(insertNode(nd));
+        if (idx === undefined) {
+          // First try to get from modifiedNodeMap (most common case)
+          let nd = modifiedNodeMap.get(key);
+          
+          // If not in modifiedNodeMap, get directly from diagram
+          // This happens when GoJS creates nodes automatically (e.g., Cloud nodes)
+          if (!nd && diagram) {
+            const nodeData = diagram.model.findNodeDataForKey(key);
+            nd = nodeData !== null ? nodeData : undefined;
+          }
+          
+          if (nd) {
+            console.log('➕ Inserting node into Redux:', key, nd.category);
+            // Update our index map - use current length + number already inserted in this batch
+            const newIndex = nodeDataArray.length + insertedCount;
+            mapNodeKeyIdx.current.set(nd.key, newIndex);
+            insertedCount++;
+            dispatch(insertNode(nd));
+          } else {
+            console.warn('⚠️ Cannot insert node - data not found:', key);
+          }
         }
       });
     }
@@ -141,18 +170,40 @@ export function useDiagramModelSync() {
         if (idx !== undefined && idx >= 0) {
           dispatch(modifyLink({ index: idx, data: cleanedData }));
         }
+        // Note: If idx is undefined, link will be handled by insertedLinkKeys
       });
     }
 
     // Process link insertions
     if (insertedLinkKeys) {
+      // Track how many links we've inserted in this batch for correct indexing
+      let insertedCount = 0;
+      
       insertedLinkKeys.forEach((key: go.Key) => {
-        const ld = modifiedLinkMap.get(key);
         const idx = mapLinkKeyIdx.current.get(key);
-        if (ld && idx === undefined) {
-          // Link data already cleaned in modifiedLinkData processing above
-          mapLinkKeyIdx.current.set(ld.key, linkDataArray.length);
-          dispatch(insertLink(ld));
+        if (idx === undefined) {
+          // First try to get from modifiedLinkMap (most common case)
+          let ld = modifiedLinkMap.get(key);
+          
+          // If not in modifiedLinkMap, get directly from diagram and clean it
+          // This handles edge cases where links are created but not in modifiedLinkData
+          if (!ld && diagram) {
+            const linkData = (diagram.model as go.GraphLinksModel).findLinkDataForKey(key);
+            if (linkData !== null) {
+              ld = cleanLinkData(linkData);
+            }
+          }
+          
+          if (ld) {
+            console.log('➕ Inserting link into Redux:', key, ld.category);
+            // Link data already cleaned - use current length + number already inserted in this batch
+            const newIndex = linkDataArray.length + insertedCount;
+            mapLinkKeyIdx.current.set(ld.key, newIndex);
+            insertedCount++;
+            dispatch(insertLink(ld));
+          } else {
+            console.warn('⚠️ Cannot insert link - data not found:', key);
+          }
         }
       });
     }

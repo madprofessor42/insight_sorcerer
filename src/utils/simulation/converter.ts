@@ -157,7 +157,7 @@ export function convertToSimulationModel(
     if (errors.length > 0) {
       return {
         success: false,
-        error: `Conversion completed with ${errors.length} error(s)`,
+        error: `Conversion completed with ${errors.length} error(s). Details is ${errors.map(error => error.message).join(', ')}`,
         errorDetails: errors,
       };
     }

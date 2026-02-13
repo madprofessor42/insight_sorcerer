@@ -29,6 +29,11 @@ export function useDiagramSelection() {
         // Check if a link (edge) is selected
         const selectedLink = selection.filter((part) => part instanceof go.Link).first();
         
+        // Log selection changes for debugging (only when something is selected)
+        if (selectedNode || selectedLink) {
+          console.log('👆 Selected:', selectedNode?.data?.key || selectedLink?.data?.key);
+        }
+        
         // Update node selection
         if (selectedNode instanceof go.Node) {
           dispatch(setSelectedNodeKey(selectedNode.data.key));

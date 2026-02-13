@@ -12,9 +12,7 @@ import {
   type ChartType,
   type SelectableItem,
   type SimulationRunResult,
-  getSelectableItems,
-  getSelectableItemsFromResults,
-  getSelectableItemsFromSeriesKeys,
+  getAvailableChartItems,
   resolveSimulationKeyName
 } from '../../../utils/simulation';
 import { nanoid } from 'nanoid';
@@ -59,49 +57,15 @@ export function ResultChartsConfigModal({
     }
   }, [isOpen, charts]);
 
-  // Get all available nodes and edges as selectable items using utility
-  // Always show base items (for pre-simulation configuration)
-  // If simulation has run and vectors exist, also show vector elements
-  // If no simulation but we have saved series keys, use those to restore vector elements
+  // Get all available items for chart configuration
+  // Utility handles: base items, vector elements, and filtering of expanded vectors
   const availableItems = useMemo<SelectableItem[]>(() => {
-    const baseItems = getSelectableItems(nodeDataArray, linkDataArray);
-    const itemsMap = new Map<string, SelectableItem>();
-    
-    // Add base items
-    baseItems.forEach(item => itemsMap.set(item.key, item));
-    
-    // If we have simulation results, add vector elements as additional options
-    if (simulationResult?.success) {
-      const vectorItems = getSelectableItemsFromResults(simulationResult, nodeDataArray, linkDataArray)
-        .filter(item => item.isVectorElement); // Only vector elements, not base items
-      
-      vectorItems.forEach(item => itemsMap.set(item.key, item));
-    } else if (lastSimulationSeriesKeys.length > 0) {
-      // No current simulation results, but we have saved series keys from last run
-      // Use them to restore vector elements
-      const savedItems = getSelectableItemsFromSeriesKeys(lastSimulationSeriesKeys, nodeDataArray, linkDataArray);
-      savedItems.forEach(item => {
-        if (!itemsMap.has(item.key)) {
-          itemsMap.set(item.key, item);
-        }
-      });
-    }
-    
-    // Remove base items that have vector elements (to avoid showing both Population and Population.USA)
-    const allItems = Array.from(itemsMap.values());
-    const vectorElementParents = new Set(
-      allItems
-        .filter(item => item.isVectorElement)
-        .map(item => item.parentKey)
-        .filter(Boolean) as string[]
+    return getAvailableChartItems(
+      nodeDataArray,
+      linkDataArray,
+      simulationResult,
+      lastSimulationSeriesKeys
     );
-    
-    const filteredItems = allItems.filter(item => 
-      // Keep item if it's a vector element OR if it's a base item without vector expansions
-      item.isVectorElement || !vectorElementParents.has(item.key)
-    );
-    
-    return filteredItems;
   }, [simulationResult, lastSimulationSeriesKeys, nodeDataArray, linkDataArray]);
 
   // Start editing a new chart
@@ -124,15 +88,33 @@ export function ResultChartsConfigModal({
 
   // Start editing existing chart
   const handleEditChart = useCallback((chart: ResultChartConfig) => {
+    // Filter out keys that no longer have valid primitives in the diagram
+    // This happens when a primitive is deleted but still referenced in config
+    const availableKeys = new Set(availableItems.map(item => item.key));
+    const validSelectedKeys = chart.selectedKeys.filter(key => availableKeys.has(key));
+    
+    // For scatter plot, also validate axes
+    let xAxisKey = chart.type === 'scatterPlot' ? (chart as any).xAxisKey : undefined;
+    let yAxisKey = chart.type === 'scatterPlot' ? (chart as any).yAxisKey : undefined;
+    
+    if (chart.type === 'scatterPlot') {
+      if (xAxisKey && !availableKeys.has(xAxisKey)) {
+        xAxisKey = undefined;
+      }
+      if (yAxisKey && !availableKeys.has(yAxisKey)) {
+        yAxisKey = undefined;
+      }
+    }
+    
     setEditingChart({
       id: chart.id,
       type: chart.type,
       title: chart.title,
-      selectedKeys: new Set(chart.selectedKeys),
-      xAxisKey: chart.type === 'scatterPlot' ? (chart as any).xAxisKey : undefined,
-      yAxisKey: chart.type === 'scatterPlot' ? (chart as any).yAxisKey : undefined,
+      selectedKeys: new Set(validSelectedKeys),
+      xAxisKey,
+      yAxisKey,
     });
-  }, []);
+  }, [availableItems]);
 
   // Delete chart
   const handleDeleteChart = useCallback((chartId: string) => {
@@ -296,7 +278,7 @@ export function ResultChartsConfigModal({
                     <div className={styles.selectedBubbles}>
                       {editingChart.xAxisKey ? (
                         <div className={styles.selectedBubble}>
-                          {availableItems.find(i => i.key === editingChart.xAxisKey)?.displayName || editingChart.xAxisKey}
+                          {availableItems.find(i => i.key === editingChart.xAxisKey)?.displayName}
                           <span
                             className={styles.removeIcon}
                             onClick={() => setEditingChart(prev => prev ? { ...prev, xAxisKey: undefined } : prev)}
@@ -350,7 +332,7 @@ export function ResultChartsConfigModal({
                     <div className={styles.selectedBubbles}>
                       {editingChart.yAxisKey ? (
                         <div className={styles.selectedBubble}>
-                          {availableItems.find(i => i.key === editingChart.yAxisKey)?.displayName || editingChart.yAxisKey}
+                          {availableItems.find(i => i.key === editingChart.yAxisKey)?.displayName}
                           <span
                             className={styles.removeIcon}
                             onClick={() => setEditingChart(prev => prev ? { ...prev, yAxisKey: undefined } : prev)}
@@ -416,7 +398,7 @@ export function ResultChartsConfigModal({
                           const item = availableItems.find(i => i.key === key);
                           return (
                             <div key={key} className={styles.selectedBubble}>
-                              {item?.displayName || key}
+                              {item?.displayName}
                               <span
                                 className={styles.removeIcon}
                                 onClick={() => handleToggleItem(key)}

@@ -8,6 +8,7 @@ import type * as go from 'gojs';
 import type { SimulationRunResult, ResultChartConfig } from './types';
 import { generateChartColor } from './constants';
 import { resolveNodeInfo, getLinkDisplayName } from '../diagram-data';
+import { parseVectorKey } from './selectableItems';
 
 /**
  * Resolve display name for a simulation key.
@@ -27,29 +28,24 @@ export function resolveSimulationKeyName(
   if (!key) return 'Not set';
   
   const keyStr = String(key);
+  const parsed = parseVectorKey(keyStr);
   
-  // Check if this is a vector element (format: key.vectorElement)
-  const dotIndex = keyStr.lastIndexOf('.');
-  if (dotIndex > 0) {
-    const parentKey = keyStr.substring(0, dotIndex);
-    const vectorElement = keyStr.substring(dotIndex + 1);
-    
+  if (parsed.isVector) {
     // Try to find parent node
-    const node = nodes.find(n => String(n.key) === parentKey);
+    const node = nodes.find(n => String(n.key) === parsed.parentKey);
     if (node) {
-      const nodeInfo = resolveNodeInfo(parentKey, nodes);
-      return `${nodeInfo.name}.${vectorElement}`;
+      const nodeInfo = resolveNodeInfo(parsed.parentKey, nodes);
+      return `${nodeInfo.name}.${parsed.vectorElement}`;
     }
     
     // Try to find parent link
-    const link = links.find(l => String(l.key) === parentKey);
+    const link = links.find(l => String(l.key) === parsed.parentKey);
     if (link) {
-      return `${getLinkDisplayName(link)}.${vectorElement}`;
+      return `${getLinkDisplayName(link)}.${parsed.vectorElement}`;
     }
     
     // Parent not found - this can happen if the diagram changed since the config was saved
-    // Return a readable name anyway (just show the vector element part)
-    return `[Unknown].${vectorElement}`;
+    return `[Unknown].${parsed.vectorElement}`;
   }
   
   // Try to find as node first
@@ -66,7 +62,6 @@ export function resolveSimulationKeyName(
   }
   
   // Fallback if not found - this can happen if the diagram changed
-  // Show a meaningful fallback instead of just the key
   return `[Unknown: ${keyStr.substring(0, 8)}...]`;
 }
 

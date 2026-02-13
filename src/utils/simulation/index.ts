@@ -20,20 +20,12 @@ export type {
   SimulationConfig, 
   SimulationRunResult,
   ResultChartConfig,
-  ChartType,
-  TimeSeriesChartConfig,
-  ScatterPlotChartConfig,
-  TableChartConfig
+  ChartType
 } from './types';
 
 // Chart data generation utilities
 export {
   resolveSimulationKeyName,
-  generateTimeSeriesChartData,
-  generateScatterPlotChartData,
-  generateTableChartData,
-  generateDefaultChart,
-  generateChartDataFromConfig,
   generateAllChartsData,
   type ChartInfo,
   type TimeSeriesChartInfo,
@@ -46,7 +38,10 @@ export {
   getSelectableItems,
   getSelectableItemsFromResults,
   getSelectableItemsFromSeriesKeys,
-  type SelectableItem
+  getAvailableChartItems,
+  parseVectorKey,
+  type SelectableItem,
+  type ParsedVectorKey
 } from './selectableItems';
 
 // Form validation utilities

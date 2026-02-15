@@ -8,19 +8,30 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: var(--z-index-modal);
   padding: 24px;
 }
 
 .modal {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-xl);
   display: flex;
   flex-direction: column;
   max-height: 90vh;
   animation: modalFadeIn 0.2s ease-out;
+}
+
+.modal.draggable {
+  cursor: default;
+  max-height: none;
+  animation: modalFadeInDraggable 0.2s ease-out;
+}
+
+.modal.dragging {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  transition: none;
 }
 
 @keyframes modalFadeIn {
@@ -31,6 +42,15 @@
   to {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+@keyframes modalFadeInDraggable {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 
@@ -62,20 +82,33 @@
   background: var(--color-surface-hover);
 }
 
+.header.draggableHeader {
+  cursor: move;
+  user-select: none;
+}
+
 .title {
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
   margin: 0;
   color: var(--color-text-primary);
   letter-spacing: 0.3px;
+  flex: 1;
 }
 
+.windowControls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.minimizeButton,
 .closeButton {
   width: 32px;
   height: 32px;
   border: none;
   background: transparent;
-  font-size: 28px;
+  font-size: 24px;
   line-height: 1;
   color: var(--color-text-secondary);
   cursor: pointer;
@@ -87,9 +120,23 @@
   padding: 0;
 }
 
+.minimizeButton {
+  font-size: 28px;
+  padding-bottom: 4px;
+}
+
+.minimizeButton:hover {
+  background: var(--color-warning);
+  color: white;
+}
+
+.closeButton {
+  font-size: 28px;
+}
+
 .closeButton:hover {
-  background: var(--color-surface-active);
-  color: var(--color-text-primary);
+  background: var(--color-danger);
+  color: white;
 }
 
 /* Content */

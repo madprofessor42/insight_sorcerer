@@ -1,10 +1,10 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import * as go from 'gojs';
 import { Diagram, type DiagramHandle } from '../../components/Diagram';
 import { DiagramOverview } from '../../components/DiagramOverview';
 import { DiagramToolbar } from '../../components/DiagramToolbar';
 import { Sidebar } from '../../components/Sidebar';
-import { ToastProvider } from '../../components/ui';
+import { ToastProvider, MinimizedWindowsBar, type MinimizedWindow } from '../../components/ui';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { clearDiagram } from '../../store/diagramSlice';
 import { useDiagramModelSync } from '../../hooks/diagram/useDiagramModelSync';
@@ -27,6 +27,28 @@ export function DiagramEditor() {
   const [currentDiagramId, setCurrentDiagramId] = useState<string | null>(null);
   const [currentDiagramName, setCurrentDiagramName] = useState<string>('');
   const hasLoadedRef = useRef(false);
+
+  // Track minimized windows
+  const [minimizedWindows, setMinimizedWindows] = useState<MinimizedWindow[]>([]);
+
+  // Window management callbacks
+  const handleWindowMinimize = useCallback((windowId: string, title: string, icon?: string) => {
+    setMinimizedWindows((prev) => {
+      // Don't add if already minimized
+      if (prev.some((w) => w.id === windowId)) return prev;
+      return [...prev, { id: windowId, title, icon }];
+    });
+  }, []);
+
+  const handleWindowCloseFromTaskbar = useCallback((windowId: string) => {
+    // Call the specific window's close handler
+    const handler = sidebarCloseHandlersRef.current[windowId];
+    if (handler) {
+      handler();
+    }
+    // Remove from minimized list
+    setMinimizedWindows((prev) => prev.filter((w) => w.id !== windowId));
+  }, []);
 
   // Load last opened diagram on mount
   useEffect(() => {
@@ -72,10 +94,36 @@ export function DiagramEditor() {
     return () => clearTimeout(timer);
   }, [observedDiagram]);
 
+  // Create refs to store Sidebar's window handlers
+  const sidebarRestoreHandlersRef = useRef<Record<string, () => void>>({});
+  const sidebarCloseHandlersRef = useRef<Record<string, () => void>>({});
+
+  const registerRestoreHandler = (windowId: string, handler: () => void) => {
+    sidebarRestoreHandlersRef.current[windowId] = handler;
+  };
+
+  const registerCloseHandler = (windowId: string, handler: () => void) => {
+    sidebarCloseHandlersRef.current[windowId] = handler;
+  };
+
+  const handleWindowRestoreFromTaskbar = useCallback((windowId: string) => {
+    // Call the specific window's restore handler
+    const handler = sidebarRestoreHandlersRef.current[windowId];
+    if (handler) {
+      handler();
+    }
+    // Remove from minimized list
+    setMinimizedWindows((prev) => prev.filter((w) => w.id !== windowId));
+  }, []);
+
   return (
     <ToastProvider>
       <div className="diagram-editor">
-        <Sidebar />
+        <Sidebar 
+          onWindowMinimize={handleWindowMinimize}
+          onWindowRestore={registerRestoreHandler}
+          onWindowClose={registerCloseHandler}
+        />
         
         <main className="diagram-panel">
           <div className="diagram-container">
@@ -100,6 +148,13 @@ export function DiagramEditor() {
             </div>
           </div>
         </main>
+
+        {/* Minimized Windows Bar */}
+        <MinimizedWindowsBar
+          windows={minimizedWindows}
+          onRestore={handleWindowRestoreFromTaskbar}
+          onClose={handleWindowCloseFromTaskbar}
+        />
       </div>
     </ToastProvider>
   );

@@ -18,7 +18,13 @@ const MIN_WIDTH = 220;
 const MAX_WIDTH = 500;
 const DEFAULT_WIDTH = 385;
 
-export function Sidebar() {
+interface SidebarProps {
+  onWindowMinimize?: (windowId: string, title: string, icon?: string) => void;
+  onWindowRestore?: (windowId: string, handler: () => void) => void;
+  onWindowClose?: (windowId: string, handler: () => void) => void;
+}
+
+export function Sidebar({ onWindowMinimize, onWindowRestore, onWindowClose }: SidebarProps = {}) {
   const dispatch = useAppDispatch();
   const selectedLinkType = useAppSelector((state) => state.diagram.selectedLinkType);
   const simulationConfig = useAppSelector((state) => state.diagram.simulationConfig);
@@ -27,8 +33,41 @@ export function Sidebar() {
   const [width, setWidth] = useState(DEFAULT_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
+  const [isAIChatMinimized, setIsAIChatMinimized] = useState(false);
   const startXRef = useRef(0);
   const startWidthRef = useRef(DEFAULT_WIDTH);
+
+  const handleOpenAIChat = () => {
+    setIsAIChatOpen(true);
+    setIsAIChatMinimized(false);
+  };
+
+  const handleMinimizeAIChat = () => {
+    setIsAIChatMinimized(true);
+    onWindowMinimize?.('ai-chat', 'AI Ассистент', '🤖');
+  };
+
+  const handleMaximizeAIChat = useCallback(() => {
+    setIsAIChatMinimized(false);
+  }, []);
+
+  const handleCloseAIChat = useCallback(() => {
+    setIsAIChatOpen(false);
+    setIsAIChatMinimized(false);
+  }, []);
+
+  // Register restore and close handlers with parent
+  useEffect(() => {
+    if (onWindowRestore) {
+      onWindowRestore('ai-chat', handleMaximizeAIChat);
+    }
+  }, [onWindowRestore, handleMaximizeAIChat]);
+
+  useEffect(() => {
+    if (onWindowClose) {
+      onWindowClose('ai-chat', handleCloseAIChat);
+    }
+  }, [onWindowClose, handleCloseAIChat]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -76,7 +115,7 @@ export function Sidebar() {
               </div>
               <button
                 className={styles.aiChatButton}
-                onClick={() => setIsAIChatOpen(true)}
+                onClick={handleOpenAIChat}
                 title="Открыть AI ассистент"
               >
                 🤖
@@ -172,7 +211,13 @@ export function Sidebar() {
       </aside>
 
       {/* AI Chat Modal */}
-      <AIChatModal isOpen={isAIChatOpen} onClose={() => setIsAIChatOpen(false)} />
+      <AIChatModal 
+        isOpen={isAIChatOpen} 
+        onClose={handleCloseAIChat}
+        isMinimized={isAIChatMinimized}
+        onMinimize={handleMinimizeAIChat}
+        onMaximize={handleMaximizeAIChat}
+      />
     </>
   );
 }

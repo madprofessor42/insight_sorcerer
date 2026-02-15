@@ -94,21 +94,21 @@ export const aiRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
   });
 
   // WebSocket endpoint для real-time чата с AI
-  fastify.get('/chat', { websocket: true }, (connection) => {
+  fastify.get('/chat', { websocket: true }, (socket) => {
     const clientId = Math.random().toString(36).substring(7);
     fastify.log.info({ clientId }, 'AI Chat WebSocket connection established');
 
     // Heartbeat interval (ping каждые 30 секунд)
     const heartbeatInterval = setInterval(() => {
-      if (connection.socket.readyState === connection.socket.OPEN) {
-        connection.socket.send(JSON.stringify({ type: 'ping' }));
+      if (socket.readyState === socket.OPEN) {
+        socket.send(JSON.stringify({ type: 'ping' }));
       }
     }, 30000);
 
     // ВАЖНО: Все event handlers устанавливаются синхронно!
     // Это критично для избежания потери сообщений
     
-    connection.socket.on('message', async (message: Buffer) => {
+    socket.on('message', async (message: Buffer) => {
       try {
         const data = JSON.parse(message.toString()) as {
           type: 'message' | 'context_update' | 'ping';
@@ -120,7 +120,7 @@ export const aiRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
 
         // Обработка ping от клиента
         if (data.type === 'ping') {
-          connection.socket.send(JSON.stringify({ type: 'pong' }));
+          socket.send(JSON.stringify({ type: 'pong' }));
           return;
         }
 
@@ -136,18 +136,18 @@ export const aiRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
             timestamp: new Date().toISOString(),
           };
 
-          connection.socket.send(JSON.stringify(response));
+          socket.send(JSON.stringify(response));
         } else if (data.type === 'context_update') {
           // Обновление контекста (текущая диаграмма, выбранный узел и т.д.)
           fastify.log.info({ clientId }, 'Context updated');
-          connection.socket.send(JSON.stringify({
+          socket.send(JSON.stringify({
             type: 'context_received',
             timestamp: new Date().toISOString(),
           }));
         }
       } catch (error) {
         fastify.log.error(error);
-        connection.socket.send(JSON.stringify({
+        socket.send(JSON.stringify({
           type: 'error',
           message: 'Failed to process message',
           error: error instanceof Error ? error.message : 'Unknown error',
@@ -155,18 +155,18 @@ export const aiRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
       }
     });
 
-    connection.socket.on('close', (code: number, reason: Buffer) => {
+    socket.on('close', (code: number, reason: Buffer) => {
       fastify.log.info({ clientId, code, reason: reason.toString() }, 'AI Chat WebSocket connection closed');
       clearInterval(heartbeatInterval);
     });
 
-    connection.socket.on('error', (error: Error) => {
+    socket.on('error', (error: Error) => {
       fastify.log.error({ clientId, error }, 'WebSocket error');
       clearInterval(heartbeatInterval);
     });
 
     // Отправляем приветствие
-    connection.socket.send(JSON.stringify({
+    socket.send(JSON.stringify({
       type: 'welcome',
       message: '👋 Привет! Я AI ассистент Insight Sorcerer. Чем могу помочь?',
       timestamp: new Date().toISOString(),

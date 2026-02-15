@@ -6,9 +6,18 @@ import styles from './AIChatModal.module.css';
 interface AIChatModalProps {
   isOpen: boolean;
   onClose: () => void;
+  isMinimized?: boolean;
+  onMinimize?: () => void;
+  onMaximize?: () => void;
 }
 
-export const AIChatModal = ({ isOpen, onClose }: AIChatModalProps) => {
+export const AIChatModal = ({ 
+  isOpen, 
+  onClose, 
+  isMinimized = false,
+  onMinimize,
+  onMaximize,
+}: AIChatModalProps) => {
   const { messages, isConnected, isConnecting, connect, disconnect, sendMessage } = useAIChat();
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -73,7 +82,18 @@ export const AIChatModal = ({ isOpen, onClose }: AIChatModalProps) => {
   );
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={modalTitle} size="large">
+    <Modal 
+      isOpen={isOpen} 
+      onClose={onClose} 
+      title={modalTitle} 
+      size="large"
+      draggable={true}
+      minimizable={true}
+      isMinimized={isMinimized}
+      onMinimize={onMinimize}
+      onMaximize={onMaximize}
+      windowId="ai-chat"
+    >
       <div className={styles.chatContainer}>
         {/* Messages */}
         <div className={styles.messages}>

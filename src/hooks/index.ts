@@ -4,3 +4,4 @@ export * from './diagram';
 export * from './edge';
 export * from './palette';
 export * from './simulation';
+export * from './ui';

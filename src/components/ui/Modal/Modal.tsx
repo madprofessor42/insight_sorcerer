@@ -10,7 +10,7 @@ import styles from './Modal.module.css';
 export interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  title: string;
+  title: string | ReactNode;
   children: ReactNode;
   size?: 'small' | 'medium' | 'large' | 'fullscreen';
   closeOnBackdropClick?: boolean;
@@ -61,7 +61,11 @@ export function Modal({
       <div className={`${styles.modal} ${styles[size]}`}>
         {/* Header */}
         <div className={styles.header}>
-          <h2 className={styles.title}>{title}</h2>
+          {typeof title === 'string' ? (
+            <h2 className={styles.title}>{title}</h2>
+          ) : (
+            <div className={styles.title}>{title}</div>
+          )}
           <button
             className={styles.closeButton}
             onClick={onClose}

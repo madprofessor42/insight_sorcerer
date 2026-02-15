@@ -9,6 +9,7 @@ import { EdgePanel } from './EdgePanel';
 import { DebugPanel } from './DebugPanel';
 import { SimulationPanel } from './SimulationPanel';
 import { FormulaListPanel } from './FormulaListPanel';
+import { AIChatModal } from '../AIChat';
 import { LINK_CONFIGURATIONS, NODE_CONFIGURATIONS } from '../../config';
 import type { LinkType } from '../../config';
 import styles from './Sidebar.module.css';
@@ -25,6 +26,7 @@ export function Sidebar() {
 
   const [width, setWidth] = useState(DEFAULT_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
+  const [isAIChatOpen, setIsAIChatOpen] = useState(false);
   const startXRef = useRef(0);
   const startWidthRef = useRef(DEFAULT_WIDTH);
 
@@ -62,13 +64,25 @@ export function Sidebar() {
   }, [isResizing, handleMouseMove, handleMouseUp]);
 
   return (
-    <aside className={styles.sidebar} style={{ width }}>
-      <div className={styles.sidebarContent}>
-        {/* Header */}
-        <header className={styles.header}>
-          <h1 className={styles.title}>System Dynamics</h1>
-          <p className={styles.subtitle}>Visual Modeler</p>
-        </header>
+    <>
+      <aside className={styles.sidebar} style={{ width }}>
+        <div className={styles.sidebarContent}>
+          {/* Header */}
+          <header className={styles.header}>
+            <div className={styles.headerContent}>
+              <div>
+                <h1 className={styles.title}>System Dynamics</h1>
+                <p className={styles.subtitle}>Visual Modeler</p>
+              </div>
+              <button
+                className={styles.aiChatButton}
+                onClick={() => setIsAIChatOpen(true)}
+                title="Открыть AI ассистент"
+              >
+                🤖
+              </button>
+            </div>
+          </header>
 
         {/* Diagram Storage Section */}
         {/* Node Components Section - Dynamic from configuration */}
@@ -150,11 +164,15 @@ export function Sidebar() {
         <DebugPanel />
       </div>
 
-      {/* Resize handle */}
-      <div
-        className={`${styles.resizeHandle} ${isResizing ? styles.resizeHandleActive : ''}`}
-        onMouseDown={handleMouseDown}
-      />
-    </aside>
+        {/* Resize handle */}
+        <div
+          className={`${styles.resizeHandle} ${isResizing ? styles.resizeHandleActive : ''}`}
+          onMouseDown={handleMouseDown}
+        />
+      </aside>
+
+      {/* AI Chat Modal */}
+      <AIChatModal isOpen={isAIChatOpen} onClose={() => setIsAIChatOpen(false)} />
+    </>
   );
 }

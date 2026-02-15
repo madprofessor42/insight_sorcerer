@@ -21,10 +21,20 @@ System Dynamics modeling platform inspired by Insight Maker. Build, simulate, an
 
 - Node.js 20+ 
 - npm or yarn
+- **OpenRouter API Key** (for AI features) - Get it at https://openrouter.ai/keys
 
 ### Installation & Development
 
-Use the Makefile for easy setup:
+1. **Setup environment variables:**
+
+```bash
+# Create .env file in backend directory
+cd backend
+cp env.example .env
+# Edit .env and add your OPENROUTER_API_KEY
+```
+
+2. **Install and run:**
 
 ```bash
 # Install all dependencies (frontend + backend)

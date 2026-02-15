@@ -5,6 +5,7 @@ export interface ChatMessage {
   type: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: string;
+  isStreaming?: boolean;
 }
 
 interface UseAIChatOptions {
@@ -103,6 +104,10 @@ export const useAIChat = (options: UseAIChatOptions = {}) => {
         startHeartbeat(); // Запуск heartbeat
       };
 
+      let currentStreamingMessage = '';
+      let isStreamingMsg = false;
+      let streamingMessageId = '';
+
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
@@ -122,7 +127,47 @@ export const useAIChat = (options: UseAIChatOptions = {}) => {
                 timestamp: data.timestamp,
               },
             ]);
+          } else if (data.type === 'thinking') {
+            // AI начинает думать, создаем сообщение для streaming
+            isStreamingMsg = true;
+            currentStreamingMessage = '';
+            streamingMessageId = `assistant-${Date.now()}`;
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: streamingMessageId,
+                type: 'assistant',
+                content: '💭 Думаю...',
+                timestamp: data.timestamp,
+                isStreaming: true,
+              },
+            ]);
+          } else if (data.type === 'token') {
+            // Получен токен, обновляем streaming сообщение
+            if (isStreamingMsg) {
+              currentStreamingMessage += data.content;
+              setMessages((prev) => {
+                return prev.map(msg => 
+                  msg.id === streamingMessageId
+                    ? { ...msg, content: currentStreamingMessage, isStreaming: true }
+                    : msg
+                );
+              });
+            }
+          } else if (data.type === 'message_complete') {
+            // Streaming завершен
+            isStreamingMsg = false;
+            setMessages((prev) => {
+              return prev.map(msg => 
+                msg.id === streamingMessageId
+                  ? { ...msg, isStreaming: false, timestamp: data.timestamp }
+                  : msg
+              );
+            });
+            currentStreamingMessage = '';
+            streamingMessageId = '';
           } else if (data.type === 'message') {
+            // Обычное сообщение (fallback для не-streaming режима)
             setMessages((prev) => [
               ...prev,
               {
@@ -134,12 +179,13 @@ export const useAIChat = (options: UseAIChatOptions = {}) => {
             ]);
           } else if (data.type === 'error') {
             console.error('AI Chat error:', data.message);
+            isStreamingMsg = false;
             setMessages((prev) => [
               ...prev,
               {
                 id: `error-${Date.now()}`,
                 type: 'system',
-                content: `Ошибка: ${data.message}`,
+                content: `❌ Ошибка: ${data.message}`,
                 timestamp: new Date().toISOString(),
               },
             ]);

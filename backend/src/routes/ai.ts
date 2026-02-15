@@ -1,5 +1,7 @@
 import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import type { AIQueryRequest, AIQueryResponse } from '../types/ai.js';
+import { processChatMessage } from '../services/ai-agent.js';
+import { HumanMessage, AIMessage, type BaseMessage } from '@langchain/core/messages';
 
 export const aiRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   
@@ -98,6 +100,9 @@ export const aiRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
     const clientId = Math.random().toString(36).substring(7);
     fastify.log.info({ clientId }, 'AI Chat WebSocket connection established');
 
+    // Store conversation history for this client
+    const conversationHistory: BaseMessage[] = [];
+
     // Heartbeat interval (ping каждые 30 секунд)
     const heartbeatInterval = setInterval(() => {
       if (socket.readyState === socket.OPEN) {
@@ -125,21 +130,69 @@ export const aiRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
         }
 
         if (data.type === 'message' && data.message) {
-          // TODO: Интеграция с LLM
-          // Симуляция задержки ответа AI
-          await new Promise(resolve => setTimeout(resolve, 500));
-
-          // Mock ответ от AI
-          const response = {
-            type: 'message',
-            content: `AI ответ на: "${data.message}"\n\nЯ могу помочь вам с:\n- Построением схемы\n- Дебагом модели\n- Созданием формул\n- Анализом структуры`,
+          // Send "thinking" indicator
+          socket.send(JSON.stringify({
+            type: 'thinking',
             timestamp: new Date().toISOString(),
-          };
+          }));
 
-          socket.send(JSON.stringify(response));
+          try {
+            let fullResponse = '';
+            let tokenCount = 0;
+            
+            // Process message with AI agent using streaming
+            await processChatMessage(
+              data.message,
+              conversationHistory,
+              (token: string) => {
+                // Stream each token to the client
+                if (socket.readyState === socket.OPEN) {
+                  socket.send(JSON.stringify({
+                    type: 'token',
+                    content: token,
+                    timestamp: new Date().toISOString(),
+                  }));
+                  fullResponse += token;
+                  tokenCount++;
+                }
+              }
+            );
+
+            // Update conversation history
+            conversationHistory.push(new HumanMessage(data.message));
+            conversationHistory.push(new AIMessage(fullResponse));
+
+            // Send completion signal
+            socket.send(JSON.stringify({
+              type: 'message_complete',
+              timestamp: new Date().toISOString(),
+            }));
+
+            fastify.log.info({ 
+              clientId, 
+              messageLength: fullResponse.length,
+              tokenCount,
+              historySize: conversationHistory.length 
+            }, 'AI response sent');
+          } catch (aiError) {
+            fastify.log.error({ clientId, error: aiError }, 'AI processing error');
+            socket.send(JSON.stringify({
+              type: 'error',
+              message: 'Ошибка при обработке сообщения AI',
+              error: aiError instanceof Error ? aiError.message : 'Unknown error',
+              timestamp: new Date().toISOString(),
+            }));
+          }
         } else if (data.type === 'context_update') {
           // Обновление контекста (текущая диаграмма, выбранный узел и т.д.)
-          fastify.log.info({ clientId }, 'Context updated');
+          fastify.log.info({ clientId, context: data.context }, 'Context updated');
+          
+          // Add context to conversation history as a system message
+          if (data.context) {
+            const contextMessage = `Контекст обновлен: ${JSON.stringify(data.context)}`;
+            conversationHistory.push(new HumanMessage(contextMessage));
+          }
+
           socket.send(JSON.stringify({
             type: 'context_received',
             timestamp: new Date().toISOString(),

@@ -17,6 +17,17 @@ interface UseAIChatOptions {
   heartbeatInterval?: number;
 }
 
+/**
+ * AI Chat WebSocket Hook
+ * 
+ * Важно: История сообщений является сессионной и очищается при:
+ * - Закрытии чата (disconnect)
+ * - Размонтировании компонента
+ * 
+ * Каждое новое подключение = новая чистая сессия без истории прошлых разговоров.
+ * Это ожидаемое поведение для обеспечения приватности и свежего контекста.
+ */
+
 export const useAIChat = (options: UseAIChatOptions = {}) => {
   const {
     url = 'ws://localhost:3001/api/ai/chat',
@@ -233,6 +244,11 @@ export const useAIChat = (options: UseAIChatOptions = {}) => {
       wsRef.current.close(1000, 'User disconnected'); // 1000 = normal closure
       wsRef.current = null;
     }
+
+    // Очищаем историю сообщений при отключении
+    setMessages([]);
+    setIsConnected(false);
+    setIsConnecting(false);
   }, [clearHeartbeat]);
 
   const sendMessage = useCallback((message: string) => {
@@ -285,7 +301,7 @@ export const useAIChat = (options: UseAIChatOptions = {}) => {
       connect();
     }
 
-    // Cleanup функция
+    // Cleanup функция при размонтировании компонента
     return () => {
       shouldReconnectRef.current = false;
       
@@ -299,6 +315,11 @@ export const useAIChat = (options: UseAIChatOptions = {}) => {
         wsRef.current.close(1000, 'Component unmounted');
         wsRef.current = null;
       }
+
+      // Очищаем историю при размонтировании
+      setMessages([]);
+      setIsConnected(false);
+      setIsConnecting(false);
     };
   }, [autoConnect, connect, clearHeartbeat]); // connect теперь в зависимостях
 

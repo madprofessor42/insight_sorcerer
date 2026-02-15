@@ -100,7 +100,9 @@ export const aiRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
     const clientId = Math.random().toString(36).substring(7);
     fastify.log.info({ clientId }, 'AI Chat WebSocket connection established');
 
-    // Store conversation history for this client
+    // Store conversation history for this WebSocket session
+    // NOTE: История уничтожается при закрытии соединения - это ожидаемое поведение
+    // Каждое новое подключение = новая сессия с пустой историей
     const conversationHistory: BaseMessage[] = [];
 
     // Heartbeat interval (ping каждые 30 секунд)

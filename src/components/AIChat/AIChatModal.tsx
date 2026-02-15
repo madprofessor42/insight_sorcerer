@@ -34,9 +34,20 @@ export const AIChatModal = ({
   }, [isOpen, connect, disconnect]);
 
   useEffect(() => {
-    // Автоскролл к последнему сообщению
+    // Автоскролл к последнему сообщению при изменении messages
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+    // Автоскролл при разворачивании из минимизированного состояния
+    if (isOpen && !isMinimized) {
+      // Небольшая задержка для того, чтобы DOM успел отрендериться
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        inputRef.current?.focus();
+      }, 100);
+    }
+  }, [isMinimized, isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

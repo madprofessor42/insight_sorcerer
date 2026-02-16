@@ -1,0 +1,170 @@
+/**
+ * Modification Proposal Styles
+ */
+
+.proposalContainer {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 12px 0;
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.proposalHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.expandButton {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 12px;
+  transition: background-color 0.2s;
+}
+
+.expandButton:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.proposalTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.proposalTitle h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.proposalIcon {
+  font-size: 20px;
+}
+
+.proposalSummary {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.proposalSummary p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.operationsList {
+  margin-bottom: 16px;
+}
+
+.operationsList h5 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.operationItem {
+  display: flex;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+  transition: background-color 0.2s;
+}
+
+.operationItem:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.operationIcon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.operationContent {
+  flex: 1;
+}
+
+.operationDescription {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.operationReasoning {
+  font-size: 13px;
+  opacity: 0.8;
+  font-style: italic;
+}
+
+.expectedOutcome {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.expectedOutcome h5 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.expectedOutcome p {
+  margin: 0;
+  line-height: 1.5;
+  font-size: 14px;
+}
+
+.proposalActions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.actionButton {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.acceptButton {
+  background: #10b981;
+  color: white;
+}
+
+.acceptButton:hover {
+  background: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+.rejectButton {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.rejectButton:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.actionButton:active {
+  transform: translateY(0);
+}
+

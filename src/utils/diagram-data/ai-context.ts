@@ -7,8 +7,7 @@
 
 import type * as go from 'gojs';
 import type { RootState } from '../../store/store';
-import { getNodeConfiguration } from '../../config';
-import type { NodeType, LinkType } from '../../config';
+import type { LinkType } from '../../config';
 import {
   getNodeDisplayName,
   getLinkDisplayName,
@@ -143,91 +142,53 @@ export function extractDiagramContext(state: RootState): DiagramContext {
 // ============================================================================
 
 /**
- * Get human-readable label for node type using configuration
- */
-function getNodeTypeLabel(category: string): string {
-  const config = getNodeConfiguration(category as NodeType);
-  if (config) {
-    return config.label;
-  }
-  
-  // Fallback labels
-  const fallbackLabels: Record<string, string> = {
-    'stock': 'Stock',
-    'variable': 'Variable',
-    'converter': 'Converter',
-    'cloud': 'Cloud',
-    'unknown': 'Unknown',
-  };
-  return fallbackLabels[category.toLowerCase()] || category;
-}
-
-/**
- * Format diagram context for LLM prompt
+ * Format diagram context for LLM prompt as JSON
+ * Returns structured JSON with IDs and names for better understanding
  */
 export function formatDiagramContextForLLM(context: DiagramContext): string {
   if (context.totalNodes === 0) {
-    return 'Диаграмма пуста. Пользователь только начинает работу.';
+    return JSON.stringify({ empty: true, message: 'Диаграмма пуста' }, null, 2);
   }
 
-  const parts: string[] = [];
-
-  // Overview
-  parts.push(`📊 **Текущая диаграмма:**`);
-  parts.push(`- Всего элементов: ${context.totalNodes} узлов, ${context.totalLinks} связей`);
-
-  // Nodes by type
-  if (Object.keys(context.nodesByType).length > 0) {
-    parts.push(`- Типы элементов:`);
-    Object.entries(context.nodesByType).forEach(([type, count]) => {
-      const typeLabel = getNodeTypeLabel(type);
-      parts.push(`  • ${typeLabel}: ${count}`);
-    });
-  }
-
-  // Nodes details
-  if (context.nodes.length > 0) {
-    parts.push(`\n🔷 **Элементы диаграммы:**`);
-    context.nodes.forEach((node, index) => {
-      const typeLabel = getNodeTypeLabel(node.category);
-      let nodeInfo = `${index + 1}. [${typeLabel}] "${node.text}"`;
+  // Create structured JSON with both IDs and display names
+  const jsonContext: any = {
+    summary: {
+      totalNodes: context.totalNodes,
+      totalLinks: context.totalLinks,
+      nodesByType: context.nodesByType,
+    },
+    nodes: context.nodes.map(node => {
+      const nodeData: any = {
+        id: node.key,
+        name: node.text,
+        category: node.category,
+      };
       
-      if (node.formula) {
-        nodeInfo += ` | Формула: ${node.formula}`;
+      // Variable: only has 'value' field
+      if (node.category === 'Variable' && node.value !== undefined) {
+        nodeData.value = node.value;
       }
       
-      if (node.value !== undefined) {
-        nodeInfo += ` | Значение: ${typeof node.value === 'object' ? JSON.stringify(node.value) : node.value}`;
+      // Stock: only has 'initialValue' field
+      if (node.category === 'Stock' && node.initialValue !== undefined) {
+        nodeData.initialValue = node.initialValue;
       }
       
-      if (node.initialValue !== undefined) {
-        nodeInfo += ` | Начальное значение: ${typeof node.initialValue === 'object' ? JSON.stringify(node.initialValue) : node.initialValue}`;
-      }
-      
-      // Converter-specific fields
+      // Converter: has 'input' and 'values' fields
       if (node.category === 'Converter') {
         if (node.input !== undefined) {
-          nodeInfo += ` | Input Source: ${node.input}`;
+          nodeData.input = node.input;
         }
         if (node.values !== undefined) {
-          nodeInfo += ` | Data Points: ${node.values}`;
+          nodeData.values = node.values;
         }
       }
       
-      parts.push(nodeInfo);
-    });
-  }
-
-  // Separate links into regular links and flows
-  const regularLinks = context.links.filter((l: any) => l.type !== 'flow' && l.type !== 'biflow');
-  const flowLinks = context.links.filter((l: any) => l.type === 'flow' || l.type === 'biflow');
-  
-  // Regular Links
-  if (regularLinks.length > 0) {
-    parts.push(`\n🔗 **Links:**`);
-    regularLinks.forEach((link: any, index) => {
-      const fromEndpoint = link._fromEndpoint;
-      const toEndpoint = link._toEndpoint;
+      return nodeData;
+    }),
+    links: context.links.map(link => {
+      const fromEndpoint = (link as any)._fromEndpoint;
+      const toEndpoint = (link as any)._toEndpoint;
       
       // Get display text for endpoints
       const fromText = isEdgeEndpoint(fromEndpoint) 
@@ -238,60 +199,36 @@ export function formatDiagramContextForLLM(context: DiagramContext): string {
         ? toEndpoint.name
         : context.nodes.find(n => n.key === link.to)?.text || link.to;
       
-      // Format: "Source" -> "Target" (имя: Label) or "Source" ↔ "Target" (имя: Label) for bidirectional
-      const arrow = link.bidirectional ? '↔' : '->';
-      let linkInfo = `${index + 1}. "${fromText}" ${arrow} "${toText}"`;
+      const linkData: any = {
+        id: link.key,
+        fromId: link.from,
+        fromName: fromText,
+        toId: link.to,
+        toName: toText,
+        type: link.type,
+        name: link.label || '',
+      };
       
-      // Add link label/name
-      if (link.label) {
-        linkInfo += ` (имя: ${link.label})`;
+      if (link.bidirectional) {
+        linkData.bidirectional = true;
       }
       
-      parts.push(linkInfo);
-    });
+      if (link.flowRate !== undefined) {
+        linkData.flowRate = link.flowRate;
+      }
+      
+      return linkData;
+    }),
+  };
+  
+  if (context.hasSimulation) {
+    jsonContext.simulation = {
+      steps: context.simulationSteps,
+      timeUnit: context.simulationTimeUnit,
+    };
   }
   
-  // Flows
-  if (flowLinks.length > 0) {
-    parts.push(`\n💧 **Flows:**`);
-    flowLinks.forEach((link: any, index) => {
-      const fromEndpoint = link._fromEndpoint;
-      const toEndpoint = link._toEndpoint;
-      
-      // Get display text for endpoints
-      const fromText = isEdgeEndpoint(fromEndpoint)
-        ? fromEndpoint.name
-        : context.nodes.find(n => n.key === link.from)?.text || link.from;
-      
-      const toText = isEdgeEndpoint(toEndpoint)
-        ? toEndpoint.name
-        : context.nodes.find(n => n.key === link.to)?.text || link.to;
-      
-      // Format: "Source" → "Target" (имя: Name) | Flow Rate: value
-      let flowInfo = `${index + 1}. "${fromText}" → "${toText}"`;
-      
-      // Add flow name/label
-      if (link.label) {
-        flowInfo += ` (имя: ${link.label})`;
-      }
-      
-      // Add flow rate
-      if (link.flowRate !== undefined) {
-        flowInfo += ` | Flow Rate: ${typeof link.flowRate === 'object' ? JSON.stringify(link.flowRate) : link.flowRate}`;
-      }
-      
-      parts.push(flowInfo);
-    });
-  }
-
-  // Simulation info
-  if (context.hasSimulation) {
-    parts.push(`\n⚙️ **Настройки симуляции:**`);
-    parts.push(`- Шагов: ${context.simulationSteps}`);
-    parts.push(`- Единица времени: ${context.simulationTimeUnit}`);
-  }
-
-  return parts.join('\n');
+  return JSON.stringify(jsonContext, null, 2);
 }
 
 // ============================================================================
@@ -320,4 +257,5 @@ export function getNodeConnections(
     outgoing: context.links.filter(l => l.from === nodeKey),
   };
 }
+
 

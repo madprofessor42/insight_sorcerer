@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
+import { useStore } from 'react-redux';
 import { useAIChat } from '../../hooks/ai';
-import { useAppSelector } from '../../store/hooks';
+import { useAppSelector, useAppDispatch } from '../../store/hooks';
+import type { RootState } from '../../store/store';
 import { extractDiagramContext, formatDiagramContextForLLM } from '../../utils/diagram-data';
+import { applyDiagramModifications } from '../../utils/diagram-modifications-applier';
 import { Modal } from '../ui/Modal/Modal';
+import { ModificationProposal } from './ModificationProposal';
 import styles from './AIChatModal.module.css';
 
 interface AIChatModalProps {
@@ -20,13 +24,28 @@ export const AIChatModal = ({
   onMinimize,
   onMaximize,
 }: AIChatModalProps) => {
-  const { messages, isConnected, isConnecting, connect, disconnect, sendMessage, updateContext } = useAIChat();
+  const {
+    messages,
+    isConnected,
+    isConnecting,
+    pendingProposal,
+    connect,
+    disconnect,
+    sendMessage,
+    updateContext,
+    requestModifications,
+    clearProposal,
+  } = useAIChat();
+  
   const [inputValue, setInputValue] = useState('');
+  const [mode, setMode] = useState<'ask' | 'modify'>('ask');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   
-  // Get diagram state from Redux
+  // Get diagram state and dispatch from Redux
   const diagramState = useAppSelector((state) => state.diagram);
+  const dispatch = useAppDispatch();
+  const store = useStore<RootState>();
 
   useEffect(() => {
     if (isOpen) {
@@ -79,8 +98,37 @@ export const AIChatModal = ({
     e.preventDefault();
     if (!inputValue.trim() || !isConnected) return;
 
-    sendMessage(inputValue.trim());
+    if (mode === 'ask') {
+      sendMessage(inputValue.trim());
+    } else {
+      // Context is already in backend's conversationHistory from automatic updates
+      requestModifications(inputValue.trim());
+    }
+    
     setInputValue('');
+  };
+
+  const handleAcceptModifications = () => {
+    if (!pendingProposal) return;
+
+    const result = applyDiagramModifications(
+      pendingProposal,
+      dispatch,
+      store.getState
+    );
+
+    console.log('✨ Modifications applied:', result);
+    alert(
+      `Применено изменений: ${result.appliedCount}\n` +
+      `Ошибок: ${result.failedCount}\n\n` +
+      result.messages.join('\n')
+    );
+
+    clearProposal();
+  };
+
+  const handleRejectModifications = () => {
+    clearProposal();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -177,9 +225,30 @@ export const AIChatModal = ({
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Modification Proposal */}
+        {pendingProposal && (
+          <div className={styles.proposalWrapper}>
+            <ModificationProposal
+              proposal={pendingProposal}
+              onAccept={handleAcceptModifications}
+              onReject={handleRejectModifications}
+            />
+          </div>
+        )}
+
         {/* Input */}
         <div className={styles.inputContainer}>
           <form className={styles.inputForm} onSubmit={handleSubmit}>
+            <select
+              className={styles.modeSelect}
+              value={mode}
+              onChange={(e) => setMode(e.target.value as 'ask' | 'modify')}
+              disabled={!isConnected}
+              title="Выберите режим работы"
+            >
+              <option value="ask">💬 Спросить</option>
+              <option value="modify">✨ Изменить</option>
+            </select>
             <textarea
               ref={inputRef}
               className={styles.input}
@@ -188,7 +257,9 @@ export const AIChatModal = ({
               onKeyDown={handleKeyDown}
               placeholder={
                 isConnected
-                  ? 'Напишите ваш вопрос... (Enter для отправки, Shift+Enter для новой строки)'
+                  ? mode === 'ask'
+                    ? 'Напишите ваш вопрос... (Enter для отправки, Shift+Enter для новой строки)'
+                    : 'Опишите как изменить диаграмму... (Enter для отправки, Shift+Enter для новой строки)'
                   : 'Подключение к серверу...'
               }
               disabled={!isConnected}
@@ -196,10 +267,11 @@ export const AIChatModal = ({
             />
             <button
               type="submit"
-              className={styles.sendButton}
+              className={mode === 'modify' ? styles.modifyButton : styles.sendButton}
               disabled={!isConnected || !inputValue.trim()}
+              title={mode === 'ask' ? 'Отправить вопрос' : 'Запросить изменения диаграммы'}
             >
-              Отправить
+              {mode === 'ask' ? '📤 Отправить' : '✨ Применить'}
             </button>
           </form>
         </div>

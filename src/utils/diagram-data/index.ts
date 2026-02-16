@@ -34,6 +34,7 @@ export {
   
   // Parent edge lookup
   findParentEdgeForLabelNode,
+  findLinkLabelForEdge,
 } from './core';
 
 // ============================================================================

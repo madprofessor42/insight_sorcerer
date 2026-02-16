@@ -259,3 +259,32 @@ export function findParentEdgeForLabelNode(
   }) ?? null;
 }
 
+/**
+ * Find the LinkLabel node for a given edge (link).
+ * This is the reverse of findParentEdgeForLabelNode.
+ * 
+ * @param edgeKey - Key of the edge (link)
+ * @param nodeDataArray - Array of node data objects from Redux store
+ * @param linkDataArray - Array of link data objects from Redux store
+ * @returns LinkLabel node data object or null if not found
+ */
+export function findLinkLabelForEdge(
+  edgeKey: go.Key,
+  nodeDataArray: Array<go.ObjectData>,
+  linkDataArray: Array<go.ObjectData>
+): go.ObjectData | null {
+  // Find the edge first
+  const edge = linkDataArray.find(link => link.key === edgeKey);
+  if (!edge) return null;
+  
+  // Get labelKeys array from the edge
+  const labelKeys = edge.labelKeys;
+  if (!Array.isArray(labelKeys) || labelKeys.length === 0) return null;
+  
+  // Find the LinkLabel node with matching key (usually first element)
+  const labelNodeKey = labelKeys[0];
+  return nodeDataArray.find(node => 
+    node.key === labelNodeKey && isLinkLabelNodeData(node)
+  ) ?? null;
+}
+

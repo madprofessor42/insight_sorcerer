@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import type { AIQueryRequest, AIQueryResponse } from '../types/ai.js';
-import { processChatMessage } from '../services/ai-agent.js';
+import { processChatMessage, generateDiagramModificationsWithValidation } from '../services/ai-agent.js';
 import { HumanMessage, AIMessage, type BaseMessage } from '@langchain/core/messages';
 
 export const aiRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
@@ -118,7 +118,7 @@ export const aiRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
     socket.on('message', async (message: Buffer) => {
       try {
         const data = JSON.parse(message.toString()) as {
-          type: 'message' | 'context_update' | 'ping';
+          type: 'message' | 'context_update' | 'ping' | 'suggest_modifications';
           message?: string;
           context?: any;
         };
@@ -209,6 +209,55 @@ export const aiRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
             type: 'context_received',
             timestamp: new Date().toISOString(),
           }));
+        } else if (data.type === 'suggest_modifications') {
+          // Generate diagram modification suggestions
+          fastify.log.info({ clientId }, 'Generating diagram modifications');
+          
+          try {
+            if (!data.message) {
+              throw new Error('User request message is required');
+            }
+
+            // Send "thinking" indicator
+            socket.send(JSON.stringify({
+              type: 'thinking',
+              message: 'Анализирую диаграмму и генерирую предложения...',
+              timestamp: new Date().toISOString(),
+            }));
+
+            // Generate modifications with validation feedback loop
+            // The function will extract diagram context from conversation history internally
+            const modifications = await generateDiagramModificationsWithValidation(
+              data.message,
+              conversationHistory
+            );
+
+            // Send modifications to client
+            socket.send(JSON.stringify({
+              type: 'modifications_proposed',
+              modifications,
+              timestamp: new Date().toISOString(),
+            }));
+
+            fastify.log.info({ 
+              clientId, 
+              operationsCount: modifications.operations.length 
+            }, 'Diagram modifications generated and sent');
+
+            // Add to conversation history
+            conversationHistory.push(new HumanMessage(data.message));
+            conversationHistory.push(new AIMessage(
+              `Я предложил ${modifications.operations.length} изменений в диаграмме: ${modifications.reasoning}`
+            ));
+          } catch (modError) {
+            fastify.log.error({ clientId, error: modError }, 'Modification generation error');
+            socket.send(JSON.stringify({
+              type: 'error',
+              message: 'Не удалось сгенерировать предложения по изменению диаграммы',
+              error: modError instanceof Error ? modError.message : 'Unknown error',
+              timestamp: new Date().toISOString(),
+            }));
+          }
         }
       } catch (error) {
         fastify.log.error(error);

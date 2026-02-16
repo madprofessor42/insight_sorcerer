@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import type { DiagramModificationProposal } from '../../types/diagram-modifications';
 
 export interface ChatMessage {
   id: string;
@@ -41,6 +42,7 @@ export const useAIChat = (options: UseAIChatOptions = {}) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [pendingProposal, setPendingProposal] = useState<DiagramModificationProposal | null>(null);
   
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -200,6 +202,21 @@ export const useAIChat = (options: UseAIChatOptions = {}) => {
                 timestamp: new Date().toISOString(),
               },
             ]);
+          } else if (data.type === 'modifications_proposed') {
+            // Received diagram modification proposal
+            console.log('Modification proposal received:', data.modifications);
+            setPendingProposal(data.modifications);
+            
+            // Add system message about modifications
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: `system-${Date.now()}`,
+                type: 'system',
+                content: `✨ Получено ${data.modifications.operations.length} предложений по улучшению диаграммы`,
+                timestamp: data.timestamp,
+              },
+            ]);
           }
         } catch (error) {
           console.error('Failed to parse WebSocket message:', error);
@@ -289,6 +306,35 @@ export const useAIChat = (options: UseAIChatOptions = {}) => {
     );
   }, []);
 
+  const requestModifications = useCallback((message: string) => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      console.error('WebSocket is not connected');
+      return;
+    }
+
+    // Add user message to chat
+    const userMessage: ChatMessage = {
+      id: `user-${Date.now()}`,
+      type: 'user',
+      content: message,
+      timestamp: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, userMessage]);
+
+    // Request modifications from AI
+    // Context is already in backend's conversationHistory from automatic updates
+    wsRef.current.send(
+      JSON.stringify({
+        type: 'suggest_modifications',
+        message,
+      })
+    );
+  }, []);
+
+  const clearProposal = useCallback(() => {
+    setPendingProposal(null);
+  }, []);
+
   const clearMessages = useCallback(() => {
     setMessages([]);
   }, []);
@@ -328,10 +374,13 @@ export const useAIChat = (options: UseAIChatOptions = {}) => {
     isConnected,
     isConnecting,
     reconnectAttempts: reconnectAttemptsRef.current,
+    pendingProposal,
     connect,
     disconnect,
     sendMessage,
     updateContext,
+    requestModifications,
+    clearProposal,
     clearMessages,
   };
 };

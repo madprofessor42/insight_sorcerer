@@ -11,14 +11,17 @@
 import { ChatOpenAI } from '@langchain/openai';
 import { StateGraph, START, END, MessagesAnnotation, StateSchema, type LangGraphRunnableConfig } from '@langchain/langgraph';
 import { BaseMessage, HumanMessage, AIMessage } from '@langchain/core/messages';
-import { DiagramModificationProposalSchema, type DiagramModificationProposal } from '../types/diagram-modifications';
+import { 
+  DiagramModificationProposalSchema, 
+  type DiagramModificationProposal
+} from '../types/diagram-modifications';
+import type { ValidationResult } from './diagram-validation';
 import { z } from 'zod';
 import { 
   CHAT_SYSTEM_PROMPT, 
-  DIAGRAM_MODIFICATION_GENERATOR_PROMPT,
-  JSON_SCHEMA_INSTRUCTIONS,
-  createValidationPrompt
+  DIAGRAM_MODIFICATION_GENERATOR_PROMPT
 } from './prompts';
+import { validateDiagramModifications } from './diagram-validation';
 
 // Environment configuration
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
@@ -27,7 +30,6 @@ const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 // LLM Models from environment (or defaults)
 const DEFAULT_MODEL = process.env.LLM_MODEL || 'anthropic/claude-3.5-sonnet';
 const WRITER_MODEL = process.env.LLM_MODEL_WRITER || DEFAULT_MODEL;
-const REVIEWER_MODEL = process.env.LLM_MODEL_REVIEWER || DEFAULT_MODEL;
 
 // LangSmith tracing configuration (automatically enabled if env vars are set)
 // LANGSMITH_TRACING=true
@@ -41,28 +43,19 @@ const REVIEWER_MODEL = process.env.LLM_MODEL_REVIEWER || DEFAULT_MODEL;
 const AgentState = MessagesAnnotation;
 
 /**
- * State schema for diagram modification workflow with validation feedback loop
+ * State schema for diagram modification workflow with script validation feedback loop
  */
 const DiagramModificationState = new StateSchema({
   userRequest: z.string(),
   diagramContext: z.string(),
   conversationHistory: z.array(z.any()),
   modifications: z.any().optional(), // DiagramModificationProposal
-  validationResult: z.any().optional(), // ValidationResult
+  validationResult: z.any().optional(), // ValidationResult from script
   iterationCount: z.number().default(0),
   finalModifications: z.any().optional(), // DiagramModificationProposal
 });
 
 type DiagramModificationStateType = typeof DiagramModificationState.State;
-
-/**
- * Validation result from feedback loop
- */
-interface ValidationResult {
-  isValid: boolean;
-  issues: string[];
-  correctedModifications?: DiagramModificationProposal;
-}
 
 /**
  * Create LLM instance configured for OpenRouter
@@ -160,40 +153,22 @@ export async function generateDiagramModifications(
   userRequest: string,
   history: BaseMessage[] = []
 ): Promise<DiagramModificationProposal> {
-  const llm = createLLM(WRITER_MODEL);
   console.log('[Generator] Using LLM model:', WRITER_MODEL);
 
   // Prepare messages
   const messages: BaseMessage[] = [
-    new HumanMessage(DIAGRAM_MODIFICATION_GENERATOR_PROMPT + '\n\n' + JSON_SCHEMA_INSTRUCTIONS),
+    new HumanMessage(DIAGRAM_MODIFICATION_GENERATOR_PROMPT),
     ...history,
     new HumanMessage(`Запрос пользователя: ${userRequest}`),
   ];
 
   try {
-    // Get response from LLM
-    // For models that support it, we can pass response_format in the invoke options
-    const response = await llm.invoke(messages, {
-      response_format: { type: "json_object" }
-    } as any); // Use 'as any' because TypeScript types may not include this option for all providers
+    // Create LLM with structured output using Zod schema
+    const llm = createLLM(WRITER_MODEL).withStructuredOutput(DiagramModificationProposalSchema, {
+      name: 'diagram_modifications',
+    });
     
-    // Parse the response content as JSON
-    let content = typeof response.content === 'string' 
-      ? response.content 
-      : JSON.stringify(response.content);
-    
-    // Clean up the content - remove markdown code blocks if present
-    content = content.trim();
-    if (content.startsWith('```json')) {
-      content = content.replace(/^```json\n/, '').replace(/\n```$/, '');
-    } else if (content.startsWith('```')) {
-      content = content.replace(/^```\n/, '').replace(/\n```$/, '');
-    }
-    
-    const jsonData = JSON.parse(content);
-    
-    // Validate and parse with Zod schema
-    const result = DiagramModificationProposalSchema.parse(jsonData);
+    const result = await llm.invoke(messages);
     
     return result;
   } catch (error) {
@@ -207,74 +182,62 @@ export async function generateDiagramModifications(
 }
 
 /**
- * Validate and potentially fix proposed diagram modifications
- * This is a feedback loop that checks if the proposed changes are valid
+ * Validate proposed diagram modifications using deterministic validation script
+ * Checks: link types, node existence, orphan nodes, required fields, operation order
  */
-async function validateModifications(
+function validateModificationsWithScript(
   diagramContext: string,
   proposedModifications: DiagramModificationProposal
-): Promise<ValidationResult> {
-  const llm = createLLM(REVIEWER_MODEL);
-  console.log('[Reviewer] Using LLM model:', REVIEWER_MODEL);
-
-  const validationPrompt = createValidationPrompt(diagramContext, proposedModifications);
-
+): ValidationResult {
+  console.log('[Script Validator] Starting validation...');
+  
   try {
-    const response = await llm.invoke([new HumanMessage(validationPrompt)], {
-      response_format: { type: "json_object" }
-    } as any);
-
-    let content = typeof response.content === 'string' 
-      ? response.content 
-      : JSON.stringify(response.content);
+    const result = validateDiagramModifications(diagramContext, proposedModifications);
     
-    // Clean markdown if present
-    content = content.trim();
-    if (content.startsWith('```json')) {
-      content = content.replace(/^```json\n/, '').replace(/\n```$/, '');
-    } else if (content.startsWith('```')) {
-      content = content.replace(/^```\n/, '').replace(/\n```$/, '');
-    }
+    console.log('[Script Validator] Validation result:', {
+      isValid: result.isValid,
+      issuesCount: result.issues.length,
+    });
     
-    const validationData = JSON.parse(content);
-    
-    // Validate the correctedModifications if present
-    if (validationData.correctedModifications) {
-      validationData.correctedModifications = DiagramModificationProposalSchema.parse(
-        validationData.correctedModifications
-      );
-    }
-    
-    return validationData as ValidationResult;
+    return result;
   } catch (error) {
-    console.error('Error validating modifications:', error);
-    // If validation fails, return the original as valid (fail-safe)
+    console.error('[Script Validator] Validation error:', error);
+    // If validation fails, return error
     return {
-      isValid: true,
+      isValid: false,
       issues: [`Validation error: ${error instanceof Error ? error.message : 'Unknown error'}`],
     };
   }
 }
 
+
 /**
- * Generator Node: Generate diagram modifications
+ * Generator Node: Generate diagram modifications with script validation feedback support
  */
 async function generatorNode(state: DiagramModificationStateType): Promise<Partial<DiagramModificationStateType>> {
   console.log(`[Generator] Iteration ${state.iterationCount + 1}: Generating modifications...`);
   
-  // If we have validation feedback with corrected modifications, use them
-  if (state.validationResult?.correctedModifications) {
-    console.log('[Generator] Using corrected modifications from previous validation');
-    return {
-      modifications: state.validationResult.correctedModifications,
-      iterationCount: state.iterationCount + 1,
-    };
+  // If we have validation feedback with issues, add it to the conversation
+  const conversationWithFeedback = [...(state.conversationHistory as BaseMessage[])];
+  
+  // Check for feedback from Script Validator
+  if (state.validationResult && !state.validationResult.isValid && state.iterationCount > 0) {
+    console.log('[Generator] Adding validation feedback to prompt');
+    const feedbackMessage = `
+ВАЖНО: Предыдущая попытка содержала ошибки валидации. Исправь их!
+
+ОШИБКИ ВАЛИДАЦИИ:
+${state.validationResult.issues.map((issue: string, i: number) => `${i + 1}. ${issue}`).join('\n')}
+
+Пожалуйста, исправь эти ошибки и предложи корректные изменения.
+`;
+    conversationWithFeedback.push(new HumanMessage(feedbackMessage));
   }
   
-  // Generate new modifications
+  // Generate modifications using LLM (with or without feedback)
   const modifications = await generateDiagramModifications(
     state.userRequest,
-    state.conversationHistory as BaseMessage[]
+    conversationWithFeedback
   );
   
   console.log('[Generator] Generated modifications:', {
@@ -289,18 +252,19 @@ async function generatorNode(state: DiagramModificationStateType): Promise<Parti
 }
 
 /**
- * Reviewer Node: Validate diagram modifications
+ * Script Validator Node: Validate diagram modifications using deterministic rules
+ * Validates technical rules: link types, node existence, orphan nodes, required fields, etc.
  */
-async function reviewerNode(state: DiagramModificationStateType): Promise<Partial<DiagramModificationStateType>> {
-  console.log(`[Reviewer] Iteration ${state.iterationCount}: Validating modifications...`);
+function scriptValidatorNode(state: DiagramModificationStateType): Partial<DiagramModificationStateType> {
+  console.log(`[Script Validator] Iteration ${state.iterationCount}: Validating...`);
   
   if (!state.modifications) {
     throw new Error('No modifications to validate');
   }
   
-  const validation = await validateModifications(state.diagramContext, state.modifications);
+  const validation = validateModificationsWithScript(state.diagramContext, state.modifications);
   
-  console.log('[Reviewer] Validation result:', {
+  console.log('[Script Validator] Validation result:', {
     isValid: validation.isValid,
     issuesCount: validation.issues.length,
     issues: validation.issues,
@@ -314,14 +278,17 @@ async function reviewerNode(state: DiagramModificationStateType): Promise<Partia
     };
   }
   
-  // If invalid, return validation for next iteration
+  // If invalid, return validation for feedback loop
   return {
     validationResult: validation,
   };
 }
 
+
 /**
- * Conditional edge router: decide next step after reviewer
+ * Conditional edge router after Script Validator
+ * - If validation failed -> back to generator
+ * - If validation passed -> END
  */
 function shouldContinue(state: DiagramModificationStateType): typeof END | 'generator' {
   const maxIterations = 3;
@@ -330,8 +297,6 @@ function shouldContinue(state: DiagramModificationStateType): typeof END | 'gene
     isValid: state.validationResult?.isValid,
     iterationCount: state.iterationCount,
     maxIterations,
-    hasValidationResult: !!state.validationResult,
-    hasCorrectedModifications: !!state.validationResult?.correctedModifications,
     issuesCount: state.validationResult?.issues?.length || 0,
   });
   
@@ -346,7 +311,7 @@ function shouldContinue(state: DiagramModificationStateType): typeof END | 'gene
   }
   
   // Otherwise, go back to generator for correction
-  console.log('[Router] ↻ Routing back to generator for iteration', state.iterationCount + 1);
+  console.log('[Router] ↻ Validation failed, routing back to generator');
   return 'generator';
 }
 
@@ -373,7 +338,20 @@ function extractDiagramContextFromHistory(history: BaseMessage[]): string {
 }
 
 /**
- * Generate diagram modifications with validation feedback loop using LangGraph
+ * Generate diagram modifications with script validation feedback loop using LangGraph
+ * 
+ * Flow:
+ * 1. Generator (LLM) creates modification proposal
+ * 2. Script Validator checks using deterministic rules:
+ *    - Link types compatibility (can Variable connect to Stock?)
+ *    - Node/link existence
+ *    - Orphan nodes (nodes without connections)
+ *    - Required fields (initialValue, value, flowRate, etc.)
+ *    - Edge-to-edge connections (Variable -> Flow)
+ *    - Operation order
+ * 3. If validation fails -> loop back to Generator with feedback (max 3 iterations)
+ * 4. If validation passes -> END
+ * 5. Return final modifications (valid or best attempt after max iterations)
  */
 export async function generateDiagramModificationsWithValidation(
   userRequest: string,
@@ -386,19 +364,21 @@ export async function generateDiagramModificationsWithValidation(
     contextLength: diagramContext.length,
   });
   
-  // Build the workflow graph
+  // Build the workflow graph with script validation feedback loop
+  // Flow: Generator -> Script Validator -> (if pass) -> END
+  //                       ↑__________________|
+  //                       (if fail: feedback)
   const workflow = new StateGraph(DiagramModificationState)
     .addNode('generator', generatorNode as any)
-    .addNode('reviewer', reviewerNode as any)
+    .addNode('scriptValidator', scriptValidatorNode as any)
     .addEdge(START, 'generator')
-    .addEdge('generator', 'reviewer')
+    .addEdge('generator', 'scriptValidator')
     .addConditionalEdges(
-      'reviewer',
+      'scriptValidator',
       shouldContinue as any,
-      // Mapping: router return value -> node name
       {
-        'generator': 'generator',
-        [END]: END,
+        'generator': 'generator', // Loop back if validation failed
+        [END]: END,               // End if valid or max iterations
       }
     )
     .compile();
@@ -411,7 +391,8 @@ export async function generateDiagramModificationsWithValidation(
     iterationCount: 0,
   };
   
-  console.log('[Workflow] Starting diagram modification workflow with validation feedback loop');
+  console.log('[Workflow] Starting diagram modification workflow with script validation');
+  console.log('[Workflow] Architecture: Generator (LLM) -> Script Validator (Deterministic Rules)');
   
   // Run the workflow
   const finalState = await workflow.invoke(initialState);
@@ -419,8 +400,16 @@ export async function generateDiagramModificationsWithValidation(
   console.log('[Workflow] Completed:', {
     totalIterations: finalState.iterationCount,
     isValid: finalState.validationResult?.isValid,
-    hasIssues: finalState.validationResult?.issues.length || 0,
+    issuesCount: finalState.validationResult?.issues?.length || 0,
+    issues: finalState.validationResult?.issues || [],
   });
+  
+  // If we reached max iterations without valid result, still return the last modifications
+  // but log a warning
+  if (!finalState.validationResult?.isValid && finalState.iterationCount >= 3) {
+    console.warn('[Workflow] ⚠️  Max iterations reached without achieving valid modifications');
+    console.warn('[Workflow] Remaining issues:', finalState.validationResult?.issues);
+  }
   
   // Return final modifications (or fallback to last generated)
   return finalState.finalModifications || finalState.modifications;

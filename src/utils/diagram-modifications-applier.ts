@@ -17,6 +17,7 @@ import {
 } from '../store/diagramSlice';
 import type { RootState } from '../store/store';
 import { getNodeDisplayName, getLinkDisplayName, findLinkLabelForEdge } from './diagram-data';
+import { LINK_LABEL_CATEGORY } from '../config';
 
 // ============================================================================
 // HELPERS
@@ -47,6 +48,16 @@ function findNodeByName(state: RootState, nodeName: string): go.ObjectData | und
   });
 }
 
+/**
+ * Find link (flow/link) by display name in the diagram (fallback for name-based lookups)
+ * Uses getLinkDisplayName to correctly match names (handles text field)
+ */
+function findLinkByName(state: RootState, linkName: string): go.ObjectData | undefined {
+  return state.diagram.linkDataArray.find((link: go.ObjectData) => {
+    const displayName = getLinkDisplayName(link);
+    return displayName.toLowerCase() === linkName.toLowerCase();
+  });
+}
 
 /**
  * Generate unique key for new elements
@@ -217,14 +228,25 @@ function applyDeleteNode(
 /**
  * Apply add_link operation
  * Handles both regular links and flows
- * For flows to/from flow edges: Automatically converts to LinkLabel connection
- * If link with same endpoints already exists, converts to update operation
+ * 
+ * Resolution logic for fromId/toId:
+ * 1. Try to find in newlyCreatedFlows (flows created in this session)
+ * 2. Try to find as edge by ID -> get its LinkLabel
+ * 3. If not found, try to find edge by NAME -> get its LinkLabel
+ * 4. If not found, try to find as node by ID
+ * 5. If not found, try to find as node by NAME (for newly created nodes)
+ * 
+ * This allows LLM to reference flow edges by their name in add_link operations,
+ * which is automatically converted to the LinkLabel connection.
+ * 
+ * If link with same endpoints already exists, converts to update operation.
  */
 function applyAddLink(
   operation: Extract<DiagramOperation, { operation: 'add_link' }>,
   dispatch: Dispatch,
-  state: RootState
-): { success: boolean; message: string } {
+  state: RootState,
+  newlyCreatedFlows: Map<string, go.Key>
+): { success: boolean; message: string; flowKey?: go.Key } {
   try {
     let fromKey: go.Key;
     let toKey: go.Key;
@@ -232,61 +254,119 @@ function applyAddLink(
     let toName: string;
 
     // === RESOLVE "FROM" ===
-    // Step 1: Check if fromId is actually an edge (flow link) - find its LinkLabel
-    const linkLabel = findLinkLabelForEdge(
-      operation.fromId,
-      state.diagram.nodeDataArray,
-      state.diagram.linkDataArray
-    );
-    if (linkLabel) {
-      // fromId is a flow edge, use its LinkLabel
-      const edge = state.diagram.linkDataArray.find((link: go.ObjectData) => link.key === operation.fromId);
-      console.log(`Converting fromId from flow edge to its LinkLabel: ${operation.fromId} → ${linkLabel.key}`);
-      fromKey = linkLabel.key;
-      fromName = edge ? getLinkDisplayName(edge) : 'Flow';
+    // Step 1: Check if it's a newly created flow in this session
+    const newlyCreatedFlowKey = newlyCreatedFlows.get(operation.fromId);
+    if (newlyCreatedFlowKey) {
+      // This is a flow created in this session, use its LinkLabel key
+      const edge = state.diagram.linkDataArray.find((link: go.ObjectData) => link.key === newlyCreatedFlowKey);
+      console.log(`Found newly created flow by name: "${operation.fromId}" → LinkLabel key ${newlyCreatedFlowKey}`);
+      fromKey = newlyCreatedFlowKey;
+      fromName = edge ? getLinkDisplayName(edge) : operation.fromId;
     } else {
-      // Step 2: Try to find as node (by ID first, then by name for newly created nodes)
-      let fromNode = findNodeById(state, operation.fromId);
-      if (!fromNode) {
-        fromNode = findNodeByName(state, operation.fromId);
+      // Step 2: Try to find as existing edge (by ID) - if found, get its LinkLabel
+      let linkLabel = findLinkLabelForEdge(
+        operation.fromId,
+        state.diagram.nodeDataArray,
+        state.diagram.linkDataArray
+      );
+      
+      // Step 3: If not found by ID, try to find edge by name
+      if (!linkLabel) {
+        const edgeByName = findLinkByName(state, operation.fromId);
+        if (edgeByName) {
+          // Found a flow edge by name, get its LinkLabel
+          linkLabel = findLinkLabelForEdge(
+            edgeByName.key,
+            state.diagram.nodeDataArray,
+            state.diagram.linkDataArray
+          );
+          if (linkLabel) {
+            console.log(`Found flow edge by name and converted to LinkLabel: "${operation.fromId}" → ${linkLabel.key}`);
+          }
+        }
       }
-      if (!fromNode) {
-        return {
-          success: false,
-          message: `Source node with ID "${operation.fromId}" not found`
-        };
+      
+      if (linkLabel) {
+        // fromId is a flow edge, use its LinkLabel
+        const edge = state.diagram.linkDataArray.find((link: go.ObjectData) => 
+          link.key === operation.fromId || getLinkDisplayName(link).toLowerCase() === operation.fromId.toLowerCase()
+        );
+        console.log(`Converting fromId from flow edge to its LinkLabel: ${operation.fromId} → ${linkLabel.key}`);
+        fromKey = linkLabel.key;
+        fromName = edge ? getLinkDisplayName(edge) : 'Flow';
+      } else {
+        // Step 4: Try to find as node (by ID first, then by name for newly created nodes)
+        let fromNode = findNodeById(state, operation.fromId);
+        if (!fromNode) {
+          fromNode = findNodeByName(state, operation.fromId);
+        }
+        if (!fromNode) {
+          return {
+            success: false,
+            message: `Source node or flow with ID/name "${operation.fromId}" not found`
+          };
+        }
+        fromKey = fromNode.key;
+        fromName = getNodeDisplayName(fromNode);
       }
-      fromKey = fromNode.key;
-      fromName = getNodeDisplayName(fromNode);
     }
 
     // === RESOLVE "TO" ===
-    // Step 1: Check if toId is actually an edge (flow link) - find its LinkLabel
-    const toAsLinkLabel = findLinkLabelForEdge(
-      operation.toId,
-      state.diagram.nodeDataArray,
-      state.diagram.linkDataArray
-    );
-    if (toAsLinkLabel) {
-      // toId is a flow edge, use its LinkLabel
-      const edge = state.diagram.linkDataArray.find((link: go.ObjectData) => link.key === operation.toId);
-      console.log(`Converting toId from flow edge to its LinkLabel: ${operation.toId} → ${toAsLinkLabel.key}`);
-      toKey = toAsLinkLabel.key;
-      toName = edge ? getLinkDisplayName(edge) : 'Flow';
+    // Step 1: Check if it's a newly created flow in this session
+    const newlyCreatedToFlowKey = newlyCreatedFlows.get(operation.toId);
+    if (newlyCreatedToFlowKey) {
+      // This is a flow created in this session, use its LinkLabel key
+      const edge = state.diagram.linkDataArray.find((link: go.ObjectData) => link.key === newlyCreatedToFlowKey);
+      console.log(`Found newly created flow by name: "${operation.toId}" → LinkLabel key ${newlyCreatedToFlowKey}`);
+      toKey = newlyCreatedToFlowKey;
+      toName = edge ? getLinkDisplayName(edge) : operation.toId;
     } else {
-      // Step 2: Try to find as node (by ID first, then by name for newly created nodes)
-      let toNode = findNodeById(state, operation.toId);
-      if (!toNode) {
-        toNode = findNodeByName(state, operation.toId);
+      // Step 2: Try to find as existing edge (by ID) - if found, get its LinkLabel
+      let toAsLinkLabel = findLinkLabelForEdge(
+        operation.toId,
+        state.diagram.nodeDataArray,
+        state.diagram.linkDataArray
+      );
+      
+      // Step 3: If not found by ID, try to find edge by name
+      if (!toAsLinkLabel) {
+        const edgeByName = findLinkByName(state, operation.toId);
+        if (edgeByName) {
+          // Found a flow edge by name, get its LinkLabel
+          toAsLinkLabel = findLinkLabelForEdge(
+            edgeByName.key,
+            state.diagram.nodeDataArray,
+            state.diagram.linkDataArray
+          );
+          if (toAsLinkLabel) {
+            console.log(`Found flow edge by name and converted to LinkLabel: "${operation.toId}" → ${toAsLinkLabel.key}`);
+          }
+        }
       }
-      if (!toNode) {
-        return {
-          success: false,
-          message: `Target node with ID "${operation.toId}" not found`
-        };
+      
+      if (toAsLinkLabel) {
+        // toId is a flow edge, use its LinkLabel
+        const edge = state.diagram.linkDataArray.find((link: go.ObjectData) => 
+          link.key === operation.toId || getLinkDisplayName(link).toLowerCase() === operation.toId.toLowerCase()
+        );
+        console.log(`Converting toId from flow edge to its LinkLabel: ${operation.toId} → ${toAsLinkLabel.key}`);
+        toKey = toAsLinkLabel.key;
+        toName = edge ? getLinkDisplayName(edge) : 'Flow';
+      } else {
+        // Step 4: Try to find as node (by ID first, then by name for newly created nodes)
+        let toNode = findNodeById(state, operation.toId);
+        if (!toNode) {
+          toNode = findNodeByName(state, operation.toId);
+        }
+        if (!toNode) {
+          return {
+            success: false,
+            message: `Target node or flow with ID/name "${operation.toId}" not found`
+          };
+        }
+        toKey = toNode.key;
+        toName = getNodeDisplayName(toNode);
       }
-      toKey = toNode.key;
-      toName = getNodeDisplayName(toNode);
     }
 
     // Check if link with same endpoints already exists
@@ -310,8 +390,9 @@ function applyAddLink(
     }
 
     // Create the link
+    const linkKey = generateKey();
     const linkData: go.ObjectData = {
-      key: generateKey(),
+      key: linkKey,
       from: fromKey,
       to: toKey,
       category: operation.linkType,
@@ -327,10 +408,29 @@ function applyAddLink(
       linkData.bidirectional = operation.bidirectional;
     }
 
+    // For flow links, create LinkLabel node manually to enable immediate edge-to-edge connections
+    let linkLabelKey: go.Key | undefined;
+    if (operation.linkType === 'flow') {
+      linkLabelKey = generateKey();
+      const linkLabelData: go.ObjectData = {
+        key: linkLabelKey,
+        category: LINK_LABEL_CATEGORY,
+      };
+      
+      // Add LinkLabel to link's labelKeys array
+      linkData.labelKeys = [linkLabelKey];
+      
+      // Insert LinkLabel node first
+      dispatch(insertNode(linkLabelData));
+      console.log(`Created LinkLabel for flow "${operation.name || linkKey}": ${linkLabelKey}`);
+    }
+
     dispatch(insertLink(linkData));
+    
     return { 
       success: true, 
-      message: `Added ${operation.linkType} from "${fromName}" to "${toName}"` 
+      message: `Added ${operation.linkType} from "${fromName}" to "${toName}"`,
+      flowKey: linkLabelKey // Return LinkLabel key for tracking
     };
   } catch (error) {
     return { 
@@ -444,9 +544,13 @@ export function applyDiagramModifications(
     messages: [],
   };
 
+  // Track newly created flows in this session (name -> key)
+  // This is needed because LinkLabel nodes are created asynchronously by GoJS
+  const newlyCreatedFlows = new Map<string, go.Key>();
+
   for (const operation of proposal.operations) {
     const state = getState();
-    let result: { success: boolean; message: string };
+    let result: { success: boolean; message: string; flowKey?: go.Key };
 
     switch (operation.operation) {
       case 'add_node':
@@ -459,7 +563,11 @@ export function applyDiagramModifications(
         result = applyDeleteNode(operation, dispatch, state);
         break;
       case 'add_link':
-        result = applyAddLink(operation, dispatch, state);
+        result = applyAddLink(operation, dispatch, state, newlyCreatedFlows);
+        // Track newly created flows
+        if (result.success && result.flowKey && operation.name) {
+          newlyCreatedFlows.set(operation.name, result.flowKey);
+        }
         break;
       case 'update_link':
         result = applyUpdateLink(operation, dispatch, state);

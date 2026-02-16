@@ -59,8 +59,8 @@ export const DeleteNodeSchema = z.object({
 export const AddLinkSchema = z.object({
   operation: z.literal('add_link'),
   linkType: z.enum(['link', 'flow']).describe('Type of link/connection'),
-  fromId: z.string().describe('ID of the source node or flow edge (from diagram JSON links array)'),
-  toId: z.string().describe('ID of the target node or flow edge (from diagram JSON links array)'),
+  fromId: z.string().describe('Source: ID for existing nodes/edges (from JSON), or NAME for newly created nodes/edges in this proposal'),
+  toId: z.string().describe('Target: ID for existing nodes/edges (from JSON), or NAME for newly created nodes/edges in this proposal'),
   name: z.string().optional().describe('Name/label for the link'),
   flowRate: z.union([z.string(), z.number()]).optional().describe('Flow rate formula for Flow links'),
   bidirectional: z.boolean().optional().describe('Whether the link is bidirectional'),

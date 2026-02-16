@@ -1,28 +1,37 @@
 /**
- * Diagram Context Utilities
+ * AI Context Utilities
  * 
- * Serializes diagram data into AI-friendly format for LLM context
+ * Serializes diagram data into AI-friendly format for LLM context.
+ * Uses existing diagram-data utilities to avoid duplication.
  */
 
-import type { RootState } from '../store/store';
-import { 
-  getNodeDisplayName, 
+import type * as go from 'gojs';
+import type { RootState } from '../../store/store';
+import { getNodeConfiguration } from '../../config';
+import type { NodeType, LinkType } from '../../config';
+import {
+  getNodeDisplayName,
   getLinkDisplayName,
+  getLinkType,
   isLinkLabelNodeData,
-  findParentEdgeForLabelNode
-} from './diagram-data/core';
+  isLinkBidirectional,
+} from './core';
+import { isEdgeEndpoint, resolveConnectionEndpoint } from './display';
+
+// ============================================================================
+// AI CONTEXT TYPES
+// ============================================================================
 
 /**
  * Simplified node representation for AI context
  */
-interface AINodeContext {
+export interface AINodeContext {
   key: string;
   category: string;
   text: string;
   formula?: string;
   value?: number | string;
   initialValue?: number | string;
-  hasFormula?: boolean;
   // Converter-specific fields
   input?: string;
   values?: string;
@@ -31,14 +40,14 @@ interface AINodeContext {
 /**
  * Simplified link representation for AI context
  */
-interface AILinkContext {
-  key?: string;
+export interface AILinkContext {
+  key: string;
   from: string;
   to: string;
-  type: string;
-  label?: string;
+  type: LinkType;
+  label: string;
   flowRate?: string | number;
-  bidirectional?: boolean;
+  bidirectional: boolean;
 }
 
 /**
@@ -55,6 +64,10 @@ export interface DiagramContext {
   simulationTimeUnit?: string;
 }
 
+// ============================================================================
+// EXTRACTION FUNCTIONS
+// ============================================================================
+
 /**
  * Extract diagram context from Redux state
  */
@@ -63,67 +76,52 @@ export function extractDiagramContext(state: RootState): DiagramContext {
 
   // Serialize nodes with relevant information (exclude LinkLabel nodes)
   const nodes: AINodeContext[] = nodeDataArray
-    .filter((node: any) => !isLinkLabelNodeData(node))
-    .map((node: any) => ({
+    .filter((node: go.ObjectData) => !isLinkLabelNodeData(node))
+    .map((node: go.ObjectData) => ({
       key: String(node.key),
-      category: node.category || 'unknown',
+      category: node.category as string || 'unknown',
       text: getNodeDisplayName(node),
-      formula: node.formula,
-      value: node.value, // Current value for Variables
-      initialValue: node.initialValue, // Initial value for Stocks
-      hasFormula: Boolean(node.formula),
+      formula: node.formula as string | undefined,
+      value: node.value as number | string | undefined,
+      initialValue: node.initialValue as number | string | undefined,
       // Converter-specific fields
-      input: node.input,
-      values: node.values,
+      input: node.input as string | undefined,
+      values: node.values as string | undefined,
     }));
 
   // Serialize links with proper display names, resolving LinkLabel connections
-  const links: AILinkContext[] = linkDataArray.map((link: any) => {
-    let fromKey = link.from;
-    let toKey = link.to;
-    let isFromEdge = false;
-    let isToEdge = false;
-    
-    // Resolve LinkLabel nodes to their parent edges
-    const fromNode = nodeDataArray.find((n: any) => n.key === link.from);
-    const toNode = nodeDataArray.find((n: any) => n.key === link.to);
-    
-    // If from is a LinkLabel, get the parent edge key
-    if (fromNode && isLinkLabelNodeData(fromNode)) {
-      const parentEdge = findParentEdgeForLabelNode(fromNode.key, linkDataArray);
-      if (parentEdge) {
-        fromKey = parentEdge.key;
-        isFromEdge = true;
-      }
-    }
-    
-    // If to is a LinkLabel, get the parent edge key
-    if (toNode && isLinkLabelNodeData(toNode)) {
-      const parentEdge = findParentEdgeForLabelNode(toNode.key, linkDataArray);
-      if (parentEdge) {
-        toKey = parentEdge.key;
-        isToEdge = true;
-      }
-    }
-    
+  const links: AILinkContext[] = linkDataArray.map((link: go.ObjectData) => {
+    // Resolve endpoints (handles LinkLabel → parent edge)
+    const fromEndpoint = resolveConnectionEndpoint(
+      link.from as go.Key,
+      nodeDataArray,
+      linkDataArray
+    );
+    const toEndpoint = resolveConnectionEndpoint(
+      link.to as go.Key,
+      nodeDataArray,
+      linkDataArray
+    );
+
     return {
       key: String(link.key),
-      from: String(fromKey),
-      to: String(toKey),
-      type: link.category || 'link',
+      from: String(fromEndpoint.id),
+      to: String(toEndpoint.id),
+      type: getLinkType(link),
       label: getLinkDisplayName(link),
-      flowRate: link.flowRate,
-      bidirectional: link.bidirectional === true,
-      isFromEdge,
-      isToEdge,
+      flowRate: link.flowRate as string | number | undefined,
+      bidirectional: isLinkBidirectional(link),
+      // Store endpoint info for formatting
+      _fromEndpoint: fromEndpoint,
+      _toEndpoint: toEndpoint,
     } as any;
   });
 
   // Count nodes by type (exclude LinkLabel nodes)
   const nodesByType: Record<string, number> = {};
-  nodeDataArray.forEach((node: any) => {
+  nodeDataArray.forEach((node: go.ObjectData) => {
     if (!isLinkLabelNodeData(node)) {
-      const category = node.category || 'unknown';
+      const category = (node.category as string) || 'unknown';
       nodesByType[category] = (nodesByType[category] || 0) + 1;
     }
   });
@@ -138,6 +136,30 @@ export function extractDiagramContext(state: RootState): DiagramContext {
     simulationSteps: simulationConfig.timeLength,
     simulationTimeUnit: simulationConfig.timeUnits,
   };
+}
+
+// ============================================================================
+// FORMATTING FUNCTIONS
+// ============================================================================
+
+/**
+ * Get human-readable label for node type using configuration
+ */
+function getNodeTypeLabel(category: string): string {
+  const config = getNodeConfiguration(category as NodeType);
+  if (config) {
+    return config.label;
+  }
+  
+  // Fallback labels
+  const fallbackLabels: Record<string, string> = {
+    'stock': 'Stock',
+    'variable': 'Variable',
+    'converter': 'Converter',
+    'cloud': 'Cloud',
+    'unknown': 'Unknown',
+  };
+  return fallbackLabels[category.toLowerCase()] || category;
 }
 
 /**
@@ -204,29 +226,17 @@ export function formatDiagramContextForLLM(context: DiagramContext): string {
   if (regularLinks.length > 0) {
     parts.push(`\n🔗 **Links:**`);
     regularLinks.forEach((link: any, index) => {
-      // Try to find in nodes first
-      let fromNode = context.nodes.find(n => n.key === link.from);
-      let toNode = context.nodes.find(n => n.key === link.to);
+      const fromEndpoint = link._fromEndpoint;
+      const toEndpoint = link._toEndpoint;
       
-      let fromText = fromNode?.text;
-      let toText = toNode?.text;
+      // Get display text for endpoints
+      const fromText = isEdgeEndpoint(fromEndpoint) 
+        ? fromEndpoint.name 
+        : context.nodes.find(n => n.key === link.from)?.text || link.from;
       
-      // If from/to is actually another link (edge-to-edge connection)
-      if (!fromNode && link.isFromEdge) {
-        // Find the actual link by key
-        const actualLink = context.links.find((l: any) => l.key === link.from);
-        fromText = actualLink?.label || link.from;
-      }
-      
-      if (!toNode && link.isToEdge) {
-        // Find the actual link by key
-        const actualLink = context.links.find((l: any) => l.key === link.to);
-        toText = actualLink?.label || link.to;
-      }
-      
-      // Fallback to keys if still not found
-      if (!fromText) fromText = link.from;
-      if (!toText) toText = link.to;
+      const toText = isEdgeEndpoint(toEndpoint)
+        ? toEndpoint.name
+        : context.nodes.find(n => n.key === link.to)?.text || link.to;
       
       // Format: "Source" -> "Target" (имя: Label) or "Source" ↔ "Target" (имя: Label) for bidirectional
       const arrow = link.bidirectional ? '↔' : '->';
@@ -245,29 +255,17 @@ export function formatDiagramContextForLLM(context: DiagramContext): string {
   if (flowLinks.length > 0) {
     parts.push(`\n💧 **Flows:**`);
     flowLinks.forEach((link: any, index) => {
-      // Try to find in nodes first
-      let fromNode = context.nodes.find(n => n.key === link.from);
-      let toNode = context.nodes.find(n => n.key === link.to);
+      const fromEndpoint = link._fromEndpoint;
+      const toEndpoint = link._toEndpoint;
       
-      let fromText = fromNode?.text;
-      let toText = toNode?.text;
+      // Get display text for endpoints
+      const fromText = isEdgeEndpoint(fromEndpoint)
+        ? fromEndpoint.name
+        : context.nodes.find(n => n.key === link.from)?.text || link.from;
       
-      // If from/to is actually another link (edge-to-edge connection)
-      if (!fromNode && link.isFromEdge) {
-        // Find the actual link by key
-        const actualLink = context.links.find((l: any) => l.key === link.from);
-        fromText = actualLink?.label || link.from;
-      }
-      
-      if (!toNode && link.isToEdge) {
-        // Find the actual link by key
-        const actualLink = context.links.find((l: any) => l.key === link.to);
-        toText = actualLink?.label || link.to;
-      }
-      
-      // Fallback to keys if still not found
-      if (!fromText) fromText = link.from;
-      if (!toText) toText = link.to;
+      const toText = isEdgeEndpoint(toEndpoint)
+        ? toEndpoint.name
+        : context.nodes.find(n => n.key === link.to)?.text || link.to;
       
       // Format: "Source" → "Target" (имя: Name) | Flow Rate: value
       let flowInfo = `${index + 1}. "${fromText}" → "${toText}"`;
@@ -296,19 +294,9 @@ export function formatDiagramContextForLLM(context: DiagramContext): string {
   return parts.join('\n');
 }
 
-/**
- * Get human-readable label for node type
- */
-function getNodeTypeLabel(category: string): string {
-  const labels: Record<string, string> = {
-    'stock': 'Stock (Запас)',
-    'flow': 'Flow (Поток)',
-    'variable': 'Variable (Переменная)',
-    'converter': 'Converter (Конвертер)',
-    'unknown': 'Неизвестный тип',
-  };
-  return labels[category] || category;
-}
+// ============================================================================
+// QUERY HELPERS
+// ============================================================================
 
 /**
  * Get node by key from context

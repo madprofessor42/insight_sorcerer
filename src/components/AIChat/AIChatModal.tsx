@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAIChat } from '../../hooks/ai';
 import { useAppSelector } from '../../store/hooks';
-import { extractDiagramContext, formatDiagramContextForLLM } from '../../utils/diagram-context';
+import { extractDiagramContext, formatDiagramContextForLLM } from '../../utils/diagram-data';
 import { Modal } from '../ui/Modal/Modal';
 import styles from './AIChatModal.module.css';
 

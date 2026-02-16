@@ -72,3 +72,18 @@ export {
   getAvailableReferences,
   getAvailableReferencesForEdge,
 } from './references';
+
+// ============================================================================
+// AI CONTEXT - Serialization for LLM context
+// ============================================================================
+export {
+  extractDiagramContext,
+  formatDiagramContextForLLM,
+  getNodeFromContext,
+  getNodeConnections,
+  
+  // Types
+  type AINodeContext,
+  type AILinkContext,
+  type DiagramContext,
+} from './ai-context';

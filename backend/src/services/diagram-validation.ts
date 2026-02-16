@@ -547,6 +547,204 @@ function hasRequiredLinkFields(operation: Extract<DiagramOperation, { operation:
 }
 
 /**
+ * Extract element names from formula string
+ * Looks for patterns like [ElementName] and returns all element names
+ */
+function extractFormulaReferences(formula: string | undefined): string[] {
+  if (!formula || typeof formula !== 'string') return [];
+  
+  // Match all [ElementName] patterns
+  const matches = formula.matchAll(/\[([^\]]+)\]/g);
+  const references: string[] = [];
+  
+  for (const match of matches) {
+    references.push(match[1].trim());
+  }
+  
+  return references;
+}
+
+/**
+ * Check if formula references are properly connected
+ * Validates that all elements mentioned in formulas have corresponding connections
+ */
+function validateFormulaReferences(
+  operation: Extract<DiagramOperation, { operation: 'add_node' | 'update_node' }>,
+  context: DiagramContext,
+  allOperations: DiagramOperation[]
+): string[] {
+  const issues: string[] = [];
+  
+  // Get formula value based on node type
+  let formulaValue: string | undefined;
+  
+  if (operation.operation === 'add_node') {
+    switch (operation.category) {
+      case 'Stock':
+        formulaValue = operation.initialValue ? String(operation.initialValue) : undefined;
+        break;
+      case 'Variable':
+        formulaValue = operation.value ? String(operation.value) : undefined;
+        break;
+      case 'Converter':
+        // Converter uses input field for reference
+        formulaValue = operation.input ? String(operation.input) : undefined;
+        break;
+      case 'Cloud':
+        // Cloud doesn't have formulas
+        return issues;
+    }
+  } else {
+    // update_node
+    const value = operation.value || operation.initialValue || operation.input;
+    formulaValue = value ? String(value) : undefined;
+  }
+  
+  // Extract all referenced element names from formula
+  const referencedElements = extractFormulaReferences(formulaValue);
+  
+  if (referencedElements.length === 0) {
+    return issues; // No references to validate
+  }
+  
+  // Get the node ID (for update_node) or name (for add_node)
+  const currentNodeId = operation.operation === 'update_node' 
+    ? operation.nodeId 
+    : operation.name;
+  
+  // For each referenced element, check if there's a connection
+  for (const refElementName of referencedElements) {
+    // Find the referenced node in the context
+    const referencedNode = context.nodes.find(
+      (n) => n.name?.toLowerCase() === refElementName.toLowerCase()
+    );
+    
+    // Check if referenced element is being created in this proposal
+    const referencedIsNew = allOperations.some(
+      (op): op is Extract<DiagramOperation, { operation: 'add_node' }> => 
+        op.operation === 'add_node' && 
+        op.name.toLowerCase() === refElementName.toLowerCase()
+    );
+    
+    // Check if referenced element is being created as a link (flow edge)
+    const referencedIsNewLink = allOperations.some(
+      (op): op is Extract<DiagramOperation, { operation: 'add_link' }> => 
+        op.operation === 'add_link' && 
+        op.name?.toLowerCase() === refElementName.toLowerCase()
+    );
+    
+    if (!referencedNode && !referencedIsNew && !referencedIsNewLink) {
+      issues.push(
+        `Формула ссылается на элемент "[${refElementName}]", который не существует в диаграмме. Проверьте правильность имени или создайте этот элемент.`
+      );
+      continue;
+    }
+    
+    // Now check if there's a connection from the referenced element to the current node
+    const referencedNodeId = referencedNode?.id || refElementName; // Use name for new nodes
+    
+    // Check existing links
+    const hasExistingConnection = context.links.some((link) => {
+      // Link type should be 'link' (not 'flow')
+      if (link.category !== 'link') return false;
+      
+      // Check if link connects from referenced element to current node
+      const connectsFromRef = link.from === referencedNodeId && link.to === currentNodeId;
+      
+      // For update_node, also check by ID in context
+      const currentNodeInContext = context.nodes.find(n => n.id === currentNodeId);
+      const connectsByName = currentNodeInContext && 
+        link.from === referencedNodeId && 
+        link.to === currentNodeInContext.id;
+      
+      return connectsFromRef || connectsByName;
+    });
+    
+    // Check if connection is being created in this proposal
+    const hasNewConnection = allOperations.some(
+      (op): op is Extract<DiagramOperation, { operation: 'add_link' }> => 
+        op.operation === 'add_link' && 
+        op.linkType === 'link' &&
+        op.fromId === refElementName && 
+        op.toId === currentNodeId
+    );
+    
+    if (!hasExistingConnection && !hasNewConnection) {
+      const nodeName = operation.name || currentNodeId;
+      issues.push(
+        `Формула в "${nodeName}" ссылается на "[${refElementName}]", но нет связи (link) от "${refElementName}" к "${nodeName}". Добавьте add_link операцию: fromId="${refElementName}", toId="${nodeName}", linkType="link".`
+      );
+    }
+  }
+  
+  return issues;
+}
+
+/**
+ * Check if flow formula references are properly connected
+ * Validates that all elements mentioned in flowRate formulas have corresponding connections to the flow edge
+ */
+function validateFlowFormulaReferences(
+  operation: Extract<DiagramOperation, { operation: 'add_link' }>,
+  context: DiagramContext,
+  allOperations: DiagramOperation[]
+): string[] {
+  const issues: string[] = [];
+  
+  // Only validate flow links
+  if (operation.linkType !== 'flow') return issues;
+  
+  const flowRate = operation.flowRate ? String(operation.flowRate) : undefined;
+  const referencedElements = extractFormulaReferences(flowRate);
+  
+  if (referencedElements.length === 0) {
+    return issues; // No references to validate
+  }
+  
+  const flowName = operation.name || 'unnamed';
+  
+  // For each referenced element, check if there's a connection to this flow
+  for (const refElementName of referencedElements) {
+    // Find the referenced node in the context
+    const referencedNode = context.nodes.find(
+      (n) => n.name?.toLowerCase() === refElementName.toLowerCase()
+    );
+    
+    // Check if referenced element is being created in this proposal
+    const referencedIsNew = allOperations.some(
+      (op): op is Extract<DiagramOperation, { operation: 'add_node' }> => 
+        op.operation === 'add_node' && 
+        op.name.toLowerCase() === refElementName.toLowerCase()
+    );
+    
+    if (!referencedNode && !referencedIsNew) {
+      issues.push(
+        `Flow "${flowName}": формула flowRate ссылается на элемент "[${refElementName}]", который не существует в диаграмме. Проверьте правильность имени или создайте этот элемент.`
+      );
+      continue;
+    }
+    
+    // Check if there's a connection from the referenced element to this flow (edge-to-edge)
+    // This should be a separate add_link operation with toId = flowName
+    const hasNewConnection = allOperations.some(
+      (op): op is Extract<DiagramOperation, { operation: 'add_link' }> => 
+        op.operation === 'add_link' && 
+        op.linkType === 'link' &&
+        op.fromId === refElementName && 
+        op.toId === flowName
+    );
+    
+    if (!hasNewConnection) {
+      issues.push(
+        `Flow "${flowName}": flowRate ссылается на "[${refElementName}]", но нет связи (link) от "${refElementName}" к flow "${flowName}". Добавьте add_link операцию (edge-to-edge): fromId="${refElementName}", toId="${flowName}", linkType="link".`
+      );
+    }
+  }
+  
+  return issues;
+}
+
+/**
  * Check for orphan nodes (nodes without any connections)
  * Also checks that newly created flow edges have connections (for edge-to-edge)
  */
@@ -624,9 +822,13 @@ export function validateDiagramModifications(
           operationIssues = validateAddNode(operation, context, newNodesInProposal);
           // Check required fields for add_node
           operationIssues.push(...hasRequiredFields(operation));
+          // Check formula references
+          operationIssues.push(...validateFormulaReferences(operation, context, proposedModifications.operations));
           break;
         case 'update_node':
           operationIssues = validateUpdateNode(operation, context);
+          // Check formula references for update_node
+          operationIssues.push(...validateFormulaReferences(operation, context, proposedModifications.operations));
           break;
         case 'delete_node':
           operationIssues = validateDeleteNode(operation, context, proposedModifications.operations);
@@ -635,6 +837,8 @@ export function validateDiagramModifications(
           operationIssues = validateAddLink(operation, context, newNodesInProposal, newLinksInProposal);
           // Check required fields for add_link (e.g., flowRate for flows)
           operationIssues.push(...hasRequiredLinkFields(operation));
+          // Check flow formula references (edge-to-edge connections)
+          operationIssues.push(...validateFlowFormulaReferences(operation, context, proposedModifications.operations));
           // Track this new link for future edge-to-edge validations
           if (operation.name) {
             newLinksInProposal.set(operation.name, operation.linkType);

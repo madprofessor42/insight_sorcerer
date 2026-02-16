@@ -78,6 +78,13 @@ export const DIAGRAM_MODIFICATION_GENERATOR_PROMPT = `Ты AI ассистент
    - ✅ ПРАВИЛЬНО: "[Population]*[Growth Rate]" (имена)
    - ❌ НЕПРАВИЛЬНО: использовать ID в формулах
    - Формулы ссылаются на элементы по ИМЕНАМ, не по ID!
+   - **КРИТИЧЕСКИ ВАЖНО:** Если формула ссылается на элемент, ОБЯЗАТЕЛЬНО создай link от этого элемента!
+   - Пример: если Variable имеет value="[Birth Rate]*[Population]", нужны два add_link:
+     * add_link: fromId="Birth Rate", toId="Variable", linkType="link"
+     * add_link: fromId="Population", toId="Variable", linkType="link"
+   - Для Flow: если flowRate="[Population]*[Growth Rate]", нужны edge-to-edge links:
+     * add_link: fromId="Population", toId="FlowName", linkType="link"
+     * add_link: fromId="Growth Rate", toId="FlowName", linkType="link"
 
 7. Не удаляй существующие элементы без веской причины
 
@@ -226,7 +233,7 @@ export const DIAGRAM_MODIFICATION_GENERATOR_PROMPT = `Ты AI ассистент
   "reasoning": "Обновляем формулу для расчета чистого роста"
 }
 
-✅ ПРАВИЛЬНО - создание узлов с формулами (ИМЕНА в квадратных скобках):
+✅ ПРАВИЛЬНО - создание узлов с формулами И связями для referenced элементов:
 [
   {
     "operation": "add_node",
@@ -248,11 +255,28 @@ export const DIAGRAM_MODIFICATION_GENERATOR_PROMPT = `Ты AI ассистент
     "name": "Net Growth Rate",
     "value": "[Birth Rate]-[Death Rate]",  // ← ИМЕНА в формуле!
     "reasoning": "Чистый темп роста"
+  },
+  {
+    "operation": "add_link",
+    "linkType": "link",
+    "fromId": "Birth Rate",  // ← Создаем link от Birth Rate
+    "toId": "Net Growth Rate",
+    "name": "Birth Rate Influence",
+    "reasoning": "Birth Rate используется в формуле Net Growth Rate"
+  },
+  {
+    "operation": "add_link",
+    "linkType": "link",
+    "fromId": "Death Rate",  // ← Создаем link от Death Rate
+    "toId": "Net Growth Rate",
+    "name": "Death Rate Influence",
+    "reasoning": "Death Rate используется в формуле Net Growth Rate"
   }
 ]
 // ✅ Формулы используют ИМЕНА элементов
 // ✅ Формула "[Birth Rate]-[Death Rate]" правильная!
-// ✅ Не нужно использовать ID в формулах
+// ✅ Для КАЖДОГО элемента в формуле создан link!
+// ✅ Это ОБЯЗАТЕЛЬНО для корректной работы формулы!
 
 ❌ ОШИБКА - узел без связей (orphan node):
 [
@@ -305,6 +329,20 @@ export const DIAGRAM_MODIFICATION_GENERATOR_PROMPT = `Ты AI ассистент
   "value": "[rO4IsJX7jJFWeqQcTYQgv]-[5COadj_BwVl5kLRTNFMGz]"  // НЕТ! ID в формуле!
   // Правильно: "[Birth Rate]-[Death Rate]" (имена!)
 }
+
+❌ ОШИБКА - формула без соответствующих links:
+[
+  {
+    "operation": "add_node",
+    "category": "Variable",
+    "name": "Net Growth Rate",
+    "value": "[Birth Rate]-[Death Rate]",
+    "reasoning": "..."
+  }
+  // НЕТ add_link от Birth Rate!
+  // НЕТ add_link от Death Rate!
+  // Формула не будет работать без связей!
+]
 
 ❌ ОШИБКА - смешивание правил для операций и формул:
 // В операциях (fromId/toId): ID для существующих, имена для новых

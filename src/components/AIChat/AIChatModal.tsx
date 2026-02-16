@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAIChat } from '../../hooks/ai';
+import { useAppSelector } from '../../store/hooks';
+import { extractDiagramContext, formatDiagramContextForLLM } from '../../utils/diagram-context';
 import { Modal } from '../ui/Modal/Modal';
 import styles from './AIChatModal.module.css';
 
@@ -18,10 +20,13 @@ export const AIChatModal = ({
   onMinimize,
   onMaximize,
 }: AIChatModalProps) => {
-  const { messages, isConnected, isConnecting, connect, disconnect, sendMessage } = useAIChat();
+  const { messages, isConnected, isConnecting, connect, disconnect, sendMessage, updateContext } = useAIChat();
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Get diagram state from Redux
+  const diagramState = useAppSelector((state) => state.diagram);
 
   useEffect(() => {
     if (isOpen) {
@@ -32,6 +37,27 @@ export const AIChatModal = ({
       disconnect();
     }
   }, [isOpen, connect, disconnect]);
+
+  // Auto-send diagram context when connected or when diagram changes
+  useEffect(() => {
+    if (isConnected && isOpen) {
+      // Небольшая задержка чтобы не спамить при быстрых изменениях
+      const timer = setTimeout(() => {
+        const context = extractDiagramContext({ diagram: diagramState } as any);
+        const contextText = formatDiagramContextForLLM(context);
+        
+        updateContext({
+          diagram: context,
+          formattedContext: contextText,
+          timestamp: new Date().toISOString(),
+        });
+        
+        console.log('📊 Контекст диаграммы обновлен автоматически');
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isConnected, isOpen, diagramState, updateContext]);
 
   useEffect(() => {
     // Автоскролл к последнему сообщению при изменении messages

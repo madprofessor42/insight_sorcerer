@@ -187,12 +187,22 @@ export const aiRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
           }
         } else if (data.type === 'context_update') {
           // Обновление контекста (текущая диаграмма, выбранный узел и т.д.)
-          fastify.log.info({ clientId, context: data.context }, 'Context updated');
+          fastify.log.info({ 
+            clientId, 
+            contextSize: data.context ? JSON.stringify(data.context).length : 0,
+            hasFormattedContext: Boolean(data.context?.formattedContext)
+          }, 'Context updated');
           
-          // Add context to conversation history as a system message
-          if (data.context) {
-            const contextMessage = `Контекст обновлен: ${JSON.stringify(data.context)}`;
+          // Add formatted diagram context to conversation history
+          if (data.context && data.context.formattedContext) {
+            const contextMessage = `\n[КОНТЕКСТ ДИАГРАММЫ]\n${data.context.formattedContext}\n[КОНЕЦ КОНТЕКСТА]\n\nИспользуй эту информацию о текущей диаграмме пользователя для более точных ответов.`;
             conversationHistory.push(new HumanMessage(contextMessage));
+            
+            fastify.log.info({ 
+              clientId, 
+              totalNodes: data.context.diagram?.totalNodes || 0,
+              totalLinks: data.context.diagram?.totalLinks || 0
+            }, 'Diagram context added to conversation');
           }
 
           socket.send(JSON.stringify({

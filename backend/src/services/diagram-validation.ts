@@ -166,6 +166,34 @@ function hasDuplicateLink(
   );
 }
 
+/**
+ * Find node by ID or name (case-insensitive)
+ * Used throughout validation to support both existing nodes (by ID) and references (by name)
+ */
+function findNodeByIdOrName(
+  context: DiagramContext,
+  idOrName: string
+): DiagramContext['nodes'][0] | undefined {
+  return context.nodes.find((n) => 
+    n.id === idOrName || 
+    n.name?.toLowerCase() === idOrName.toLowerCase()
+  );
+}
+
+/**
+ * Find link by ID or name (case-insensitive)
+ * Used for edge-to-edge connections
+ */
+function findLinkByIdOrName(
+  context: DiagramContext,
+  idOrName: string
+): DiagramContext['links'][0] | undefined {
+  return context.links.find((l) => 
+    l.id === idOrName || 
+    l.text?.toLowerCase() === idOrName.toLowerCase()
+  );
+}
+
 // ============================================================================
 // CONTEXT PARSING
 // ============================================================================
@@ -217,9 +245,7 @@ function validateAddNode(
   const issues: string[] = [];
   
   // Check if node with same name already exists
-  const existingNode = context.nodes.find(
-    (n) => n.name?.toLowerCase() === operation.name.toLowerCase()
-  );
+  const existingNode = findNodeByIdOrName(context, operation.name);
   
   if (existingNode) {
     issues.push(
@@ -243,7 +269,7 @@ function validateUpdateNode(
   const issues: string[] = [];
   
   // Check if node exists
-  const node = context.nodes.find((n) => n.id === operation.nodeId);
+  const node = findNodeByIdOrName(context, operation.nodeId);
   if (!node) {
     issues.push(
       `Узел с ID "${operation.nodeId}" не найден в диаграмме. Проверьте правильность ID.`
@@ -264,7 +290,7 @@ function validateDeleteNode(
   const issues: string[] = [];
   
   // Check if node exists
-  const node = context.nodes.find((n) => n.id === operation.nodeId);
+  const node = findNodeByIdOrName(context, operation.nodeId);
   if (!node) {
     issues.push(
       `Узел с ID "${operation.nodeId}" не найден в диаграмме.`
@@ -316,7 +342,7 @@ function validateAddLink(
   }
   
   // Find FROM node/edge
-  let fromNode = context.nodes.find((n) => n.id === operation.fromId);
+  let fromNode = findNodeByIdOrName(context, operation.fromId);
   let fromIsNewNode = false;
   let fromIsNewLink = false;
   
@@ -327,7 +353,7 @@ function validateAddLink(
     // Can't validate type without knowing what was added
   }
   
-  let fromLink = context.links.find((l) => l.id === operation.fromId);
+  let fromLink = findLinkByIdOrName(context, operation.fromId);
   
   // Check if fromId refers to a newly created link (flow edge) in this proposal
   if (!fromNode && !fromLink && !fromIsNewNode && newLinksInProposal.has(operation.fromId)) {
@@ -348,7 +374,7 @@ function validateAddLink(
   }
   
   // Find TO node/edge
-  let toNode = context.nodes.find((n) => n.id === operation.toId);
+  let toNode = findNodeByIdOrName(context, operation.toId);
   let toIsNewNode = false;
   let toIsNewLink = false;
   
@@ -357,7 +383,7 @@ function validateAddLink(
     toIsNewNode = true;
   }
   
-  let toLink = context.links.find((l) => l.id === operation.toId);
+  let toLink = findLinkByIdOrName(context, operation.toId);
   
   // Check if toId refers to a newly created link (flow edge) in this proposal
   if (!toNode && !toLink && !toIsNewNode && newLinksInProposal.has(operation.toId)) {
@@ -454,7 +480,7 @@ function validateUpdateLink(
   const issues: string[] = [];
   
   // Check if link exists
-  const link = context.links.find((l) => l.id === operation.linkId);
+  const link = findLinkByIdOrName(context, operation.linkId);
   if (!link) {
     issues.push(
       `Связь с ID "${operation.linkId}" не найдена в диаграмме. Проверьте правильность ID.`
@@ -484,7 +510,7 @@ function validateDeleteLink(
   const issues: string[] = [];
   
   // Check if link exists
-  const link = context.links.find((l) => l.id === operation.linkId);
+  const link = findLinkByIdOrName(context, operation.linkId);
   if (!link) {
     issues.push(
       `Связь с ID "${operation.linkId}" не найдена в диаграмме.`
@@ -615,9 +641,7 @@ function validateFormulaReferences(
   // For each referenced element, check if there's a connection
   for (const refElementName of referencedElements) {
     // Find the referenced node in the context
-    const referencedNode = context.nodes.find(
-      (n) => n.name?.toLowerCase() === refElementName.toLowerCase()
-    );
+    const referencedNode = findNodeByIdOrName(context, refElementName);
     
     // Check if referenced element is being created in this proposal
     const referencedIsNew = allOperations.some(
@@ -648,25 +672,38 @@ function validateFormulaReferences(
       // Link type should be 'link' (not 'flow')
       if (link.category !== 'link') return false;
       
-      // Check if link connects from referenced element to current node
-      const connectsFromRef = link.from === referencedNodeId && link.to === currentNodeId;
+      // Find the 'from' node to check by name as well
+      const fromNode = findNodeByIdOrName(context, link.from);
+      const fromNodeMatchesRef = fromNode && 
+        (fromNode.id === referencedNodeId || 
+         fromNode.name?.toLowerCase() === refElementName.toLowerCase());
       
-      // For update_node, also check by ID in context
-      const currentNodeInContext = context.nodes.find(n => n.id === currentNodeId);
-      const connectsByName = currentNodeInContext && 
-        link.from === referencedNodeId && 
-        link.to === currentNodeInContext.id;
+      // Find the 'to' node to check by name as well  
+      const toNode = findNodeByIdOrName(context, link.to);
+      const toNodeMatchesCurrent = toNode && 
+        (toNode.id === currentNodeId || 
+         toNode.name?.toLowerCase() === (operation.name || currentNodeId).toLowerCase());
       
-      return connectsFromRef || connectsByName;
+      return fromNodeMatchesRef && toNodeMatchesCurrent;
     });
     
     // Check if connection is being created in this proposal
     const hasNewConnection = allOperations.some(
-      (op): op is Extract<DiagramOperation, { operation: 'add_link' }> => 
-        op.operation === 'add_link' && 
-        op.linkType === 'link' &&
-        op.fromId === refElementName && 
-        op.toId === currentNodeId
+      (op): op is Extract<DiagramOperation, { operation: 'add_link' }> => {
+        if (op.operation !== 'add_link' || op.linkType !== 'link') return false;
+        
+        // Check fromId matches referenced element (by name or ID)
+        const fromMatches = op.fromId === refElementName || 
+                           op.fromId === referencedNodeId ||
+                           op.fromId.toLowerCase() === refElementName.toLowerCase();
+        
+        // Check toId matches current node (by name or ID)
+        const toMatches = op.toId === currentNodeId || 
+                         op.toId === (operation.name || currentNodeId) ||
+                         op.toId.toLowerCase() === (operation.name || currentNodeId).toLowerCase();
+        
+        return fromMatches && toMatches;
+      }
     );
     
     if (!hasExistingConnection && !hasNewConnection) {
@@ -706,9 +743,7 @@ function validateFlowFormulaReferences(
   // For each referenced element, check if there's a connection to this flow
   for (const refElementName of referencedElements) {
     // Find the referenced node in the context
-    const referencedNode = context.nodes.find(
-      (n) => n.name?.toLowerCase() === refElementName.toLowerCase()
-    );
+    const referencedNode = findNodeByIdOrName(context, refElementName);
     
     // Check if referenced element is being created in this proposal
     const referencedIsNew = allOperations.some(
@@ -726,12 +761,22 @@ function validateFlowFormulaReferences(
     
     // Check if there's a connection from the referenced element to this flow (edge-to-edge)
     // This should be a separate add_link operation with toId = flowName
+    const referencedNodeId = referencedNode?.id;
     const hasNewConnection = allOperations.some(
-      (op): op is Extract<DiagramOperation, { operation: 'add_link' }> => 
-        op.operation === 'add_link' && 
-        op.linkType === 'link' &&
-        op.fromId === refElementName && 
-        op.toId === flowName
+      (op): op is Extract<DiagramOperation, { operation: 'add_link' }> => {
+        if (op.operation !== 'add_link' || op.linkType !== 'link') return false;
+        
+        // Check fromId matches referenced element (by name or ID)
+        const fromMatches = op.fromId === refElementName || 
+                           (referencedNodeId && op.fromId === referencedNodeId) ||
+                           op.fromId.toLowerCase() === refElementName.toLowerCase();
+        
+        // Check toId matches flow name
+        const toMatches = op.toId === flowName || 
+                         op.toId.toLowerCase() === flowName.toLowerCase();
+        
+        return fromMatches && toMatches;
+      }
     );
     
     if (!hasNewConnection) {

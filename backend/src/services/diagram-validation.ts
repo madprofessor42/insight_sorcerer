@@ -218,7 +218,7 @@ function parseDiagramContext(contextJson: string): DiagramContext {
       })),
       links: links.map((l: any) => ({
         id: l.id || l.key,
-        category: l.category || 'link',
+        category: l.category || l.type || 'link',
         from: l.from || l.fromId,
         to: l.to || l.toId,
         text: l.text || l.name,

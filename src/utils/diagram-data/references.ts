@@ -389,14 +389,26 @@ export function getAvailableReferencesForEdge(
             );
           }
           
-          // Process the connection to get nodes on the other end
+          // Process the connection to get nodes/edges on the other end
           if (shouldProcessConnection) {
             processLinkWithBidirectional(
               link,
               labelKey,
               'incoming',
               nodeDataArray,
-              (node) => tryAddNodeReference(node, references, addedKeys)
+              (node) => {
+                // Check if it's a LinkLabel node - if so, get parent edge
+                if (isLinkLabelNodeData(node)) {
+                  const parentEdge = findParentEdgeForLabelNode(node.key, linkDataArray);
+                  if (parentEdge) {
+                    const edgeType = getLinkType(parentEdge);
+                    tryAddEdgeReference(parentEdge, edgeType, references, addedKeys);
+                  }
+                } else {
+                  // Regular node
+                  tryAddNodeReference(node, references, addedKeys);
+                }
+              }
             );
           }
         });
@@ -436,14 +448,26 @@ export function getAvailableReferencesForEdge(
             );
           }
           
-          // Process the connection to get nodes on the other end
+          // Process the connection to get nodes/edges on the other end
           if (shouldProcessConnection) {
             processLinkWithBidirectional(
               link,
               labelKey,
               'outgoing',
               nodeDataArray,
-              (node) => tryAddNodeReference(node, references, addedKeys)
+              (node) => {
+                // Check if it's a LinkLabel node - if so, get parent edge
+                if (isLinkLabelNodeData(node)) {
+                  const parentEdge = findParentEdgeForLabelNode(node.key, linkDataArray);
+                  if (parentEdge) {
+                    const edgeType = getLinkType(parentEdge);
+                    tryAddEdgeReference(parentEdge, edgeType, references, addedKeys);
+                  }
+                } else {
+                  // Regular node
+                  tryAddNodeReference(node, references, addedKeys);
+                }
+              }
             );
           }
         });

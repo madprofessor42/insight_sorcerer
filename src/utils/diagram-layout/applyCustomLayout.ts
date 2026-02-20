@@ -49,8 +49,22 @@ export interface CustomLayoutOptions {
   /**
    * Maximum radius to search for candidate positions, in px (default 300).
    * Ноды не будут перемещаться дальше чем на это расстояние от исходной позиции.
+   * Если pass не дал улучшений, maxDisplacement будет увеличен автоматически.
    */
   maxDisplacement?: number;
+
+  /**
+   * Increment to add to maxDisplacement when a pass produces no improvement (default 150).
+   * Если pass не улучшил результат, maxDisplacement увеличивается на эту величину
+   * и алгоритм пробует еще один pass с расширенным радиусом поиска.
+   */
+  maxDisplacementIncrement?: number;
+
+  /**
+   * Maximum allowed value for maxDisplacement (default 1000).
+   * Предотвращает слишком большие перемещения узлов.
+   */
+  maxDisplacementLimit?: number;
 }
 
 const DEFAULT_OPTIONS: Required<CustomLayoutOptions> = {
@@ -58,6 +72,8 @@ const DEFAULT_OPTIONS: Required<CustomLayoutOptions> = {
   maxRoundsPerPass: 20,
   minNodeGap: 20,
   maxDisplacement: 300,
+  maxDisplacementIncrement: 150,
+  maxDisplacementLimit: 1000,
 };
 
 /**
@@ -102,8 +118,12 @@ export async function applyCustomLayout(
     // Phase 3 — Multi-pass optimization
     // Each pass uses the result of the previous pass as starting state.
     // Each pass gets a FRESH displacement budget (origPositions reset per pass).
-    // Stops early if a pass made no improvement.
-    for (let pass = 0; pass < opts.iterations; pass++) {
+    // If a pass makes no improvement, maxDisplacement is increased and we try again.
+    let currentMaxDisplacement = opts.maxDisplacement;
+    let pass = 0;
+    let consecutiveNoImprovementPasses = 0;
+    
+    while (pass < opts.iterations) {
       const crossingsBefore = countEdgeCrossings(nodes, edges);
       const overlapsBefore = countNodeEdgeOverlaps(nodes, edges);
 
@@ -112,7 +132,7 @@ export async function applyCustomLayout(
         break;
       }
 
-      console.log(`[layout] Pass ${pass + 1}/${opts.iterations}: ${crossingsBefore} crossings, ${overlapsBefore} overlaps…`);
+      console.log(`[layout] Pass ${pass + 1}/${opts.iterations}: ${crossingsBefore} crossings, ${overlapsBefore} overlaps (maxDisplacement: ${currentMaxDisplacement}px)…`);
 
       // Fresh displacement budget for each pass — measured from positions
       // at the START of this pass, not from the very first positions.
@@ -124,14 +144,14 @@ export async function applyCustomLayout(
         const crossings = findAllCrossings(nodes, edges);
         if (crossings.length === 0) break;
 
-        const fixed = fixOneCrossing(nodes, edges, crossings[0], origPositions, opts.maxDisplacement);
+        const fixed = fixOneCrossing(nodes, edges, crossings[0], origPositions, currentMaxDisplacement);
         if (fixed !== null) {
           movedNodes.add(fixed);
           passMoves++;
         } else {
           let anyFixed = false;
           for (let ci = 1; ci < crossings.length; ci++) {
-            const f = fixOneCrossing(nodes, edges, crossings[ci], origPositions, opts.maxDisplacement);
+            const f = fixOneCrossing(nodes, edges, crossings[ci], origPositions, currentMaxDisplacement);
             if (f !== null) {
               movedNodes.add(f);
               passMoves++;
@@ -144,7 +164,7 @@ export async function applyCustomLayout(
       }
 
       // --- Node-edge overlap elimination ---
-      fixNodeEdgeOverlaps(nodes, edges, origPositions, opts.maxDisplacement, movedNodes);
+      fixNodeEdgeOverlaps(nodes, edges, origPositions, currentMaxDisplacement, movedNodes);
 
       totalMoves += passMoves;
 
@@ -152,11 +172,38 @@ export async function applyCustomLayout(
       const overlapsAfter = countNodeEdgeOverlaps(nodes, edges);
       console.log(`[layout] Pass ${pass + 1} done: ${crossingsAfter} crossings, ${overlapsAfter} overlaps (was ${crossingsBefore}/${overlapsBefore})`);
 
-      // Stop if no improvement in this pass
-      if (crossingsAfter >= crossingsBefore && overlapsAfter >= overlapsBefore) {
-        console.log(`[layout] No improvement in pass ${pass + 1} — stopping.`);
+      // Check if there was improvement
+      const hadImprovement = crossingsAfter < crossingsBefore || overlapsAfter < overlapsBefore;
+      
+      if (!hadImprovement) {
+        consecutiveNoImprovementPasses++;
+        
+        // Try increasing maxDisplacement if we haven't reached the limit
+        if (currentMaxDisplacement < opts.maxDisplacementLimit) {
+          const newMaxDisplacement = Math.min(
+            currentMaxDisplacement + opts.maxDisplacementIncrement,
+            opts.maxDisplacementLimit
+          );
+          console.log(`[layout] No improvement in pass ${pass + 1} — increasing maxDisplacement from ${currentMaxDisplacement}px to ${newMaxDisplacement}px`);
+          currentMaxDisplacement = newMaxDisplacement;
+          
+          // Don't count this pass toward the limit if we're increasing displacement
+          // This gives the algorithm a chance with the new displacement value
+          if (consecutiveNoImprovementPasses < 3) {
+            // Allow a few more attempts with increased displacement
+            continue; // Don't increment pass counter
+          }
+        }
+        
+        // If we've reached the limit or had too many consecutive failures, stop
+        console.log(`[layout] Stopping: reached maxDisplacement limit or no improvement possible.`);
         break;
+      } else {
+        // Reset consecutive failure counter on success
+        consecutiveNoImprovementPasses = 0;
       }
+      
+      pass++;
     }
 
     // Phase 4 — Minimal overlap removal

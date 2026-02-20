@@ -17,10 +17,10 @@ export const AddNodeSchema = z.object({
   operation: z.literal('add_node'),
   category: z.enum(['Stock', 'Variable', 'Converter', 'Cloud']).describe('Type of node to add'),
   name: z.string().describe('Name of the new node'),
-  initialValue: z.union([z.string(), z.number()]).optional().describe('Initial value for Stock nodes (can be number or formula)'),
-  value: z.union([z.string(), z.number()]).optional().describe('Value for Variable nodes (can be number or formula string)'),
-  input: z.string().optional().describe('Input source for Converter nodes'),
-  values: z.string().optional().describe('Data points for Converter nodes (format: x1,y1;x2,y2;x3,y3)'),
+  initialValue: z.union([z.string(), z.number()]).nullish().describe('Initial value for Stock nodes (can be number or formula)'),
+  value: z.union([z.string(), z.number()]).nullish().describe('Value for Variable nodes (can be number or formula string)'),
+  input: z.string().nullish().describe('Input source for Converter nodes'),
+  values: z.string().nullish().describe('Data points for Converter nodes (format: x1,y1;x2,y2;x3,y3)'),
   reasoning: z.string().describe('Explanation why this node should be added'),
 });
 
@@ -31,11 +31,11 @@ export const UpdateNodeSchema = z.object({
   operation: z.literal('update_node'),
   nodeId: z.string().describe('ID of the node to update (from diagram JSON)'),
   name: z.string().describe('Current name of the node (for UI display)'),
-  newName: z.string().optional().describe('New name for the node'),
-  initialValue: z.union([z.string(), z.number()]).optional().describe('New initial value for Stock nodes (can be number or formula)'),
-  value: z.union([z.string(), z.number()]).optional().describe('New value for Variable nodes (can be number or formula string)'),
-  input: z.string().optional().describe('New input source for Converter nodes'),
-  values: z.string().optional().describe('New data points for Converter nodes'),
+  newName: z.string().nullish().describe('New name for the node'),
+  initialValue: z.union([z.string(), z.number()]).nullish().describe('New initial value for Stock nodes (can be number or formula)'),
+  value: z.union([z.string(), z.number()]).nullish().describe('New value for Variable nodes (can be number or formula string)'),
+  input: z.string().nullish().describe('New input source for Converter nodes'),
+  values: z.string().nullish().describe('New data points for Converter nodes'),
   reasoning: z.string().describe('Explanation why this node should be updated'),
 });
 
@@ -61,9 +61,9 @@ export const AddLinkSchema = z.object({
   linkType: z.enum(['link', 'flow']).describe('Type of link/connection'),
   fromId: z.string().describe('Source: ID for existing nodes/edges (from JSON), or NAME for newly created nodes/edges in this proposal'),
   toId: z.string().describe('Target: ID for existing nodes/edges (from JSON), or NAME for newly created nodes/edges in this proposal'),
-  name: z.string().optional().describe('Name/label for the link'),
-  flowRate: z.union([z.string(), z.number()]).optional().describe('Flow rate formula for Flow links'),
-  bidirectional: z.boolean().optional().describe('Whether the link is bidirectional'),
+  name: z.string().nullish().describe('Name/label for the link'),
+  flowRate: z.union([z.string(), z.number()]).nullish().describe('Flow rate formula for Flow links'),
+  bidirectional: z.boolean().nullish().describe('Whether the link is bidirectional'),
   reasoning: z.string().describe('Explanation why this link should be added'),
 });
 
@@ -74,9 +74,9 @@ export const UpdateLinkSchema = z.object({
   operation: z.literal('update_link'),
   linkId: z.string().describe('ID of the link to update (from diagram JSON)'),
   name: z.string().describe('Current name of the link (for UI display)'),
-  newName: z.string().optional().describe('New name for the link'),
-  flowRate: z.union([z.string(), z.number()]).optional().describe('New flow rate formula'),
-  bidirectional: z.boolean().optional().describe('New bidirectional setting'),
+  newName: z.string().nullish().describe('New name for the link'),
+  flowRate: z.union([z.string(), z.number()]).nullish().describe('New flow rate formula'),
+  bidirectional: z.boolean().nullish().describe('New bidirectional setting'),
   reasoning: z.string().describe('Explanation why this link should be updated'),
 });
 

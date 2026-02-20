@@ -48,3 +48,15 @@ export function ChartIcon(props: IconProps) {
   );
 }
 
+/** Auto Layout icon for organizing diagram */
+export function AutoLayoutIcon(props: IconProps) {
+  return (
+    <svg {...defaultProps} {...props}>
+      <circle cx="6" cy="6" r="3" />
+      <circle cx="18" cy="6" r="3" />
+      <circle cx="6" cy="18" r="3" />
+      <circle cx="18" cy="18" r="3" />
+      <path d="M9 6h6M9 18h6M6 9v6M18 9v6" />
+    </svg>
+  );
+}

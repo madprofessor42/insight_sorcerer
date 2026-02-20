@@ -3,25 +3,29 @@
  */
 
 import { useState, useCallback } from 'react';
+import type * as go from 'gojs';
 import { useAppDispatch } from '../../store/hooks';
 import { clearDiagram } from '../../store/diagramSlice';
 import { useDiagramPersistence } from '../../hooks/diagram/useDiagramPersistence';
 import { saveLastOpenedDiagramId } from '../../utils/database';
 import type { DiagramMetadata } from '../../utils/database';
-import { useToast } from '../ui';
+import { useToast, AutoLayoutIcon } from '../ui';
 import { Modal, ModalActions, FormField } from '../ui';
+import { applyCustomLayout } from '../../utils/diagram-layout';
 import styles from './DiagramToolbar.module.css';
 
 interface DiagramToolbarProps {
   currentDiagramId: string | null;
   currentDiagramName: string;
   onDiagramChanged: (id: string | null, name: string) => void;
+  diagram: go.Diagram | null;
 }
 
 export function DiagramToolbar({ 
   currentDiagramId, 
   currentDiagramName,
-  onDiagramChanged 
+  onDiagramChanged,
+  diagram 
 }: DiagramToolbarProps) {
   const dispatch = useAppDispatch();
   const { saveDiagram, loadDiagram, getSavedDiagrams, deleteDiagram, status } = useDiagramPersistence();
@@ -142,46 +146,78 @@ export function DiagramToolbar({
     }
   }, [deleteDiagram, currentDiagramId, onDiagramChanged, toast, loadSavedDiagrams]);
 
+  // Handle Auto Layout button click
+  const handleAutoLayout = useCallback(async () => {
+    if (!diagram) {
+      toast.showError('Диаграмма не инициализирована');
+      return;
+    }
+
+    try {
+      await applyCustomLayout(diagram);
+      toast.showSuccess('Layout применён успешно');
+    } catch (err) {
+      console.error('Failed to apply auto layout:', err);
+      toast.showError('Не удалось применить layout');
+    }
+  }, [diagram, toast]);
+
   const isSaving = status === 'saving';
 
   return (
     <>
-      <div className={styles.toolbar}>
-        <button
-          onClick={handleNew}
-          className={styles.button}
-          title="Create new diagram"
-        >
-          New
-        </button>
-        
-        <button
-          onClick={handleLoad}
-          className={styles.button}
-          title="Load saved diagram"
-        >
-          Load
-        </button>
-        
-        <div className={styles.divider} />
-        
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          className={styles.button}
-          title="Save diagram"
-        >
-          {isSaving ? 'Saving...' : 'Save'}
-        </button>
-        
-        <button
-          onClick={handleSaveAs}
-          disabled={isSaving}
-          className={styles.button}
-          title="Save as new diagram"
-        >
-          Save As
-        </button>
+      <div className={styles.toolbarWrapper}>
+        {/* Tools block - Layout and other diagram tools */}
+        <div className={styles.toolbar}>
+          <button
+            onClick={handleAutoLayout}
+            className={styles.button}
+            title="Auto layout diagram using force-directed algorithm"
+            disabled={!diagram}
+          >
+            <AutoLayoutIcon width={14} height={14} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+            <span style={{ verticalAlign: 'middle' }}>Layout</span>
+          </button>
+        </div>
+
+        {/* Main block - New/Load and Save controls */}
+        <div className={styles.toolbar}>
+          <button
+            onClick={handleNew}
+            className={styles.button}
+            title="Create new diagram"
+          >
+            New
+          </button>
+          
+          <button
+            onClick={handleLoad}
+            className={styles.button}
+            title="Load saved diagram"
+          >
+            Load
+          </button>
+          
+          <div className={styles.divider} />
+          
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className={styles.button}
+            title="Save diagram"
+          >
+            {isSaving ? 'Saving...' : 'Save'}
+          </button>
+          
+          <button
+            onClick={handleSaveAs}
+            disabled={isSaving}
+            className={styles.button}
+            title="Save as new diagram"
+          >
+            Save As
+          </button>
+        </div>
       </div>
 
       {/* Save dialog */}

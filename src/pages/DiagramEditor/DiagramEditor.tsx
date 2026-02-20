@@ -134,6 +134,7 @@ export function DiagramEditor() {
                 setCurrentDiagramId(id);
                 setCurrentDiagramName(name);
               }}
+              diagram={observedDiagram}
             />
             
             <Diagram

@@ -10,7 +10,7 @@ export type { ModalActionsProps } from './ModalActions/ModalActions';
 export { MinimizedWindowsBar } from './MinimizedWindowsBar/MinimizedWindowsBar';
 export type { MinimizedWindow } from './MinimizedWindowsBar/MinimizedWindowsBar';
 
-export { SettingsIcon, BugIcon, ChartIcon } from './Icons/Icons';
+export { SettingsIcon, BugIcon, ChartIcon, AutoLayoutIcon } from './Icons/Icons';
 
 export { Toast } from './Toast/Toast';
 export { ToastContainer } from './Toast/ToastContainer';
